@@ -3,6 +3,7 @@ export interface SportCategory {
   categoryName: string;
   description: string;
   iconUrl: string;
+  cloudinaryId: string;
   status: string;
   displayOrder: number;
   createdAt: string;

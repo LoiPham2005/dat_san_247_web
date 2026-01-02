@@ -7,7 +7,9 @@ interface SportCategoryState {
   loading: boolean;
   error: string | null;
   fetchCategories: () => Promise<void>;
-  createCategories: (category: SportCategory) => Promise<void>;
+  createCategories: (formData: FormData) => Promise<void>;
+  updateCategory: (id: number, formData: FormData) => Promise<void>;
+  deleteCategory: (id: number) => Promise<void>;
 }
 
 export const useSportCategoryStore = create<SportCategoryState>((set, get) => ({
@@ -27,12 +29,43 @@ export const useSportCategoryStore = create<SportCategoryState>((set, get) => ({
   },
 
   // Tạo danh mục mới
-  createCategories: async (category: SportCategory) => {
+  createCategories: async (formData: FormData) => {
     set({ loading: true, error: null });
     try {
-      const res = await sportCategoryApi.create(category);
-      // Dùng get() để lấy state hiện tại và nối dữ liệu mới vào
-      set({ categories: [...get().categories, res.data], loading: false });
+      const res = await sportCategoryApi.create(formData);
+      const currentCategories = get().categories;
+      set({
+        categories: [...currentCategories, res.data],
+        loading: false,
+      });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+
+  // Cập nhật danh mục
+  updateCategory: async (id: number, formData: FormData) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await sportCategoryApi.update(id, formData);
+      const updatedCategories = get().categories.map((cat) =>
+        cat.categoryId === id ? res.data : cat
+      );
+      set({ categories: updatedCategories, loading: false });
+    } catch (error: any) {
+      set({ error: error.message, loading: false });
+    }
+  },
+
+  // Xóa danh mục
+  deleteCategory: async (id: number) => {
+    set({ loading: true, error: null });
+    try {
+      await sportCategoryApi.delete(id);
+      const filteredCategories = get().categories.filter(
+        (cat) => cat.categoryId !== id
+      );
+      set({ categories: filteredCategories, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
     }

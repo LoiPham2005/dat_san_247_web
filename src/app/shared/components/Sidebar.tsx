@@ -52,8 +52,8 @@ import routesApp from "../constants/routes";
 
 const menuItems = [
     { name: "Dashboard", href: routesApp.home, icon: FaTachometerAlt },
-    { name: "Sản phẩm", href: routesApp.sportCategories, icon: FaBoxes },
-    //   { name: "Danh mục", href: routesApp.category, icon: FaTags },
+    { name: "Danh mục", href: routesApp.sportCategories, icon: FaBoxes },
+    { name: "Sân thể thao", href: routesApp.venues, icon: FaTags },
     //   { name: "Thương hiệu", href: routesApp.brand, icon: FaTag },
     //   { name: "Banner", href: routesApp.banner, icon: FaImage },
     //   { name: "Voucher", href: routesApp.voucher, icon: FaTicketAlt },
@@ -84,11 +84,11 @@ export default function Sidebar() {
             {/* Logo */}
             <div className="flex items-center justify-between p-4">
                 {!collapsed && (
-                    <h1 className="text-2xl font-bold text-blue-600">Đặt Sân 24/7 & SportHub</h1>
+                    <h1 className="text-2xl font-bold text-green-400">Đặt Sân 24/7 & SportHub</h1>
                 )}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="text-gray-600 dark:text-gray-300 hover:text-blue-500"
+                    className="text-gray-600 dark:text-gray-300 hover:text-green-500"
                 >
                     {collapsed ? "»" : "«"}
                 </button>
@@ -105,8 +105,8 @@ export default function Sidebar() {
                                 <Link
                                     href={item.href}
                                     className={`flex items-center px-4 py-3 rounded-md transition-all ${isActive
-                                            ? "bg-blue-500 text-white"
-                                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        ? "bg-green-500 text-white"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                                         }`}
                                     title={collapsed ? item.name : ""}
                                 >

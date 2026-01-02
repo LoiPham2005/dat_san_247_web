@@ -6,6 +6,7 @@ const routesApp = {
     profile: "/features/profile/pages",
     dashboard: "/features/dashboard/pages",
     sportCategories: "/features/sport-categories/pages",
+    venues: "/features/venue/pages",
 };
 
 export default routesApp;
