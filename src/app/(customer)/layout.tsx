@@ -1,5 +1,6 @@
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import { CustomerHeader } from '@/components/layout/customer/CustomerHeader';
+import { CustomerFooter } from '@/components/layout/customer/CustomerFooter';
+import { Toaster } from '@/components/ui/toaster';
 
 export default function CustomerLayout({
     children,
@@ -7,12 +8,13 @@ export default function CustomerLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-grow container mx-auto px-4 py-8">
+        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 font-sans">
+            <CustomerHeader />
+            <main className="flex-grow pt-16">
                 {children}
             </main>
-            <Footer />
+            <CustomerFooter />
+            <Toaster />
         </div>
     );
 }

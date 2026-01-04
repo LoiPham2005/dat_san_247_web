@@ -12,7 +12,7 @@ export interface User {
     phone?: string;
     role: UserRole;
     avatar?: string;
-    venueId?: string; // For staff and owners
+    venueId?: string; 
     isActive: boolean;
     createdAt: string;
 }

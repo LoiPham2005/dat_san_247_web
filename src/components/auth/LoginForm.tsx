@@ -45,8 +45,8 @@ export const LoginForm = () => {
                 error={errors.password?.message}
                 {...register('password')}
             />
-            <Button type="submit" className="w-full" isLoading={isLoading}>
-                Login
+            <Button type="submit" className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all" isLoading={isLoading}>
+                Sign In
             </Button>
         </form>
     );

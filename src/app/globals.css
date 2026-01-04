@@ -1,10 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-    --color-primary-50: #f0f9ff;
-    --color-primary-500: #3b82f6;
-    --color-primary-600: #2563eb;
-    --color-primary-700: #1d4ed8;
+    --color-primary-50: #f2fbf3;
+    --color-primary-100: #e1f6e3;
+    --color-primary-200: #c5ecc8;
+    --color-primary-300: #9adca0;
+    --color-primary-400: #68c471;
+    --color-primary-500: #4fa553;
+    --color-primary-600: #3e8a42;
+    --color-primary-700: #336e37;
+    --color-primary-800: #2c572f;
+    --color-primary-900: #254828;
+    --color-primary-950: #102712;
 }
 
 :root {
@@ -12,15 +19,47 @@
     --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
+/* Dark Theme */
+:root.dark {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+}
+
+/* Green Theme - A softer, nature-inspired dark/light hybrid or distinct look */
+:root.green {
+    --background: #e6f7e8;
+    /* Very light green bg */
+    --foreground: #052e08;
+    /* Dark green text */
+}
+
+:root.green .glass {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: rgba(79, 165, 83, 0.2);
 }
 
 body {
     background: var(--background);
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }

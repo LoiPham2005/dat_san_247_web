@@ -1,30 +1,100 @@
-import { Button } from './button';
+'use client';
+
+import * as React from 'react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/format';
 
-interface DialogProps {
+const DialogContext = React.createContext<{
     isOpen: boolean;
-    onClose: () => void;
-    title: string;
-    children: React.ReactNode;
-    footer?: React.ReactNode;
-}
+    setIsOpen: (open: boolean) => void;
+} | null>(null);
 
-export const Dialog = ({ isOpen, onClose, title, children, footer }: DialogProps) => {
-    if (!isOpen) return null;
+const Dialog = ({ children, open, onOpenChange }: { children: React.ReactNode, open?: boolean, onOpenChange?: (open: boolean) => void }) => {
+    const [isOpenState, setIsOpenState] = React.useState(false);
+
+    // Controlled vs Uncontrolled logic
+    const isOpen = open !== undefined ? open : isOpenState;
+    const setIsOpen = React.useCallback((newVal: boolean) => {
+        setIsOpenState(newVal);
+        onOpenChange?.(newVal);
+    }, [onOpenChange]);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md bg-white rounded-lg shadow-xl animate-in fade-in zoom-in duration-200">
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="text-lg font-semibold">{title}</h2>
-                    <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
-                        <span className="sr-only">Close</span>
-                        &times;
-                    </Button>
-                </div>
-                <div className="p-4">{children}</div>
-                {footer && <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end gap-2">{footer}</div>}
-            </div>
-        </div>
+        <DialogContext.Provider value={{ isOpen, setIsOpen }}>
+            {children}
+        </DialogContext.Provider>
     );
 };
+
+const DialogTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { asChild?: boolean }>(
+    ({ className, onClick, asChild, children, ...props }, ref) => {
+        const context = React.useContext(DialogContext);
+
+        const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+            context?.setIsOpen(true);
+            onClick?.(e);
+        };
+
+        if (asChild && React.isValidElement(children)) {
+            // @ts-ignore
+            return React.cloneElement(children as React.ReactElement<any>, {
+                onClick: handleClick,
+                ref: ref,
+                ...props
+            });
+        }
+
+        return (
+            <button
+                ref={ref}
+                onClick={handleClick}
+                className={className}
+                {...props}
+            >
+                {children}
+            </button>
+        );
+    }
+);
+DialogTrigger.displayName = "DialogTrigger";
+
+const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+    ({ className, children, ...props }, ref) => {
+        const context = React.useContext(DialogContext);
+
+        if (!context?.isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+                {/* Backdrop */}
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity animate-in fade-in"
+                    onClick={() => context.setIsOpen(false)}
+                />
+
+                {/* Content */}
+                <div
+                    ref={ref}
+                    className={cn(
+                        "z-50 grid w-full max-w-lg gap-4 border bg-white p-6 shadow-lg duration-200 animate-in fade-in zoom-in-95 sm:rounded-lg dark:bg-gray-900 border-gray-200 dark:border-gray-800",
+                        className
+                    )}
+                    {...props}
+                >
+                    {children}
+                    <button
+                        type="button"
+                        className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+                        onClick={() => context.setIsOpen(false)}
+                    >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Close</span>
+                    </button>
+                </div>
+            </div>
+        );
+    }
+);
+DialogContent.displayName = "DialogContent";
+
+export { Dialog, DialogTrigger, DialogContent };
