@@ -37,7 +37,7 @@ export const useAuth = () => {
             if (['ADMIN', 'OWNER', 'STAFF'].includes(role)) {
                 router.push('/admin/dashboard');
             } else {
-                // router.push('/');
+                router.push('/');
                 // router.push('/customer/bookings');
             }
         } catch (error) {
