@@ -94,21 +94,35 @@ export const DropdownMenuContent = ({
 export const DropdownMenuItem = ({
     children,
     onClick,
-    className
+    className,
+    asChild
 }: {
     children: ReactNode;
     onClick?: () => void;
     className?: string;
+    asChild?: boolean;
 }) => {
     const context = useContext(DropdownContext);
 
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onClick?.();
+        context?.setIsOpen(false);
+    };
+
+    if (asChild && React.isValidElement(children)) {
+        return React.cloneElement(children as React.ReactElement<any>, {
+            onClick: (e: React.MouseEvent) => {
+                const childOnClick = (children.props as any).onClick;
+                if (childOnClick) childOnClick(e);
+                handleClick(e);
+            }
+        });
+    }
+
     return (
         <button
-            onClick={(e) => {
-                e.stopPropagation();
-                onClick?.();
-                context?.setIsOpen(false);
-            }}
+            onClick={handleClick}
             className={cn(
                 "w-full text-left px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors dark:text-gray-200 dark:hover:bg-gray-800 flex items-center gap-2",
                 className

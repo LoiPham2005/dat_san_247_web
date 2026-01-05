@@ -60,8 +60,7 @@ export const RegisterForm = () => {
                 options={[
                     { value: UserRole.CUSTOMER, label: 'Customer (I want to book)' },
                     { value: UserRole.OWNER, label: 'Venue Owner (I have a field)' },
-                    { value: UserRole.STAFF, label: 'Staff' },
-                    { value: UserRole.ADMIN, label: 'Admin' },
+                    { value: UserRole.VENUE_STAFF, label: 'Venue Staff' },
                 ]}
                 error={errors.role?.message}
                 {...register('role')}

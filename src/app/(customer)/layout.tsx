@@ -10,7 +10,7 @@ export default function CustomerLayout({
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 font-sans">
             <CustomerHeader />
-            <main className="flex-grow pt-16">
+            <main className="flex-grow">
                 {children}
             </main>
             <CustomerFooter />

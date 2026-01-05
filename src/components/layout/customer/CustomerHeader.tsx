@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth.store';
 import {
     Search,
@@ -28,8 +29,13 @@ import { cn } from '@/lib/utils/format';
 
 export const CustomerHeader = () => {
     const { user, logout } = useAuthStore();
+    const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Transparent header logic for landing pages
+    const isTransparentPage = pathname === '/' || pathname === '/about';
+    const showTransparent = isTransparentPage && !isScrolled;
 
     useEffect(() => {
         const handleScroll = () => {
@@ -51,7 +57,9 @@ export const CustomerHeader = () => {
         <header
             className={cn(
                 "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-                isScrolled ? "bg-white/80 backdrop-blur-md shadow-md py-3" : "bg-transparent py-5"
+                showTransparent
+                    ? "bg-transparent py-5"
+                    : "bg-white/80 backdrop-blur-md shadow-md py-3 border-b border-gray-100 dark:bg-gray-900/80 dark:border-gray-800"
             )}
         >
             <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
@@ -59,13 +67,13 @@ export const CustomerHeader = () => {
                 <Link href="/" className="flex items-center gap-2">
                     <div className={cn(
                         "h-10 w-10 rounded-xl flex items-center justify-center font-bold text-xl transition-colors",
-                        isScrolled ? "bg-primary-600 text-white" : "bg-white text-primary-600"
+                        showTransparent ? "bg-white text-primary-600" : "bg-primary-600 text-white"
                     )}>
                         DS
                     </div>
                     <span className={cn(
                         "text-xl font-bold transition-colors",
-                        isScrolled ? "text-gray-900" : "text-white"
+                        showTransparent ? "text-white" : "text-gray-900 dark:text-white"
                     )}>
                         DatSan247
                     </span>
@@ -79,7 +87,7 @@ export const CustomerHeader = () => {
                             href={link.href}
                             className={cn(
                                 "text-sm font-medium transition-colors hover:text-primary-500",
-                                isScrolled ? "text-gray-600" : "text-gray-100 hover:text-white"
+                                showTransparent ? "text-gray-100 hover:text-white" : "text-gray-600 dark:text-gray-300"
                             )}
                         >
                             {link.label}
@@ -92,7 +100,7 @@ export const CustomerHeader = () => {
                     {/* Search Icon (Mobile/Compact) */}
                     <button className={cn(
                         "p-2 rounded-full transition-colors",
-                        isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white hover:bg-white/10"
+                        showTransparent ? "text-white hover:bg-white/10" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     )}>
                         <Search className="h-5 w-5" />
                     </button>
@@ -101,10 +109,10 @@ export const CustomerHeader = () => {
                     <Link href="/cart" className="relative group">
                         <div className={cn(
                             "p-2 rounded-full transition-colors",
-                            isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white hover:bg-white/10"
+                            showTransparent ? "text-white hover:bg-white/10" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                         )}>
                             <ShoppingCart className="h-5 w-5" />
-                            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+                            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
                         </div>
                     </Link>
 
@@ -126,17 +134,41 @@ export const CustomerHeader = () => {
                                     <p className="font-semibold text-sm">{user.name}</p>
                                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                                 </div>
-                                <DropdownMenuItem>
-                                    <User className="mr-2 h-4 w-4" /> My Profile
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href="/profile"
+                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <User className="mr-2 h-4 w-4" /> My Profile
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <CreditCard className="mr-2 h-4 w-4" /> My Bookings
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href="/bookings"
+                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <CreditCard className="mr-2 h-4 w-4" /> My Bookings
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Heart className="mr-2 h-4 w-4" /> Favorites
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href="/favorites"
+                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <Heart className="mr-2 h-4 w-4" /> Favorites
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Settings className="mr-2 h-4 w-4" /> Settings
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href="/profile?tab=security"
+                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        <Settings className="mr-2 h-4 w-4" /> Settings
+                                    </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={logout} className="text-red-600">
@@ -150,7 +182,7 @@ export const CustomerHeader = () => {
                                 <Button
                                     variant="ghost"
                                     className={cn(
-                                        isScrolled ? "text-gray-700" : "text-white hover:bg-white/10 hover:text-white"
+                                        showTransparent ? "text-white hover:bg-white/10" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     )}
                                 >
                                     Login
@@ -158,7 +190,7 @@ export const CustomerHeader = () => {
                             </Link>
                             <Link href="/register">
                                 <Button className={cn(
-                                    isScrolled ? "bg-primary-600 text-white" : "bg-white text-primary-600 hover:bg-gray-100"
+                                    showTransparent ? "bg-white text-primary-600 hover:bg-gray-100" : "bg-primary-600 text-white"
                                 )}>
                                     Sign Up
                                 </Button>
@@ -171,7 +203,7 @@ export const CustomerHeader = () => {
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className={cn(
                             "md:hidden p-2 rounded-lg",
-                            isScrolled ? "text-gray-900" : "text-white"
+                            showTransparent ? "text-white" : "text-gray-900 dark:text-white"
                         )}
                     >
                         {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

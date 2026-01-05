@@ -10,7 +10,12 @@ import {
     CalendarCheck,
     Wallet,
     Bell,
-    MessageSquareQuote
+    MessageSquareQuote,
+    Headphones,
+    Megaphone,
+    Wrench,
+    Clock,
+    MessageSquare,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth.types';
 
@@ -38,11 +43,20 @@ export const ROLE_MENUS = {
         { label: 'Analytics', icon: BarChart3, href: '/owner/analytics' },
         { label: 'Settings', icon: Settings, href: '/owner/settings' },
     ],
-    [UserRole.STAFF]: [
-        { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
-        { label: 'Check In/Out', icon: CalendarCheck, href: '/admin/checkin' },
-        { label: 'Bookings', icon: Calendar, href: '/admin/bookings' },
-        { label: 'My Venue', icon: MapPin, href: '/admin/my-venue' },
+    [UserRole.ADMIN_STAFF]: [
+        { label: 'Support', icon: Headphones, href: '/admin-staff/support' },
+        { label: 'Marketing', icon: Megaphone, href: '/admin-staff/marketing' },
+        { label: 'Technical', icon: Wrench, href: '/admin-staff/technical' },
+        { label: 'Finance', icon: Wallet, href: '/admin-staff/finance' },
+        { label: 'Moderation', icon: Shield, href: '/admin-staff/moderation' },
+    ],
+    [UserRole.VENUE_STAFF]: [
+        { label: 'Dashboard', icon: LayoutDashboard, href: '/venue-staff/dashboard' },
+        { label: 'Bookings', icon: Calendar, href: '/venue-staff/bookings' },
+        { label: 'My Venues', icon: MapPin, href: '/venue-staff/venues' },
+        { label: 'Schedule', icon: Clock, href: '/venue-staff/schedule' },
+        { label: 'Messages', icon: MessageSquare, href: '/venue-staff/messages' },
+        { label: 'Reports', icon: BarChart3, href: '/venue-staff/reports' },
     ],
     [UserRole.CUSTOMER]: [
         { label: 'Home', icon: LayoutDashboard, href: '/' },

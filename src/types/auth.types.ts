@@ -1,6 +1,7 @@
 export enum UserRole {
     ADMIN = 'ADMIN',
-    STAFF = 'STAFF',
+    ADMIN_STAFF = 'ADMIN_STAFF', // System staff
+    VENUE_STAFF = 'VENUE_STAFF', // Venue owner's staff
     OWNER = 'OWNER',
     CUSTOMER = 'CUSTOMER'
 }
@@ -12,7 +13,7 @@ export interface User {
     phone?: string;
     role: UserRole;
     avatar?: string;
-    venueId?: string; 
+    venueId?: string;
     isActive: boolean;
     createdAt: string;
 }

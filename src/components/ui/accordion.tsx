@@ -10,6 +10,8 @@ const AccordionContext = React.createContext<{
     collapsible?: boolean;
 } | null>(null);
 
+const AccordionItemContext = React.createContext<{ value: string }>({ value: '' });
+
 interface AccordionProps {
     type?: "single" | "multiple";
     value?: string | string[];
@@ -71,7 +73,9 @@ const Accordion = ({ type = "single", value: controlledValue, defaultValue, onVa
 
 const AccordionItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { value: string }>(
     ({ className, value, ...props }, ref) => (
-        <div ref={ref} className={cn("border-b", className)} {...props} data-value={value} />
+        <AccordionItemContext.Provider value={{ value }}>
+            <div ref={ref} className={cn("border-b", className)} {...props} />
+        </AccordionItemContext.Provider>
     )
 );
 AccordionItem.displayName = "AccordionItem";
@@ -79,78 +83,54 @@ AccordionItem.displayName = "AccordionItem";
 const AccordionTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
     ({ className, children, ...props }, ref) => {
         const context = React.useContext(AccordionContext);
-        // Find parent item value (hacky traverse or pass explicit? explicitly passing is better but shadcn api doesn't require it on trigger. 
-        // We actually need to get the value from the parent AccordionItem context if we nested Contexts, usually AccordionItem wraps a Context provider.)
+        const { value } = React.useContext(AccordionItemContext);
 
-        // Let's refactor AccordionItem to provide the value context.
+        const isOpen = context?.value.includes(value);
+
         return (
-            <AccordionItemContext.Consumer>
-                {({ value }) => {
-                    const isOpen = context?.value.includes(value);
-                    return (
-                        <div className="flex">
-                            <button
-                                ref={ref}
-                                type="button"
-                                onClick={() => context?.onValueChange(value)}
-                                aria-expanded={isOpen}
-                                className={cn(
-                                    "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[aria-expanded=true]>svg]:rotate-180",
-                                    className
-                                )}
-                                {...props}
-                            >
-                                {children}
-                                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                            </button>
-                        </div>
-                    )
-                }}
-            </AccordionItemContext.Consumer>
+            <div className="flex">
+                <button
+                    ref={ref}
+                    type="button"
+                    onClick={() => context?.onValueChange(value)}
+                    aria-expanded={isOpen}
+                    className={cn(
+                        "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[aria-expanded=true]>svg]:rotate-180",
+                        className
+                    )}
+                    {...props}
+                >
+                    {children}
+                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                </button>
+            </div>
         );
     }
 );
 AccordionTrigger.displayName = "AccordionTrigger";
 
 const AccordionContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-    ({ className, children, ...props }, ref) => (
-        <AccordionItemContext.Consumer>
-            {({ value }) => {
-                // We need access to the root context too to check openness
-                const rootContext = React.useContext(AccordionContext);
-                const isOpen = rootContext?.value.includes(value);
+    ({ className, children, ...props }, ref) => {
+        const { value } = React.useContext(AccordionItemContext);
+        const rootContext = React.useContext(AccordionContext);
+        const isOpen = rootContext?.value.includes(value);
 
-                if (!isOpen) return null;
+        if (!isOpen) return null;
 
-                return (
-                    <div
-                        ref={ref}
-                        className={cn(
-                            "overflow-hidden text-sm transition-all animate-in slide-in-from-top-1",
-                            className
-                        )}
-                        {...props}
-                    >
-                        <div className="pb-4 pt-0">{children}</div>
-                    </div>
-                );
-            }}
-        </AccordionItemContext.Consumer>
-    )
+        return (
+            <div
+                ref={ref}
+                className={cn(
+                    "overflow-hidden text-sm transition-all animate-in slide-in-from-top-1",
+                    className
+                )}
+                {...props}
+            >
+                <div className="pb-4 pt-0">{children}</div>
+            </div>
+        );
+    }
 );
 AccordionContent.displayName = "AccordionContent";
 
-// Helper Context for Item to Trigger/Content communication
-const AccordionItemContext = React.createContext<{ value: string }>({ value: '' });
-
-// Redefine AccordionItem to use Provider
-const AccordionItemWrapper = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { value: string }>(
-    ({ className, value, ...props }, ref) => (
-        <AccordionItemContext.Provider value={{ value }}>
-            <div ref={ref} className={cn("border-b", className)} {...props} />
-        </AccordionItemContext.Provider>
-    )
-);
-AccordionItemWrapper.displayName = "AccordionItem";
-
-export { Accordion, AccordionItemWrapper as AccordionItem, AccordionTrigger, AccordionContent };
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };

@@ -54,10 +54,11 @@ export const columns: ColumnDef<User>[] = [
 
             if (role === UserRole.ADMIN) { variant = 'danger'; icon = <Shield className="mr-1 h-3 w-3" />; }
             if (role === UserRole.OWNER) { variant = 'warning'; icon = <MapPin className="mr-1 h-3 w-3" />; }
-            if (role === UserRole.STAFF) { variant = 'info'; }
+            if (role === UserRole.ADMIN_STAFF) { variant = 'info'; }
+            if (role === UserRole.VENUE_STAFF) { variant = 'secondary'; }
             if (role === UserRole.CUSTOMER) { variant = 'success'; }
 
-            return <Badge variant={variant} className="pl-1.5">{icon}{role}</Badge>
+            return <Badge variant={variant === 'defaut' ? 'default' : variant} className="pl-1.5">{icon}{role}</Badge>
         }
     },
     {

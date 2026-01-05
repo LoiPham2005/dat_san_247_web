@@ -33,7 +33,7 @@ export default function FindVenuesPage() {
     const allVenues = [...venues, ...venues, ...venues];
 
     return (
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 pt-24 pb-8">
             {/* Header / Search Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>

@@ -4,7 +4,8 @@ import type { NextRequest } from 'next/server';
 const publicRoutes = ['/login', '/register', '/'];
 const adminRoutes = ['/admin'];
 const ownerRoutes = ['/owner'];
-const staffRoutes = ['/staff'];
+const adminStaffRoutes = ['/admin-staff'];
+const venueStaffRoutes = ['/venue-staff'];
 
 export function middleware(request: NextRequest) {
     // TEMPORARY BYPASS: allow all traffic because Auth is currently in localStorage (client-side)

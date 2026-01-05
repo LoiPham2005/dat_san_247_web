@@ -15,14 +15,15 @@ export const useAuth = () => {
             let role = 'CUSTOMER';
             const email = credentials.email.toLowerCase();
 
-            if (email.includes('admin')) role = 'ADMIN';
+            if (email.includes('admin_staff')) role = 'ADMIN_STAFF';
+            else if (email.includes('admin')) role = 'ADMIN';
             else if (email.includes('owner')) role = 'OWNER';
-            else if (email.includes('staff')) role = 'STAFF';
+            else if (email.includes('staff')) role = 'VENUE_STAFF';
 
             const user: any = {
                 id: '1',
                 email: credentials.email,
-                name: role.charAt(0).toUpperCase() + role.slice(1) + ' User',
+                name: role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') + ' User',
                 role: role as any,
                 isActive: true,
                 createdAt: new Date().toISOString(),
@@ -33,12 +34,16 @@ export const useAuth = () => {
             setAuth(user, token);
 
             // Redirect based on role
-            // All management roles go to /admin for now per user request
-            if (['ADMIN', 'OWNER', 'STAFF'].includes(role)) {
+            if (role === 'ADMIN_STAFF') {
+                router.push('/admin-staff/support');
+            } else if (role === 'ADMIN') {
                 router.push('/admin/dashboard');
+            } else if (role === 'OWNER') {
+                router.push('/owner/dashboard');
+            } else if (role === 'VENUE_STAFF') {
+                router.push('/venue-staff/dashboard');
             } else {
                 router.push('/');
-                // router.push('/customer/bookings');
             }
         } catch (error) {
             console.error('Login error', error);
