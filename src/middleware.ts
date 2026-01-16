@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 const publicRoutes = ['/login', '/register', '/'];
 const adminRoutes = ['/admin'];
 const ownerRoutes = ['/owner'];
-const adminStaffRoutes = ['/admin-staff'];
+const adminStaffRoutes = ['/staff'];
 const venueStaffRoutes = ['/venue-staff'];
 
 export function middleware(request: NextRequest) {

@@ -1,50 +1,68 @@
 import { useAuthStore } from '@/lib/store/auth.store';
 import { authService } from '@/lib/api/services/auth.service';
-import { LoginCredentials, RegisterData } from '@/types/auth.types';
+import { LoginCredentials, RegisterData, UserRole } from '@/types/auth.types';
 import { useRouter } from 'next/navigation';
+import { useSession, signIn, signOut, getSession } from 'next-auth/react';
+import { useEffect } from 'react';
 
 export const useAuth = () => {
+    const { data: session, status } = useSession();
     const { user, token, isAuthenticated, setAuth, logout: logoutStore } = useAuthStore();
     const router = useRouter();
 
-    const login = async (credentials: LoginCredentials) => {
-        try {
-            // SIMULATED LOGIN LOGIC
-            await new Promise(resolve => setTimeout(resolve, 800)); // Fake delay
-
-            let role = 'CUSTOMER';
-            const email = credentials.email.toLowerCase();
-
-            if (email.includes('admin_staff')) role = 'ADMIN_STAFF';
-            else if (email.includes('admin')) role = 'ADMIN';
-            else if (email.includes('owner')) role = 'OWNER';
-            else if (email.includes('staff')) role = 'VENUE_STAFF';
-
-            const user: any = {
-                id: '1',
-                email: credentials.email,
-                name: role.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') + ' User',
-                role: role as any,
-                isActive: true,
-                createdAt: new Date().toISOString(),
-                phone: '0123456789'
+    // Sync NextAuth session with local Zustand store for axios interceptors
+    useEffect(() => {
+        if (status === 'authenticated' && session?.user && (session as any).accessToken) {
+            const sessionUser: any = {
+                id: (session.user as any).id,
+                email: session.user.email!,
+                name: session.user.name!,
+                role: (session.user as any).role,
+                isActive: true, // Assuming active if logged in
+                createdAt: new Date().toISOString(), // Placeholder
             };
 
-            const token = 'fake-jwt-token';
-            setAuth(user, token);
+            // Only update if token changed to avoid infinite loops if setAuth triggers something
+            if (token !== (session as any).accessToken) {
+                setAuth(sessionUser, (session as any).accessToken);
+            }
+        } else if (status === 'unauthenticated' && token) {
+            // If NextAuth says unauthenticated but we have a token, clear it
+            logoutStore();
+        }
+    }, [session, status, setAuth, token, logoutStore]);
+
+
+    const login = async (credentials: LoginCredentials) => {
+        try {
+            const result = await signIn('credentials', {
+                redirect: false,
+                email: credentials.email,
+                password: credentials.password,
+            });
+
+            if (result?.error) {
+                throw new Error(result.error);
+            }
+
+            // Get session manually to get the role for redirection
+            const session = await getSession();
+            const role = (session?.user as any)?.role;
 
             // Redirect based on role
-            if (role === 'ADMIN_STAFF') {
-                router.push('/admin-staff/support');
-            } else if (role === 'ADMIN') {
+            if (role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN) {
                 router.push('/admin/dashboard');
-            } else if (role === 'OWNER') {
+            } else if (role === UserRole.STAFF) {
+                router.push('/staff/support');
+            } else if (role === UserRole.OWNER) {
                 router.push('/owner/dashboard');
-            } else if (role === 'VENUE_STAFF') {
+            } else if (role === UserRole.VENUE_STAFF) {
                 router.push('/venue-staff/dashboard');
             } else {
                 router.push('/');
             }
+
+            router.refresh();
         } catch (error) {
             console.error('Login error', error);
             throw error;
@@ -53,9 +71,9 @@ export const useAuth = () => {
 
     const register = async (userData: RegisterData) => {
         try {
-            const data = await authService.register(userData);
-            setAuth(data.user, data.token);
-            router.push('/');
+            await authService.register(userData);
+            // After register, auto login
+            await login({ email: userData.email, password: userData.password });
         } catch (error) {
             throw error;
         }
@@ -63,7 +81,11 @@ export const useAuth = () => {
 
     const logout = async () => {
         try {
-            await authService.logout();
+            // Optional: call backend logout to revoke refresh token
+            // const currentToken = useAuthStore.getState().token;
+            // if (currentToken) await authService.logout(); 
+
+            await signOut({ redirect: false });
             logoutStore();
             router.push('/login');
         } catch (error) {
@@ -75,9 +97,10 @@ export const useAuth = () => {
     return {
         user,
         token,
-        isAuthenticated,
+        isAuthenticated: !!token, // use store truth
         login,
         register,
         logout,
+        isLoading: status === 'loading',
     };
 };

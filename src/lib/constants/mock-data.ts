@@ -25,9 +25,9 @@ export const MOCK_USERS = [
     {
         id: '3',
         name: 'Lê Văn Staff',
-        email: 'admin_staff@datsan247.com',
+        email: 'staff@datsan247.com',
         phone: '0912345678',
-        role: UserRole.ADMIN_STAFF,
+        role: UserRole.STAFF,
         status: 'ACTIVE',
         createdAt: '2024-02-20T09:15:00Z',
         avatar: 'https://ui-avatars.com/api/?name=Le+Van+C&background=random',

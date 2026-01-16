@@ -19,7 +19,7 @@ export const authService = {
     },
 
     getCurrentUser: async (): Promise<User> => {
-        const { data } = await axiosInstance.get(API_ENDPOINTS.ME);
+        const { data } = await axiosInstance.post(API_ENDPOINTS.ME);
         return data;
     },
 

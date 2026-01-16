@@ -1,9 +1,10 @@
 export enum UserRole {
-    ADMIN = 'ADMIN',
-    ADMIN_STAFF = 'ADMIN_STAFF', // System staff
-    VENUE_STAFF = 'VENUE_STAFF', // Venue owner's staff
-    OWNER = 'OWNER',
-    CUSTOMER = 'CUSTOMER'
+    SUPER_ADMIN = 'super-admin',
+    ADMIN = 'admin',
+    STAFF = 'staff', // System staff
+    VENUE_STAFF = 'venue-staff', // Venue owner's staff
+    OWNER = 'owner',
+    CUSTOMER = 'customer'
 }
 
 export interface User {

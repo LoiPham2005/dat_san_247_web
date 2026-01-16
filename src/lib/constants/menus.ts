@@ -43,12 +43,12 @@ export const ROLE_MENUS = {
         { label: 'Analytics', icon: BarChart3, href: '/owner/analytics' },
         { label: 'Settings', icon: Settings, href: '/owner/settings' },
     ],
-    [UserRole.ADMIN_STAFF]: [
-        { label: 'Support', icon: Headphones, href: '/admin-staff/support' },
-        { label: 'Marketing', icon: Megaphone, href: '/admin-staff/marketing' },
-        { label: 'Technical', icon: Wrench, href: '/admin-staff/technical' },
-        { label: 'Finance', icon: Wallet, href: '/admin-staff/finance' },
-        { label: 'Moderation', icon: Shield, href: '/admin-staff/moderation' },
+    [UserRole.STAFF]: [
+        { label: 'Support', icon: Headphones, href: '/staff/support' },
+        { label: 'Marketing', icon: Megaphone, href: '/staff/marketing' },
+        { label: 'Technical', icon: Wrench, href: '/staff/technical' },
+        { label: 'Finance', icon: Wallet, href: '/staff/finance' },
+        { label: 'Moderation', icon: Shield, href: '/staff/moderation' },
     ],
     [UserRole.VENUE_STAFF]: [
         { label: 'Dashboard', icon: LayoutDashboard, href: '/venue-staff/dashboard' },
