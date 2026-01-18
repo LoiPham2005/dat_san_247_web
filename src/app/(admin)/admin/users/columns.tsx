@@ -14,30 +14,30 @@ import {
 
 export type User = {
     id: string;
-    name: string;
+    fullName: string;
     email: string;
     phone: string;
-    role: UserRole;
-    status: 'ACTIVE' | 'PENDING' | 'BLOCKED';
+    role: { name: UserRole };
+    isActive: boolean;
     createdAt: string;
-    avatar: string;
+    avatarUrl?: string;
 }
 
 export const columns: ColumnDef<User>[] = [
     {
-        accessorKey: "name",
+        accessorKey: "fullName",
         header: "User",
         cell: ({ row }) => {
             const user = row.original;
             return (
                 <div className="flex items-center gap-3">
                     <img
-                        src={user.avatar}
-                        alt={user.name}
+                        src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.fullName}&background=random`}
+                        alt={user.fullName}
                         className="h-9 w-9 rounded-full object-cover border border-gray-100 dark:border-gray-800"
                     />
                     <div className="flex flex-col">
-                        <span className="font-medium text-gray-900 dark:text-white">{user.name}</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{user.fullName}</span>
                         <span className="text-xs text-gray-500">{user.email}</span>
                     </div>
                 </div>
@@ -45,11 +45,12 @@ export const columns: ColumnDef<User>[] = [
         }
     },
     {
-        accessorKey: "role",
+        accessorFn: (row) => row.role?.name,
+        id: "role",
         header: "Role",
         cell: ({ row }) => {
-            const role = row.original.role;
-            let variant: any = 'defaut';
+            const role = row.getValue("role") as UserRole;
+            let variant: any = 'default';
             let icon = null;
 
             if (role === UserRole.ADMIN) { variant = 'danger'; icon = <Shield className="mr-1 h-3 w-3" />; }
@@ -58,7 +59,7 @@ export const columns: ColumnDef<User>[] = [
             if (role === UserRole.VENUE_STAFF) { variant = 'secondary'; }
             if (role === UserRole.CUSTOMER) { variant = 'success'; }
 
-            return <Badge variant={variant === 'defaut' ? 'default' : variant} className="pl-1.5">{icon}{role}</Badge>
+            return <Badge variant={variant} className="pl-1.5 uppercase">{icon}{role}</Badge>
         }
     },
     {
@@ -66,16 +67,13 @@ export const columns: ColumnDef<User>[] = [
         header: "Phone",
     },
     {
-        accessorKey: "status",
+        accessorKey: "isActive",
         header: "Status",
         cell: ({ row }) => {
-            const status = row.original.status;
+            const isActive = row.original.isActive;
             return (
-                <Badge variant={
-                    status === 'ACTIVE' ? 'success' :
-                        status === 'PENDING' ? 'warning' : 'danger'
-                }>
-                    {status}
+                <Badge variant={isActive ? 'success' : 'danger'}>
+                    {isActive ? 'ACTIVE' : 'INACTIVE'}
                 </Badge>
             )
         }

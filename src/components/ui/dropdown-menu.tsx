@@ -95,19 +95,23 @@ export const DropdownMenuItem = ({
     children,
     onClick,
     className,
-    asChild
+    asChild,
+    closeOnClick = true
 }: {
     children: ReactNode;
     onClick?: () => void;
     className?: string;
     asChild?: boolean;
+    closeOnClick?: boolean;
 }) => {
     const context = useContext(DropdownContext);
 
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         onClick?.();
-        context?.setIsOpen(false);
+        if (closeOnClick) {
+            context?.setIsOpen(false);
+        }
     };
 
     if (asChild && React.isValidElement(children)) {

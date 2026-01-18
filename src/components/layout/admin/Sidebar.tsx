@@ -14,7 +14,7 @@ export const AdminSidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: 
     const { user } = useAuthStore();
     const { logout } = useAuth();
 
-    const menus = user ? ROLE_MENUS[user.role as UserRole] || [] : [];
+    const menus = user && user.role in ROLE_MENUS ? ROLE_MENUS[user.role as keyof typeof ROLE_MENUS] : [];
 
     return (
         <>
@@ -43,7 +43,7 @@ export const AdminSidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: 
 
                 <div className="flex flex-col justify-between h-[calc(100vh-4rem)] p-4">
                     <nav className="space-y-1">
-                        {menus.map((item) => {
+                        {menus.map((item: any) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
 

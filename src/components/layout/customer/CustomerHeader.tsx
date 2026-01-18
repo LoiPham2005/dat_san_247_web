@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth.store';
+import { useAuth } from '@/lib/hooks/useAuth';
 import {
     Search,
     ShoppingCart,
@@ -28,7 +29,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/format';
 
 export const CustomerHeader = () => {
-    const { user, logout } = useAuthStore();
+    const { user } = useAuthStore();
+    const { logout } = useAuth();
     const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -171,7 +173,7 @@ export const CustomerHeader = () => {
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={logout} className="text-red-600">
+                                <DropdownMenuItem onClick={() => logout()} className="text-red-600 cursor-pointer">
                                     <LogOut className="mr-2 h-4 w-4" /> Sign Out
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

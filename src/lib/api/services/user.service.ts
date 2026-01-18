@@ -1,22 +1,43 @@
-import axiosInstance from '../axios';
-import { API_ENDPOINTS } from '../endpoints';
-import { UserProfile, UpdateProfileData } from '@/types/user.types';
+import axiosInstance from "../axios";
+import { UserRole } from "@/types/auth.types";
+import { API_ENDPOINTS } from "../endpoints";
+
+export interface UserFilter {
+    page?: number;
+    limit?: number;
+    role?: UserRole;
+    search?: string;
+    isActive?: boolean | string;
+}
 
 export const userService = {
-    getProfile: async (): Promise<UserProfile> => {
-        const { data } = await axiosInstance.get(API_ENDPOINTS.ME);
-        return data;
+    getUsers: async (filter: UserFilter = {}) => {
+        const { data } = await axiosInstance.get(API_ENDPOINTS.ADMIN_USERS, { params: filter });
+        return data.data;
     },
 
-    updateProfile: async (data: UpdateProfileData): Promise<UserProfile> => {
-        // Assuming endpoint for update is /users/profile or similar, adjusting usually strictly to ME or specific ID
-        // For now assuming a hypothetical /users/profile endpoint or PUT to ME
-        const { data: response } = await axiosInstance.put(`${API_ENDPOINTS.USERS}/profile`, data);
-        return response;
+    createUser: async (data: any) => {
+        const response = await axiosInstance.post(API_ENDPOINTS.ADMIN_USERS, data);
+        return response.data.data;
     },
 
-    getById: async (id: string): Promise<UserProfile> => {
-        const { data } = await axiosInstance.get(API_ENDPOINTS.USER_BY_ID(id));
-        return data;
-    }
+    getUserById: async (id: string) => {
+        const { data: result } = await axiosInstance.get(API_ENDPOINTS.ADMIN_USER_BY_ID(id));
+        return result.data;
+    },
+
+    updateUser: async (id: string, data: any) => {
+        const { data: result } = await axiosInstance.put(API_ENDPOINTS.ADMIN_USER_BY_ID(id), data);
+        return result.data;
+    },
+
+    toggleUserStatus: async (id: string) => {
+        const { data } = await axiosInstance.post(`${API_ENDPOINTS.ADMIN_USER_BY_ID(id)}/toggle-status`);
+        return data.data;
+    },
+
+    deleteUser: async (id: string) => {
+        const { data } = await axiosInstance.delete(API_ENDPOINTS.ADMIN_USER_BY_ID(id));
+        return data.data;
+    },
 };

@@ -1,18 +1,36 @@
+export enum VenueStatus {
+    PENDING = 'PENDING',
+    APPROVED = 'APPROVED',
+    REJECTED = 'REJECTED',
+    SUSPENDED = 'SUSPENDED',
+}
+
 export interface Venue {
     id: string;
     name: string;
     description: string;
     address: string;
+    city: string;
+    district: string;
+    ward: string;
     ownerId: string;
-    images: string[];
-    sportTypes: SportType[];
-    amenities: string[];
-    pricePerHour: number;
-    openTime: string;
-    closeTime: string;
+    phone?: string;
+    owner?: {
+        fullName: string;
+        email: string;
+        phone: string;
+    };
+    status: VenueStatus;
+    thumbnailUrl: string;
+    images?: any[];
+    amenities?: any[];
+    courts?: any[];
     isActive: boolean;
     rating: number;
-    totalBookings: number;
+    totalReviews: number;
+    openingTime: string;
+    closingTime: string;
+    createdAt: string;
 }
 
 export enum SportType {

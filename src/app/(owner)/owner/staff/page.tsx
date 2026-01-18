@@ -10,7 +10,9 @@ import {
     Phone,
     CalendarCheck,
     Lock,
-    Unlock
+    Unlock,
+    Loader2,
+    AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,41 +24,26 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-
-const MOCK_STAFF = [
-    {
-        id: 'st-01',
-        name: 'Nguyen Van Nhan Vien',
-        email: 'staff1@example.com',
-        phone: '0908887776',
-        role: 'Receptionist',
-        venue: 'Sân bóng đá Mini 247',
-        status: 'ACTIVE',
-        lastActive: '10 mins ago'
-    },
-    {
-        id: 'st-02',
-        name: 'Tran Thi Quan Ly',
-        email: 'manager@example.com',
-        phone: '0901112223',
-        role: 'Manager',
-        venue: 'All Venues',
-        status: 'ACTIVE',
-        lastActive: '1 hour ago'
-    },
-    {
-        id: 'st-03',
-        name: 'Le Van Bao Ve',
-        email: 'security@example.com',
-        phone: '0903334445',
-        role: 'Security',
-        venue: 'Sân Tennis Vàng',
-        status: 'INACTIVE',
-        lastActive: '2 days ago'
-    }
-];
+import { useStaffStore } from "@/lib/store/staff.store";
+import { useEffect, useState } from "react";
+import { StaffModal } from "@/components/owner/StaffModal";
 
 export default function OwnerStaffPage() {
+    const { staff, isLoading, error, fetchStaff, removeStaff } = useStaffStore();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+        fetchStaff();
+    }, [fetchStaff]);
+
+    if (!isMounted) return null;
+
+    const staffList = Array.isArray(staff) ? staff : [];
+    const totalStaff = staffList.length;
+    const onDutyCount = staffList.filter(s => s.user?.isActive).length;
+
     return (
         <div className="space-y-8 pb-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -68,7 +55,7 @@ export default function OwnerStaffPage() {
                         Manage your team, assign roles, and track performance.
                     </p>
                 </div>
-                <Button>
+                <Button onClick={() => setIsModalOpen(true)}>
                     <UserPlus className="mr-2 h-4 w-4" /> Add New Staff
                 </Button>
             </div>
@@ -79,7 +66,7 @@ export default function OwnerStaffPage() {
                         <Users className="h-6 w-6" />
                     </div>
                     <div>
-                        <p className="text-2xl font-bold">12</p>
+                        <p className="text-2xl font-bold">{totalStaff}</p>
                         <p className="text-xs text-gray-500">Total Staff</p>
                     </div>
                 </div>
@@ -88,7 +75,7 @@ export default function OwnerStaffPage() {
                         <CalendarCheck className="h-6 w-6" />
                     </div>
                     <div>
-                        <p className="text-2xl font-bold">8</p>
+                        <p className="text-2xl font-bold">{onDutyCount}</p>
                         <p className="text-xs text-gray-500">On Duty Now</p>
                     </div>
                 </div>
@@ -96,51 +83,74 @@ export default function OwnerStaffPage() {
 
             <div className="rounded-xl bg-white p-1 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
                 <div className="p-4">
-                    <DataTable
-                        columns={columns}
-                        data={MOCK_STAFF}
-                        searchKey="name"
-                    />
+                    {isLoading && staffList.length === 0 ? (
+                        <div className="flex h-64 items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+                        </div>
+                    ) : error ? (
+                        <div className="flex h-64 flex-col items-center justify-center gap-2 text-red-500">
+                            <AlertCircle className="h-10 w-10" />
+                            <p className="font-medium">Failed to load staff</p>
+                            <p className="text-xs text-gray-500">{error}</p>
+                            <Button variant="outline" size="sm" onClick={() => fetchStaff()}>Try Again</Button>
+                        </div>
+                    ) : (
+                        <DataTable
+                            columns={getColumns(removeStaff)}
+                            data={staffList}
+                            searchKey="user_fullName"
+                        />
+                    )}
                 </div>
             </div>
+
+            <StaffModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            />
         </div>
     );
 }
 
-const columns: ColumnDef<any>[] = [
+const getColumns = (removeStaff: (id: string) => void): ColumnDef<any>[] => [
     {
-        accessorKey: "name",
+        id: "name",
+        accessorFn: (row) => row.user?.fullName,
         header: "Staff Member",
         cell: ({ row }) => (
             <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600">
-                    {row.original.name[0]}
+                <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 overflow-hidden">
+                    {row.original.user?.avatarUrl ? (
+                        <img src={row.original.user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                        row.original.user?.fullName?.[0] || '?'
+                    )}
                 </div>
                 <div>
-                    <p className="font-semibold text-sm">{row.original.name}</p>
-                    <p className="text-xs text-gray-500">{row.original.email}</p>
+                    <p className="font-semibold text-sm">{row.original.user?.fullName}</p>
+                    <p className="text-xs text-gray-500">{row.original.user?.email}</p>
                 </div>
             </div>
         )
     },
     {
-        accessorKey: "role",
+        id: "role",
         header: "Role",
-        cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge>
+        cell: ({ row }) => <Badge variant="outline">{row.original.user?.role?.name || 'Staff'}</Badge>
     },
     {
-        accessorKey: "venue",
+        id: "venue",
         header: "Assigned Venue",
-        cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.venue}</span>
+        cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.venue?.name}</span>
     },
     {
-        accessorKey: "status",
+        id: "status",
         header: "Status",
         cell: ({ row }) => {
-            const isActive = row.original.status === 'ACTIVE';
+            const isActive = row.original.user?.isActive;
             return (
                 <Badge variant={isActive ? 'success' : 'secondary'}>
-                    {row.original.status}
+                    {isActive ? 'ONLINE' : 'OFFLINE'}
                 </Badge>
             )
         }
@@ -155,22 +165,9 @@ const columns: ColumnDef<any>[] = [
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                        <CalendarCheck className="mr-2 h-4 w-4" /> View Schedule
+                    <DropdownMenuItem onClick={() => removeStaff(row.original.id)} className="text-red-600">
+                        <Shield className="mr-2 h-4 w-4" /> Unassign Staff
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <Shield className="mr-2 h-4 w-4" /> Edit Permissions
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {row.original.status === 'ACTIVE' ? (
-                        <DropdownMenuItem className="text-orange-600">
-                            <Lock className="mr-2 h-4 w-4" /> Suspend Account
-                        </DropdownMenuItem>
-                    ) : (
-                        <DropdownMenuItem className="text-green-600">
-                            <Unlock className="mr-2 h-4 w-4" /> Activate Account
-                        </DropdownMenuItem>
-                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
         )

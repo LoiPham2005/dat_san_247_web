@@ -3,8 +3,8 @@ import { LoginForm } from '@/components/auth/LoginForm';
 
 export default function LoginPage() {
     return (
-        <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 p-4">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+        <div className="flex min-h-screen w-full items-center justify-center bg-gray-50/50 p-4">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
             <div className="relative w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
                 {/* Decorative blobs */}

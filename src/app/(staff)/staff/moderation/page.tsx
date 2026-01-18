@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useModerationStore } from '@/lib/store/moderation.store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,153 +12,310 @@ import {
     X,
     Shield,
     Eye,
-    AlertTriangle,
     ShieldCheck,
     Users,
     MessageSquare,
-    MoreVertical,
-    CheckCircle2
+    Loader2,
+    AlertCircle,
+    MapPin,
+    Calendar,
+    Phone,
+    Mail
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/components/ui/use-toast';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils/format';
 
 export default function ModerationPage() {
+    const {
+        pendingVenues,
+        isLoading,
+        error,
+        fetchPendingVenues,
+        approveVenue,
+        rejectVenue
+    } = useModerationStore();
+
+    const { toast } = useToast();
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Rejection state
+    const [rejectingVenueId, setRejectingVenueId] = useState<string | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const [isRejectLoading, setIsRejectLoading] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+        fetchPendingVenues();
+    }, [fetchPendingVenues]);
+
+    if (!isMounted) return null;
+
+    const handleApprove = async (id: string, name: string) => {
+        try {
+            await approveVenue(id);
+            toast({
+                title: "Venue Approved",
+                description: `${name} has been successfully approved.`,
+            });
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || "Failed to approve venue",
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleRejectSubmit = async () => {
+        if (!rejectingVenueId || !rejectReason.trim()) return;
+
+        setIsRejectLoading(true);
+        try {
+            await rejectVenue(rejectingVenueId, rejectReason);
+            toast({
+                title: "Venue Rejected",
+                description: "The venue application has been rejected.",
+            });
+            setRejectingVenueId(null);
+            setRejectReason('');
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || "Failed to reject venue",
+                variant: "destructive"
+            });
+        } finally {
+            setIsRejectLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
             {/* Header */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
                         Content Moderation
                     </h1>
-                    <p className="mt-2 text-gray-500 dark:text-gray-400">
-                        Review venue applications, flagged reviews, and community safety.
+                    <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium">
+                        Review and verify venue applications to maintain platform quality.
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
+                <div className="flex items-center gap-3">
+                    <Button variant="outline" className="rounded-full px-6 border-2 hover:bg-gray-50">
                         Guidelines
                     </Button>
-                    <Button size="sm" className="bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-500/20">
+                    <Button className="rounded-full px-6 bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-500/20 text-white">
                         <ShieldCheck className="mr-2 h-4 w-4" />
-                        Verification Queue
+                        Verification Log
                     </Button>
                 </div>
             </div>
 
+            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatsCard
-                    title="Pending Approvals"
-                    value="15"
-                    description="New owners awaiting verification"
+                    title="Pending Venues"
+                    value={pendingVenues.length.toString()}
+                    description="Applications awaiting review"
                     icon={Shield}
-                    className="border-orange-100 dark:border-orange-900/30"
+                    className="border-primary-100 dark:border-primary-900/30 bg-primary-50/10"
                 />
                 <StatsCard
-                    title="Flagged Reviews"
-                    value="8"
-                    description="Reported by community users"
+                    title="Reported Content"
+                    value="0"
+                    description="Flagged reviews or comments"
                     icon={MessageSquare}
-                    className="border-red-100 dark:border-red-900/30"
+                    className="border-red-100 dark:border-red-900/30 bg-red-50/10"
                 />
                 <StatsCard
-                    title="User Reports"
-                    value="3"
-                    description="Active suspension requests"
+                    title="Active Owners"
+                    value="--"
+                    description="Verified service providers"
                     icon={Users}
-                    className="border-amber-100 dark:border-amber-900/30"
+                    className="border-primary-100 dark:border-primary-900/30 bg-primary-50/10"
                 />
             </div>
 
-            <Tabs defaultValue="approvals" className="space-y-6">
-                <TabsList className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-1 rounded-xl">
-                    <TabsTrigger value="approvals">Owner Approvals</TabsTrigger>
-                    <TabsTrigger value="reviews">Reviews & Content</TabsTrigger>
-                    <TabsTrigger value="users">User Management</TabsTrigger>
+            <Tabs defaultValue="venues" className="space-y-6">
+                <TabsList className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1 rounded-xl shadow-sm">
+                    <TabsTrigger value="venues" className="rounded-lg px-8 data-[state=active]:bg-primary-600 data-[state=active]:text-white transition-all">
+                        Venue Approvals
+                    </TabsTrigger>
+                    <TabsTrigger value="reviews" className="rounded-lg px-8 data-[state=active]:bg-primary-600 data-[state=active]:text-white transition-all">
+                        Reports & Flagged
+                    </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="approvals" className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                        {[1, 2, 3].map((i) => (
-                            <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow dark:bg-gray-900/50">
-                                <CardContent className="p-6">
-                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                                        <div className="relative h-24 w-40 bg-gray-100 rounded-2xl flex-shrink-0 overflow-hidden group">
-                                            <img src={`https://images.unsplash.com/photo-1544033527-b192daee1f5b?w=400&h=240&fit=crop`} alt="Venue" className="object-cover w-full h-full" />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <Button size="sm" variant="secondary" className="h-8 text-xs">Preview Photos</Button>
+                <TabsContent value="venues" className="space-y-6">
+                    {isLoading && pendingVenues.length === 0 ? (
+                        <div className="flex h-96 flex-col items-center justify-center gap-4 bg-white/50 dark:bg-gray-900/50 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary-600" />
+                            <p className="text-gray-500 font-medium">Scanning for new applications...</p>
+                        </div>
+                    ) : pendingVenues.length === 0 ? (
+                        <div className="flex h-96 flex-col items-center justify-center gap-4 bg-white/50 dark:bg-gray-900/50 rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
+                            <div className="h-20 w-20 rounded-full bg-green-50 flex items-center justify-center">
+                                <Check className="h-10 w-10 text-green-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">All caught up!</h3>
+                            <p className="text-gray-500 max-w-sm text-center">No pending venue applications found. Check back later for new submissions.</p>
+                            <Button variant="outline" onClick={() => fetchPendingVenues()} className="mt-2">Refresh Queue</Button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-6">
+                            {pendingVenues.map((venue) => (
+                                <Card key={venue.id} className="overflow-hidden border-none shadow-xl shadow-gray-200/50 hover:shadow-2xl hover:shadow-gray-300/50 transition-all duration-300 rounded-3xl group">
+                                    <div className="flex flex-col lg:flex-row">
+                                        {/* Image Section */}
+                                        <div className="relative w-full lg:w-72 h-48 lg:h-auto bg-gray-100 overflow-hidden">
+                                            <img
+                                                src={venue.thumbnailUrl || `https://images.unsplash.com/photo-1544033527-b192daee1f5b?w=600&h=400&fit=crop`}
+                                                alt={venue.name}
+                                                className="object-cover w-full h-full"
+                                            />
+                                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                                <Button size="sm" variant="secondary" className="w-full bg-white border-gray-200 text-gray-900 hover:bg-gray-50">
+                                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                                </Button>
+                                            </div>
+                                            <div className="absolute top-4 left-4">
+                                                <Badge className="bg-primary-600 text-white border-none">Pending Verification</Badge>
                                             </div>
                                         </div>
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-3">
-                                                <h3 className="font-bold text-xl text-gray-900 dark:text-white">New Badminton Center {i}</h3>
-                                                <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400">Verification Needed</Badge>
+
+                                        {/* Info Section */}
+                                        <CardContent className="flex-1 p-8">
+                                            <div className="flex flex-col h-full justify-between gap-6">
+                                                <div className="space-y-4">
+                                                    <div className="flex items-start justify-between">
+                                                        <div>
+                                                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-primary-600 transition-colors uppercase tracking-tight">{venue.name}</h3>
+                                                            <p className="flex items-center text-gray-500 mt-1">
+                                                                <MapPin className="mr-1.5 h-4 w-4 text-primary-600" />
+                                                                {venue.address}, {venue.district}, {venue.city}
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Submitted On</p>
+                                                            <p className="text-sm font-semibold text-gray-700">{new Date(venue.createdAt).toLocaleDateString('vi-VN')}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-800">
+                                                        <div className="space-y-1">
+                                                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Owner</p>
+                                                            <p className="text-sm font-bold flex items-center gap-2">
+                                                                <Users className="h-3.5 w-3.5 text-primary-600" /> {venue.owner?.fullName || 'N/A'}
+                                                            </p>
+                                                            <div className="flex flex-col gap-0.5 mt-1 border-l-2 border-primary-100 pl-3">
+                                                                <p className="text-xs text-gray-500">{venue.owner?.email || 'N/A'}</p>
+                                                                <p className="text-xs text-gray-500">{venue.owner?.phone || 'N/A'}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Facility</p>
+                                                            <p className="text-sm font-bold flex items-center gap-2">
+                                                                <Calendar className="h-3.5 w-3.5 text-primary-600" /> {venue.openingTime} - {venue.closingTime}
+                                                            </p>
+                                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                                {venue.amenities?.slice(0, 3).map((a: any, i: number) => (
+                                                                    <span key={i} className="text-[10px] px-1.5 py-0.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md font-medium">{a.name || a}</span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                                    <Button
+                                                        onClick={() => handleApprove(venue.id, venue.name)}
+                                                        className="flex-1 bg-primary-600 hover:bg-primary-700 text-white rounded-xl h-11 transition-all"
+                                                    >
+                                                        <Check className="mr-2 h-4 w-4" /> Approve Business
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => setRejectingVenueId(venue.id)}
+                                                        className="flex-1 border border-red-200 text-red-600 hover:bg-red-50 rounded-xl h-11"
+                                                    >
+                                                        <X className="mr-2 h-4 w-4" /> Reject Request
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
-                                                <p className="text-gray-500">Owner: <span className="text-gray-900 dark:text-gray-300 font-medium">Hoang Van Owner</span></p>
-                                                <p className="text-gray-500">Phone: <span className="text-gray-900 dark:text-gray-300 font-medium">0909 *** 123</span></p>
-                                                <p className="text-gray-500">Location: <span className="text-gray-900 dark:text-gray-300 font-medium">District 1, Ho Chi Minh City</span></p>
-                                                <p className="text-gray-500">Submitted: <span className="text-gray-900 dark:text-gray-300 font-medium">2 hours ago</span></p>
-                                            </div>
-                                            <div className="flex gap-4 text-xs font-semibold text-primary-600 mt-2">
-                                                <button className="flex items-center gap-1 hover:underline underline-offset-4"><Eye className="h-3.5 w-3.5" /> Business License</button>
-                                                <button className="flex items-center gap-1 hover:underline underline-offset-4"><Shield className="h-3.5 w-3.5" /> Identity Check</button>
-                                            </div>
-                                        </div>
-                                        <div className="flex md:flex-col gap-2 w-full md:w-auto">
-                                            <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl">
-                                                <Check className="mr-2 h-4 w-4" /> Approve
-                                            </Button>
-                                            <Button variant="outline" className="flex-1 border-red-200 text-red-600 hover:bg-red-50 rounded-xl">
-                                                <X className="mr-2 h-4 w-4" /> Reject
-                                            </Button>
-                                        </div>
+                                        </CardContent>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="reviews">
-                    <Card className="border-none shadow-sm dark:bg-gray-900/50 overflow-hidden">
-                        <CardHeader className="border-b dark:border-gray-800">
+                    <Card className="border-none shadow-2xl shadow-gray-200/50 rounded-3xl overflow-hidden">
+                        <CardHeader className="bg-gray-50/50 border-b dark:border-gray-800 p-8">
                             <div className="flex items-center justify-between">
-                                <CardTitle className="text-lg">Flagged Content Queue</CardTitle>
-                                <Badge variant="outline" className="font-mono">8 ITEMS REMAINING</Badge>
+                                <CardTitle className="text-2xl font-bold">Flagged Reviews Queue</CardTitle>
+                                <Badge variant="outline" className="px-4 py-1 rounded-full border-2">O ITEMS REMAINING</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <ScrollArea className="h-[500px]">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div key={i} className="p-6 border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors flex gap-6">
-                                        <div className="p-2 h-fit bg-red-100 dark:bg-red-900/30 rounded-full">
-                                            <AlertTriangle className="h-5 w-5 text-red-600" />
-                                        </div>
-                                        <div className="flex-1 space-y-3">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <span className="font-bold text-gray-900 dark:text-white">Review on "City Sports Complex"</span>
-                                                    <p className="text-xs text-gray-400 mt-0.5">Reported by: anonymous_user123 • Mar 22, 2024</p>
-                                                </div>
-                                                <Badge variant="destructive" className="bg-red-100 text-red-700 text-[10px] py-0">Profanity</Badge>
-                                            </div>
-                                            <div className="relative p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border dark:border-gray-700 italic text-sm text-gray-700 dark:text-gray-300">
-                                                <span className="absolute -top-3 left-4 bg-white dark:bg-gray-900 px-2 text-[10px] font-bold text-gray-400">CONTENT</span>
-                                                "This place is terrible, don't go here... [Potential profanity or hate speech detected] ..."
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="default" className="rounded-lg h-8 px-4">Delete Review</Button>
-                                                <Button size="sm" variant="outline" className="rounded-lg h-8 px-4 text-gray-500">Dismiss Report</Button>
-                                                <Button size="sm" variant="ghost" className="rounded-lg h-8 text-amber-600 hover:bg-amber-50">Warn User</Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </ScrollArea>
+                            <div className="flex h-64 flex-col items-center justify-center text-gray-400">
+                                <MessageSquare className="h-12 w-12 mb-2 opacity-20" />
+                                <p>No reported content to review.</p>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Reject Reason Dialog */}
+            <Dialog open={!!rejectingVenueId} onOpenChange={(open) => !open && setRejectingVenueId(null)}>
+                <DialogContent className="sm:max-w-[500px] rounded-3xl p-8">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold text-red-600">Reject Application</DialogTitle>
+                        <DialogDescription className="text-gray-500 pt-2 text-lg">
+                            Please provide a detailed reason for rejecting this venue. This will be sent to the owner.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-6">
+                        <Textarea
+                            placeholder="e.g., Missing required business license photos, incomplete address details, or violates community guidelines..."
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            className="min-h-[150px] rounded-2xl border-2 focus:ring-red-500 focus:border-red-500 p-4 text-base"
+                        />
+                    </div>
+                    <DialogFooter className="gap-3 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setRejectingVenueId(null)}
+                            className="rounded-2xl h-12 px-6 border-2"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleRejectSubmit}
+                            disabled={!rejectReason.trim() || isRejectLoading}
+                            className="rounded-2xl h-12 px-8 bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20"
+                        >
+                            {isRejectLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <X className="h-5 w-5 mr-2" />}
+                            Confirm Rejection
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

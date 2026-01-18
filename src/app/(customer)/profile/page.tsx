@@ -14,12 +14,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from '@/lib/store/auth.store';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input'; // Assuming standard Shadcn Input
 import { Label } from '@/components/ui/label'; // Assuming standard Shadcn Label
 
 export default function ProfilePage() {
-    const { user, logout } = useAuthStore();
+    const { user } = useAuthStore();
+    const { logout } = useAuth();
     const currentUser = user || { name: 'Guest User', email: 'guest@datsan247.com', role: 'USER', avatar: '' };
 
     return (
@@ -58,7 +60,7 @@ export default function ProfilePage() {
                             <Button
                                 variant="ghost"
                                 className="w-full justify-start px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={logout}
+                                onClick={() => logout()}
                             >
                                 <LogOut className="mr-3 h-5 w-5" /> Sign Out
                             </Button>

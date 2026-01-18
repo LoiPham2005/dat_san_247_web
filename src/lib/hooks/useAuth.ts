@@ -79,18 +79,18 @@ export const useAuth = () => {
         }
     };
 
-    const logout = async () => {
+    const logout = async (shouldRedirect = false) => {
         try {
-            // Optional: call backend logout to revoke refresh token
-            // const currentToken = useAuthStore.getState().token;
-            // if (currentToken) await authService.logout(); 
-
             await signOut({ redirect: false });
             logoutStore();
-            router.push('/login');
+            if (shouldRedirect) {
+                router.push('/login');
+            }
         } catch (error) {
             logoutStore();
-            router.push('/login');
+            if (shouldRedirect) {
+                router.push('/login');
+            }
         }
     };
 

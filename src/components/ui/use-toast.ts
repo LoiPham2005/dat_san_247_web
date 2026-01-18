@@ -7,7 +7,7 @@ type ToastProps = {
     description?: string;
     className?: string;
     duration?: number;
-    // ... other props
+    variant?: 'default' | 'destructive';
 };
 
 type Listener = (toasts: ToastProps[]) => void;

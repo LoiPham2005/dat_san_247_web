@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { useAuthStore } from '@/lib/store/auth.store';
+import { signOut } from 'next-auth/react';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -33,8 +34,13 @@ axiosInstance.interceptors.response.use(
         if (error.response?.status === 401) {
             if (typeof window !== 'undefined') {
                 useAuthStore.getState().logout();
-                window.location.href = '/login';
+                signOut({ callbackUrl: '/login' });
             }
+        }
+        // Extract error message from our standard API response format if available
+        const errorData = error.response?.data as any;
+        if (errorData && errorData.message) {
+            error.message = errorData.message;
         }
         return Promise.reject(error);
     }
