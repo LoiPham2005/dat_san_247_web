@@ -1,136 +1,240 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useCartStore, CartItem } from '@/lib/store/cart.store';
+import {
+    ShoppingBag,
+    Trash2,
+    Calendar,
+    Clock,
+    MapPin,
+    ChevronRight,
+    Home,
+    CreditCard,
+    ArrowRight,
+    Tag,
+    AlertCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trash2, MapPin, Calendar, Clock, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-
-// Mock Cart Item
-const CART_ITEMS = [
-    {
-        id: "1",
-        venueName: "City Sports Complex",
-        courtName: "Field 3 (7-a-side)",
-        address: "123 Le Loi, District 1, HCMC",
-        image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=2670&auto=format&fit=crop",
-        date: "Mar 25, 2024",
-        time: "19:00 - 20:30",
-        price: 450000,
-    }
-];
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils/format';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function CartPage() {
-    const [items, setItems] = useState(CART_ITEMS);
-    const [promoCode, setPromoCode] = useState("");
+    const { items, removeItem, clearCart, getTotal } = useCartStore();
+    const [isMounted, setIsMounted] = useState(false);
+    const { toast } = useToast();
 
-    const subtotal = items.reduce((acc, item) => acc + item.price, 0);
-    const discount = 0;
-    const total = subtotal - discount;
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
-    const removeItem = (id: string) => {
-        setItems(items.filter(i => i.id !== id));
-    }
+    if (!isMounted) return null;
 
-    if (items.length === 0) {
-        return (
-            <div className="container mx-auto px-4 py-16 text-center">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Trash2 className="h-10 w-10 text-gray-400" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h1>
-                <p className="text-gray-500 mb-8">Looks like you haven't booked any venues yet.</p>
-                <Link href="/venues">
-                    <Button size="lg" className="bg-primary-600 hover:bg-primary-700">Find Venues</Button>
-                </Link>
-            </div>
-        )
-    }
+    const totalAmount = getTotal();
+
+    const handleRemove = (id: string, name: string) => {
+        removeItem(id);
+        toast({
+            title: "Item removed",
+            description: `Booking for ${name} removed from basket.`,
+        });
+    };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Your Cart</h1>
+        <div className="min-h-screen bg-gray-50 dark:bg-black pt-24 pb-20 font-sans">
+            <div className="container mx-auto px-4 max-w-7xl">
+                {/* Breadcrumbs */}
+                <nav className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 mb-8">
+                    <Link href="/" className="hover:text-primary-600 transition-colors flex items-center gap-1">
+                        <Home className="h-3 w-3" /> Home
+                    </Link>
+                    <ChevronRight className="h-3 w-3" />
+                    <span className="text-gray-900 dark:text-white">Booking Basket</span>
+                </nav>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Cart Items List */}
-                <div className="lg:col-span-2 space-y-6">
-                    {items.map((item) => (
-                        <div key={item.id} className="flex flex-col sm:flex-row gap-6 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                            <img src={item.image} alt={item.venueName} className="w-full sm:w-40 h-32 object-cover rounded-xl" />
-
-                            <div className="flex-1 flex flex-col justify-between">
-                                <div>
-                                    <div className="flex justify-between items-start">
-                                        <h3 className="font-bold text-lg text-gray-900 dark:text-white">{item.venueName}</h3>
-                                        <button
-                                            onClick={() => removeItem(item.id)}
-                                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                                        >
-                                            <Trash2 className="h-5 w-5" />
-                                        </button>
-                                    </div>
-                                    <p className="text-gray-500 text-sm">{item.courtName}</p>
-                                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                                        <MapPin className="h-3 w-3" /> {item.address}
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-between items-end mt-4 sm:mt-0">
-                                    <div className="flex gap-4 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
-                                            <Calendar className="h-4 w-4 text-primary-500" /> {item.date}
-                                        </div>
-                                        <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded">
-                                            <Clock className="h-4 w-4 text-primary-500" /> {item.time}
-                                        </div>
-                                    </div>
-                                    <span className="font-bold text-lg text-primary-600">{item.price.toLocaleString()}đ</span>
-                                </div>
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="h-10 w-10 bg-primary-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary-500/20 font-black">
+                                <ShoppingBag className="h-5 w-5" />
                             </div>
+                            <Badge variant="outline" className="border-primary-200 text-primary-600 uppercase font-black text-[10px] tracking-widest bg-primary-50/50">
+                                {items.length} Pending Suất
+                            </Badge>
                         </div>
-                    ))}
+                        <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-[0.9] mt-2">
+                            Checkout Your <br /> <span className="text-primary-600 italic">Bookings</span>
+                        </h1>
+                    </div>
+                    {items.length > 0 && (
+                        <Button
+                            variant="ghost"
+                            className="text-gray-400 hover:text-red-500 uppercase font-black text-[10px] tracking-widest"
+                            onClick={() => { clearCart(); toast({ title: "Basket cleared" }); }}
+                        >
+                            <Trash2 className="h-4 w-4 mr-2" /> Clear All
+                        </Button>
+                    )}
                 </div>
 
-                {/* Summary Sidebar */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 sticky top-24">
-                        <h3 className="font-bold text-lg mb-6">Order Summary</h3>
-
-                        <div className="space-y-4 mb-6">
-                            <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                                <span>Subtotal</span>
-                                <span>{subtotal.toLocaleString()}đ</span>
-                            </div>
-                            <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                                <span>Service Fee</span>
-                                <span>0đ</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-lg pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <span>Total</span>
-                                <span className="text-primary-600">{total.toLocaleString()}đ</span>
-                            </div>
+                {items.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-32 text-center bg-white dark:bg-gray-900 rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-sm px-6">
+                        <div className="h-24 w-24 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-6">
+                            <ShoppingBag className="h-12 w-12 text-gray-200" />
                         </div>
-
-                        <div className="mb-6">
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Enter promo code"
-                                    value={promoCode}
-                                    onChange={(e) => setPromoCode(e.target.value)}
-                                    className="bg-gray-50 border-gray-200"
-                                />
-                                <Button variant="outline">Apply</Button>
-                            </div>
-                        </div>
-
-                        <Link href="/checkout">
-                            <Button className="w-full h-12 text-base font-bold shadow-lg shadow-primary-500/20">
-                                Proceed to Checkout <ArrowRight className="ml-2 h-4 w-4" />
+                        <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-2">Your basket is empty</h3>
+                        <p className="text-gray-500 max-w-sm mb-8 font-medium">
+                            Looks like you haven't selected any time slots yet. Let's find a perfect field for your next game!
+                        </p>
+                        <Link href="/venues">
+                            <Button className="h-14 px-8 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-black uppercase tracking-widest text-xs shadow-xl shadow-primary-500/20 transition-all hover:scale-105">
+                                Start Booking Now
                             </Button>
                         </Link>
                     </div>
-                </div>
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                        {/* Items List */}
+                        <div className="lg:col-span-8 space-y-4">
+                            {items.map((item) => (
+                                <CartItemCard
+                                    key={item.id}
+                                    item={item}
+                                    onRemove={() => handleRemove(item.id, item.venueName)}
+                                />
+                            ))}
+
+                            <div className="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-3xl border border-blue-100 dark:border-blue-900/20 flex gap-4 items-start">
+                                <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                                <div className="text-sm">
+                                    <p className="font-black text-blue-900 dark:text-blue-200 uppercase tracking-tight text-xs mb-1">Booking Policy</p>
+                                    <p className="text-blue-700/80 dark:text-blue-300/80 font-medium">
+                                        Slots are held for 15 minutes. Complete your payment to officialy reserve the court.
+                                        Cancellation terms depend on the specific field's policy.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Summary Sidebar */}
+                        <div className="lg:col-span-4">
+                            <div className="sticky top-28 space-y-6">
+                                <div className="bg-gray-900 dark:bg-gray-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-primary-500/10 border border-white/5">
+                                    <h3 className="text-xl font-black uppercase tracking-tight mb-8">Summary</h3>
+
+                                    <div className="space-y-4 mb-8">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Subtotal ({items.length} items)</span>
+                                            <span className="font-black">{totalAmount.toLocaleString()}đ</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Service Fee</span>
+                                            <span className="font-black text-green-400">FREE</span>
+                                        </div>
+                                        <div className="h-px bg-white/10 my-4" />
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Total Amount</span>
+                                            <div className="text-right">
+                                                <span className="block text-3xl font-black text-primary-500">{totalAmount.toLocaleString()}đ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Promo Code */}
+                                    <div className="relative mb-8">
+                                        <Input
+                                            placeholder="PROMO CODE"
+                                            className="h-12 bg-white/5 border-white/10 rounded-xl text-xs font-bold tracking-widest placeholder:text-gray-600 focus:ring-primary-500 uppercase"
+                                        />
+                                        <Button variant="ghost" className="absolute right-1 top-1 h-10 px-4 text-primary-500 hover:text-primary-400 font-black text-xs uppercase">Apply</Button>
+                                    </div>
+
+                                    <Button className="w-full h-16 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white font-black uppercase tracking-widest text-sm shadow-xl shadow-primary-500/20 transition-all hover:scale-[1.02] flex items-center justify-center gap-3">
+                                        <CreditCard className="h-5 w-5" />
+                                        Secure Checkout
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+
+                                    <p className="text-center text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-6">
+                                        Encrypted Payment Processing
+                                    </p>
+                                </div>
+
+                                <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-6 border border-gray-100 dark:border-gray-800 text-center">
+                                    <p className="text-sm font-medium text-gray-500 mb-4">Need help with your booking?</p>
+                                    <Button variant="outline" className="w-full h-12 rounded-xl border-gray-100 dark:border-gray-800 font-black text-[10px] uppercase tracking-widest">
+                                        Speak with Support
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
+
+function CartItemCard({ item, onRemove }: { item: CartItem, onRemove: () => void }) {
+    return (
+        <div className="group bg-white dark:bg-gray-900 rounded-[2rem] p-6 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row gap-6">
+            {/* Thumbnail */}
+            <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl bg-gray-100 overflow-hidden shrink-0 border border-gray-50 dark:border-gray-800">
+                <img src={item.thumbnailUrl} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start mb-2">
+                    <div>
+                        <Badge className="bg-primary-50 text-primary-700 hover:bg-primary-50 border-none px-2 py-0.5 text-[8px] font-black uppercase tracking-widest mb-2 rounded-md">
+                            {item.sportType}
+                        </Badge>
+                        <h4 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight truncate">
+                            {item.venueName}
+                        </h4>
+                        <div className="flex items-center gap-1 text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">
+                            <MapPin className="h-3 w-3" />
+                            {item.courtName}
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                        onClick={onRemove}
+                    >
+                        <Trash2 className="h-5 w-5" />
+                    </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                            <Calendar className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-black uppercase tracking-tight">{item.date}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400">
+                            <Clock className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-black uppercase tracking-tight">{item.startTime} - {item.endTime}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Price section */}
+            <div className="sm:w-32 flex sm:flex-col justify-between sm:justify-center items-center sm:items-end border-t sm:border-t-0 sm:border-l border-gray-50 dark:border-gray-800 pt-4 sm:pt-0 sm:pl-6">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Price</span>
+                <span className="text-xl font-black text-gray-900 dark:text-white">{item.price.toLocaleString()}đ</span>
+            </div>
+        </div>
+    );
+}
+
+// Add Input to imports if available
+import { Input } from '@/components/ui/input';

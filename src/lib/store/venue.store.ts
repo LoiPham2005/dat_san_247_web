@@ -4,6 +4,7 @@ import { venueService } from '@/lib/api/services/venue.service';
 
 interface VenueStore {
     venues: Venue[];
+    favorites: Venue[];
     pagination: {
         total: number;
         page: number;
@@ -19,14 +20,17 @@ interface VenueStore {
 
     fetchVenues: (params?: any) => Promise<void>;
     fetchOwnerVenues: (params?: any) => Promise<void>;
+    fetchFavorites: () => Promise<void>;
     fetchVenueById: (id: string) => Promise<void>;
     addVenue: (data: any) => Promise<void>;
+    updateVenue: (id: string, data: any) => Promise<void>;
     setActiveVenue: (venue: Venue | null) => void;
     setFilters: (filters: any) => void;
 }
 
 export const useVenueStore = create<VenueStore>((set, get) => ({
     venues: [],
+    favorites: [],
     pagination: null,
     currentFilters: {
         search: '',
@@ -72,7 +76,15 @@ export const useVenueStore = create<VenueStore>((set, get) => ({
     fetchOwnerVenues: async (params) => {
         set({ isLoading: true, error: null });
         try {
-            const data = await venueService.getOwnerVenues(params);
+            // Clean empty params
+            const cleanParams = Object.entries({ ...params }).reduce((acc, [key, value]) => {
+                if (value !== '' && value !== null && value !== undefined) {
+                    acc[key] = value;
+                }
+                return acc;
+            }, {} as any);
+
+            const data = await venueService.getOwnerVenues(cleanParams);
             set({
                 venues: data.items || [],
                 pagination: data.meta || null,
@@ -80,6 +92,16 @@ export const useVenueStore = create<VenueStore>((set, get) => ({
             });
         } catch (error: any) {
             set({ error: error.message || 'Failed to fetch owner venues', isLoading: false });
+        }
+    },
+
+    fetchFavorites: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const data = await venueService.getMyFavorites();
+            set({ favorites: data, isLoading: false });
+        } catch (error: any) {
+            set({ error: error.message || 'Failed to fetch favorites', isLoading: false });
         }
     },
 
@@ -103,6 +125,21 @@ export const useVenueStore = create<VenueStore>((set, get) => ({
             }));
         } catch (error: any) {
             set({ error: error.message || 'Failed to create venue', isLoading: false });
+            throw error;
+        }
+    },
+
+    updateVenue: async (id: string, data: any) => {
+        set({ isLoading: true, error: null });
+        try {
+            const updatedVenue = await venueService.updateOwnerVenue(id, data);
+            set((state) => ({
+                venues: state.venues.map(v => v.id === id ? updatedVenue : v),
+                activeVenue: state.activeVenue?.id === id ? updatedVenue : state.activeVenue,
+                isLoading: false
+            }));
+        } catch (error: any) {
+            set({ error: error.message || 'Failed to update venue', isLoading: false });
             throw error;
         }
     },

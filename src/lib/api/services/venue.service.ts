@@ -55,8 +55,21 @@ export const venueService = {
         return data.data;
     },
 
-    createOwnerVenue: async (venueData: any): Promise<Venue> => {
-        const { data } = await axiosInstance.post(API_ENDPOINTS.OWNER_VENUES, venueData);
+    createOwnerVenue: async (formData: FormData | any): Promise<Venue> => {
+        const headers = formData instanceof FormData
+            ? { 'Content-Type': 'multipart/form-data' }
+            : {};
+
+        const { data } = await axiosInstance.post(API_ENDPOINTS.OWNER_VENUES, formData, { headers });
+        return data.data;
+    },
+
+    updateOwnerVenue: async (id: string, formData: FormData | any): Promise<Venue> => {
+        const headers = formData instanceof FormData
+            ? { 'Content-Type': 'multipart/form-data' }
+            : {};
+
+        const { data } = await axiosInstance.put(`${API_ENDPOINTS.OWNER_VENUES}/${id}`, formData, { headers });
         return data.data;
     },
 
@@ -111,5 +124,18 @@ export const venueService = {
 
     updateCourtPricingRules: async (id: string, rules: any[]): Promise<void> => {
         await axiosInstance.put(API_ENDPOINTS.OWNER_COURT_PRICING_RULES(id), { rules });
+    },
+
+    addToFavorite: async (id: string): Promise<void> => {
+        await axiosInstance.post(`${API_ENDPOINTS.VENUE_BY_ID(id)}/favorite`);
+    },
+
+    removeFromFavorite: async (id: string): Promise<void> => {
+        await axiosInstance.delete(`${API_ENDPOINTS.VENUE_BY_ID(id)}/favorite`);
+    },
+
+    getMyFavorites: async (): Promise<Venue[]> => {
+        const { data } = await axiosInstance.get(`${API_ENDPOINTS.VENUES}/my/favorites`);
+        return data.data;
     },
 };

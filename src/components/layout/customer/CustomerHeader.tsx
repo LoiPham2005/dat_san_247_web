@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth.store';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCartStore } from '@/lib/store/cart.store';
+import { useVenueStore } from '@/lib/store/venue.store';
 import {
     Search,
     ShoppingCart,
@@ -31,6 +33,8 @@ import { cn } from '@/lib/utils/format';
 export const CustomerHeader = () => {
     const { user } = useAuthStore();
     const { logout } = useAuth();
+    const { items } = useCartStore();
+    const { favorites } = useVenueStore();
     const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -114,7 +118,11 @@ export const CustomerHeader = () => {
                             showTransparent ? "text-white hover:bg-white/10" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                         )}>
                             <ShoppingCart className="h-5 w-5" />
-                            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900" />
+                            {items.length > 0 && (
+                                <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-primary-600 text-white text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-gray-900 animate-in zoom-in duration-300">
+                                    {items.length}
+                                </span>
+                            )}
                         </div>
                     </Link>
 

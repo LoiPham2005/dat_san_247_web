@@ -2,7 +2,7 @@
 
 import { useVenueStore } from "@/lib/store/venue.store";
 import { useEffect, useState } from "react";
-import { Loader2, AlertCircle, Plus, Filter, MapPin, Star, Users } from "lucide-react";
+import { Loader2, AlertCircle, Plus, Filter, MapPin, Star, Users, Search } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +13,30 @@ export default function OwnerVenuesPage() {
     const { venues, isLoading, error, fetchOwnerVenues } = useVenueStore();
     const [isMounted, setIsMounted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
 
     useEffect(() => {
         setIsMounted(true);
-        fetchOwnerVenues();
-    }, [fetchOwnerVenues]);
+    }, []);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
+        if (isMounted) {
+            const params: any = {};
+            if (debouncedSearch) params.search = debouncedSearch;
+            if (statusFilter) params.status = statusFilter;
+            fetchOwnerVenues(params);
+        }
+    }, [isMounted, fetchOwnerVenues, debouncedSearch, statusFilter]);
 
     if (!isMounted) return null;
 
@@ -35,12 +54,37 @@ export default function OwnerVenuesPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Filter className="mr-2 h-4 w-4" /> Filter
-                    </Button>
-                    <Button onClick={() => setIsModalOpen(true)}>
+                    <Button onClick={() => setIsModalOpen(true)} className="shadow-lg shadow-primary-500/20">
                         <Plus className="mr-2 h-4 w-4" /> Add Venue
                     </Button>
+                </div>
+            </div>
+
+            {/* Filters Section */}
+            <div className="flex flex-col gap-4 md:flex-row md:items-center bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Search venues by name..."
+                        className="w-full bg-gray-50 dark:bg-gray-800 border-none rounded-xl pl-10 h-10 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-400 ml-2 mr-1" />
+                    <select
+                        className="bg-gray-50 dark:bg-gray-800 border-none rounded-xl px-4 h-10 text-sm focus:ring-2 focus:ring-primary-500 outline-none transition-all min-w-[150px] uppercase font-bold"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="">All Statuses</option>
+                        <option value="APPROVED">Approved</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="REJECTED">Rejected</option>
+                        <option value="INACTIVE">Inactive</option>
+                    </select>
                 </div>
             </div>
 
@@ -55,25 +99,26 @@ export default function OwnerVenuesPage() {
                     <p className="text-xs text-gray-500">{error}</p>
                     <Button variant="outline" size="sm" onClick={() => fetchOwnerVenues()}>Try Again</Button>
                 </div>
+            ) : venuesList.length === 0 ? (
+                <div className="flex h-96 flex-col items-center justify-center text-center p-8 bg-gray-50/50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                    <div className="h-20 w-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-sm mb-4">
+                        <MapPin className="h-10 w-10 text-gray-300" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No venues found</h3>
+                    <p className="text-gray-500 max-w-xs mb-6">
+                        {search || statusFilter ? "Try adjusting your filters to find what you're looking for." : "Start by adding your first sports facility to the platform."}
+                    </p>
+                    {!search && !statusFilter && (
+                        <Button onClick={() => setIsModalOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" /> Register Your First Venue
+                        </Button>
+                    )}
+                </div>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {venuesList.filter(v => !!v).map((venue) => (
+                    {venuesList.map((venue) => (
                         <VenueCard key={venue.id} venue={venue} />
                     ))}
-
-                    {/* Empty State / Add New Card */}
-                    <div
-                        onClick={() => setIsModalOpen(true)}
-                        className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-8 text-center transition-all hover:border-primary-500 hover:bg-primary-50/10 dark:border-gray-800 dark:bg-gray-900/20 cursor-pointer min-h-[300px]"
-                    >
-                        <div className="mb-4 rounded-full bg-white p-4 shadow-sm group-hover:shadow-md dark:bg-gray-800 transition-shadow">
-                            <Plus className="h-8 w-8 text-gray-400 group-hover:text-primary-600" />
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-200 group-hover:text-primary-600 transition-colors">Add New Venue</h3>
-                        <p className="mt-2 text-sm text-gray-500 max-w-[200px]">
-                            Register a new field, court, or facility to start accepting bookings.
-                        </p>
-                    </div>
                 </div>
             )}
 
@@ -98,7 +143,7 @@ function VenueCard({ venue }: { venue: any }) {
             {/* Header Image */}
             <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
                 <img
-                    src={venue.thumbnailUrl || `https://images.unsplash.com/photo-1543351611-58f69d7c1781?q=80&w=800&auto=format&fit=crop`}
+                    src={venue.thumbnailUrl || venue.images?.[0]?.imageUrl || `https://images.unsplash.com/photo-1543351611-58f69d7c1781?q=80&w=800&auto=format&fit=crop`}
                     alt={venue.name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />

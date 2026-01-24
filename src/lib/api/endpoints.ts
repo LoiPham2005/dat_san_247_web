@@ -46,4 +46,9 @@ export const API_ENDPOINTS = {
     OWNER_COURTS_BY_VENUE: (venueId: string) => `/owner/courts/venue/${venueId}`,
     OWNER_COURTS_BY_ID: (id: string) => `/owner/courts/${id}`,
     OWNER_COURT_PRICING_RULES: (id: string) => `/owner/courts/${id}/pricing-rules`,
+
+    // Content & Banners
+    CONTENT: '/content',
+    BANNERS: '/content/banners',
+    BANNER_BY_ID: (id: string) => `/content/banners/${id}`,
 };

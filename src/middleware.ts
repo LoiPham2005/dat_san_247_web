@@ -6,9 +6,25 @@ export default withAuth(
         const token = req.nextauth.token;
         const url = req.nextUrl.pathname;
 
-        // Redirect authenticated users away from login/register
-        if (token && (url === '/login' || url === '/register')) {
-            return NextResponse.redirect(new URL('/', req.url));
+        // Redirect authenticated users away from login/register/root
+        if (token && (url === '/login' || url === '/register' || url === '/')) {
+            const role = token.role;
+            let targetUrl = '/';
+
+            if (role === 'super-admin' || role === 'admin') {
+                targetUrl = '/admin/dashboard';
+            } else if (role === 'owner') {
+                targetUrl = '/owner/dashboard';
+            } else if (role === 'staff') {
+                targetUrl = '/staff/support';
+            } else if (role === 'venue-staff') {
+                targetUrl = '/venue-staff/dashboard';
+            }
+
+            // Only redirect if the current url is not the target url
+            if (url !== targetUrl) {
+                return NextResponse.redirect(new URL(targetUrl, req.url));
+            }
         }
 
         // Admin routes protection

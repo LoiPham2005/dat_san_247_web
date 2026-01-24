@@ -15,18 +15,42 @@ import {
     Trash,
     Plus,
     X,
-    Loader2
+    Loader2,
+    Upload,
+    CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/format";
-import { MOCK_REVIEWS } from "@/lib/constants/mock-data";
 import { venueService } from '@/lib/api/services/venue.service';
 import { useToast } from '@/components/ui/use-toast';
 import { useOwnerVenueDetailsStore } from '@/lib/store/owner-venue-details.store';
 import { DayOfWeek } from '@/types/venue.types';
-
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useVenueStore } from '@/lib/store/venue.store';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+const venueSchema = z.object({
+    name: z.string().min(3, 'Name must be at least 3 characters'),
+    description: z.string().min(10, 'Description must be at least 10 characters'),
+    address: z.string().min(5, 'Address must be at least 5 characters'),
+    city: z.string().min(2, 'City must be at least 2 characters'),
+    district: z.string().min(2, 'District must be at least 2 characters'),
+    phone: z.string().min(10, 'Valid phone number required'),
+    openingTime: z.string().optional(),
+    closingTime: z.string().optional(),
+});
+
+type VenueFormValues = z.infer<typeof venueSchema>;
+
+const COMMON_AMENITIES = [
+    'Parking', 'Wifi', 'Changing Room', 'Shower', 'Canteen', 'Floodlights', 'Security', 'Water'
+];
 
 export default function VenueDetailsPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
     const params = React.use(paramsPromise);
@@ -151,98 +175,248 @@ export default function VenueDetailsPage({ params: paramsPromise }: { params: Pr
 }
 
 function InfoTab({ venue }: any) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [thumbnail, setThumbnail] = useState<File | null>(null);
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>(
+        venue.amenities?.map((a: any) => typeof a === 'string' ? a : a.name) || []
+    );
+    const { updateVenue } = useVenueStore();
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        reset
+    } = useForm<VenueFormValues>({
+        resolver: zodResolver(venueSchema),
+        defaultValues: {
+            name: venue.name,
+            description: venue.description,
+            address: venue.address,
+            city: venue.city,
+            district: venue.district,
+            phone: venue.phone,
+            openingTime: venue.openingTime?.slice(0, 5),
+            closingTime: venue.closingTime?.slice(0, 5),
+        }
+    });
+
+    const toggleAmenity = (amenity: string) => {
+        if (!isEditing) return;
+        setSelectedAmenities(prev =>
+            prev.includes(amenity)
+                ? prev.filter(a => a !== amenity)
+                : [...prev, amenity]
+        );
+    };
+
+    const onSubmit = async (data: VenueFormValues) => {
+        setIsLoading(true);
+        try {
+            const formData = new FormData();
+            Object.entries(data).forEach(([key, value]) => {
+                if (value) formData.append(key, value);
+            });
+
+            if (selectedAmenities.length > 0) {
+                formData.append('amenities', selectedAmenities.join(','));
+            }
+
+            if (thumbnail) {
+                formData.append('thumbnail', thumbnail);
+            }
+
+            await updateVenue(venue.id, formData);
+            toast({ title: 'Success', description: 'Venue updated successfully' });
+            setIsEditing(false);
+            setThumbnail(null); // Reset local thumbnail after success
+            // Invalidate query to refresh data
+            queryClient.invalidateQueries({ queryKey: ['owner-venue', venue.id] });
+        } catch (error: any) {
+            toast({
+                title: 'Error',
+                description: error.message || 'Failed to update venue',
+                variant: 'destructive'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
-        <div className="grid gap-8 lg:grid-cols-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-6">
                 {/* Basic Info */}
-                <div className="p-6 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-bold text-lg">Venue Details</h3>
-                        <Button size="sm" variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                <div className="p-8 rounded-3xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm">
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 className="font-bold text-xl uppercase tracking-tight">General Information</h3>
+                            <p className="text-sm text-gray-400 mt-1">Update your venue basic details and contact info.</p>
+                        </div>
+                        {!isEditing ? (
+                            <Button type="button" size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit Details
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <Button type="button" size="sm" variant="ghost" onClick={() => { setIsEditing(false); reset(); }}>Cancel</Button>
+                                <Button type="submit" size="sm" disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save Changes
+                                </Button>
+                            </div>
+                        )}
                     </div>
+
                     <div className="grid gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Venue Name</label>
-                            <input className="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-gray-50 dark:bg-gray-800 dark:border-gray-700" defaultValue={venue.name} />
+                            <Label htmlFor="name" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Venue Name</Label>
+                            <Input
+                                id="name"
+                                disabled={!isEditing}
+                                {...register('name')}
+                                className={cn("h-12 rounded-xl bg-gray-50 border-none font-bold", !isEditing && "opacity-80")}
+                            />
+                            {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
                         </div>
+
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                            <textarea className="w-full h-32 border border-gray-200 rounded-lg p-3 text-sm bg-gray-50 dark:bg-gray-800 dark:border-gray-700 resize-none" defaultValue={venue.description} />
+                            <Label htmlFor="description" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Description</Label>
+                            <Textarea
+                                id="description"
+                                disabled={!isEditing}
+                                {...register('description')}
+                                className={cn("min-h-[120px] rounded-xl bg-gray-50 border-none", !isEditing && "opacity-80")}
+                            />
+                            {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
                         </div>
+
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
-                                <input className="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-gray-50 dark:bg-gray-800 dark:border-gray-700" defaultValue={venue.address} />
+                                <Label htmlFor="address" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Full Address</Label>
+                                <Input
+                                    id="address"
+                                    disabled={!isEditing}
+                                    {...register('address')}
+                                    className="h-12 rounded-xl bg-gray-50 border-none"
+                                />
+                                {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sport Type</label>
-                                <select className="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                                    <option value="FOOTBALL">Football / Soccer</option>
-                                    <option value="TENNIS">Tennis</option>
-                                    <option value="BADMINTON">Badminton</option>
-                                    <option value="BASKETBALL">Basketball</option>
-                                    <option value="VOLLEYBALL">Volleyball</option>
-                                </select>
+                                <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Contact Phone</Label>
+                                <Input
+                                    id="phone"
+                                    disabled={!isEditing}
+                                    {...register('phone')}
+                                    className="h-12 rounded-xl bg-gray-50 border-none"
+                                />
+                                {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="city" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">City</Label>
+                                <Input id="city" disabled={!isEditing} {...register('city')} className="h-12 rounded-xl bg-gray-50 border-none" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="district" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">District</Label>
+                                <Input id="district" disabled={!isEditing} {...register('district')} className="h-12 rounded-xl bg-gray-50 border-none" />
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="openingTime" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Opening Time</Label>
+                                <Input id="openingTime" type="time" disabled={!isEditing} {...register('openingTime')} className="h-12 rounded-xl bg-gray-50 border-none" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="closingTime" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Closing Time</Label>
+                                <Input id="closingTime" type="time" disabled={!isEditing} {...register('closingTime')} className="h-12 rounded-xl bg-gray-50 border-none" />
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Amenities */}
-                <div className="p-6 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm">
-                    <h3 className="font-bold text-lg mb-6">Amenities</h3>
-                    <div className="flex flex-wrap gap-3">
-                        {venue.amenities?.map((item: any) => (
-                            <span key={typeof item === 'string' ? item : item.id} className="px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 text-sm font-medium dark:bg-primary-900/20 dark:text-primary-400 flex items-center gap-2">
-                                {typeof item === 'string' ? item : item.name}
-                                <button className="hover:text-red-500"><X className="h-3 w-3" /></button>
-                            </span>
+                <div className="p-8 rounded-3xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm">
+                    <h3 className="font-bold text-xl uppercase tracking-tight mb-6">Available Amenities</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {COMMON_AMENITIES.map((name) => (
+                            <button
+                                key={name}
+                                type="button"
+                                onClick={() => toggleAmenity(name)}
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest border transition-all flex items-center gap-2",
+                                    selectedAmenities.includes(name)
+                                        ? "bg-primary-100 text-primary-800 border-primary-200"
+                                        : "bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100"
+                                )}
+                            >
+                                {selectedAmenities.includes(name) && <CheckCircle2 className="h-3 w-3" />}
+                                {name}
+                            </button>
                         ))}
-                        <button className="px-3 py-1.5 rounded-lg border border-dashed border-gray-300 text-gray-500 text-sm font-medium hover:border-primary-500 hover:text-primary-600 flex items-center gap-1">
-                            <Plus className="h-3 w-3" /> Add
-                        </button>
                     </div>
                 </div>
             </div>
 
             <div className="space-y-6">
-                {/* Photo Gallery */}
-                <div className="p-6 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold">Gallery</h3>
-                        <Button size="sm" variant="ghost"><Plus className="h-4 w-4" /></Button>
+                {/* Thumbnail Display/Update */}
+                <div className="p-8 rounded-3xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm">
+                    <h3 className="font-bold text-xl uppercase tracking-tight mb-6">Main Logo / Cover</h3>
+                    <div className="relative aspect-square rounded-2xl bg-gray-100 overflow-hidden group border-2 border-dashed border-gray-200">
+                        {thumbnail ? (
+                            <img src={URL.createObjectURL(thumbnail)} className="w-full h-full object-cover" />
+                        ) : (
+                            <img src={venue.thumbnailUrl || `https://images.unsplash.com/photo-1544033527-b192daee1f5b?w=400&h=400&fit=crop`} className="w-full h-full object-cover" />
+                        )}
+
+                        {isEditing && (
+                            <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white">
+                                <Upload className="h-8 w-8 mb-2" />
+                                <span className="text-xs font-bold uppercase tracking-widest">Change Image</span>
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
+                                />
+                            </label>
+                        )}
+                    </div>
+                    {thumbnail && (
+                        <Button type="button" variant="ghost" size="sm" className="w-full mt-2 text-xs" onClick={() => setThumbnail(null)}>
+                            Reset Change
+                        </Button>
+                    )}
+                </div>
+
+                {/* Gallery Preview (Managed separately or in future) */}
+                <div className="p-8 rounded-3xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm opacity-60">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="font-bold text-xl uppercase tracking-tight">Gallery</h3>
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest">SOON</Badge>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                        {venue.images?.map((img: any, i: number) => (
-                            <div key={i} className="aspect-square rounded-lg bg-gray-100 overflow-hidden relative group">
-                                <img src={typeof img === 'string' ? img : img.url} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button className="text-white hover:text-red-500"><Trash className="h-4 w-4" /></button>
-                                </div>
+                        {venue.images?.slice(0, 4).map((img: any, i: number) => (
+                            <div key={i} className="aspect-square rounded-xl bg-gray-100 overflow-hidden">
+                                <img src={img.imageUrl} className="w-full h-full object-cover grayscale" />
                             </div>
                         ))}
                     </div>
-                </div>
-
-                {/* Rules */}
-                <div className="p-6 rounded-2xl bg-white border border-gray-100 dark:bg-gray-900 dark:border-gray-800 shadow-sm">
-                    <h3 className="font-bold mb-4">Venue Rules</h3>
-                    <ul className="space-y-3">
-                        {venue.rules?.map((rule: string, i: number) => (
-                            <li key={i} className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-400">
-                                <div className="h-1.5 w-1.5 rounded-full bg-primary-500 mt-1.5 shrink-0" />
-                                {rule}
-                            </li>
-                        ))}
-                        {(!venue.rules || venue.rules.length === 0) && (
-                            <p className="text-xs text-gray-400 italic">No rules specified</p>
-                        )}
-                    </ul>
+                    <p className="mt-4 text-[10px] text-gray-500 text-center uppercase font-bold">Manage Gallery in separate tab</p>
                 </div>
             </div>
-        </div>
+        </form>
     )
 }
+
+// Ensure icons are imported or added to existing imports
 
 function ScheduleTab({ venue }: { venue: any }) {
     const queryClient = useQueryClient();
