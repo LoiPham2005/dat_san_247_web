@@ -47,3 +47,13 @@ export interface TimeSlot {
     isAvailable: boolean;
     price: number;
 }
+
+export enum DayOfWeek {
+    MONDAY = 'MONDAY',
+    TUESDAY = 'TUESDAY',
+    WEDNESDAY = 'WEDNESDAY',
+    THURSDAY = 'THURSDAY',
+    FRIDAY = 'FRIDAY',
+    SATURDAY = 'SATURDAY',
+    SUNDAY = 'SUNDAY'
+}

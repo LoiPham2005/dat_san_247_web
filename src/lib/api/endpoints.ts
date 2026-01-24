@@ -27,6 +27,10 @@ export const API_ENDPOINTS = {
     BOOKING_BY_ID: (id: string) => `/bookings/${id}`,
     MY_BOOKINGS: '/bookings/my-bookings',
     CANCEL_BOOKING: (id: string) => `/bookings/${id}/cancel`,
+    OWNER_BOOKINGS: '/owner/bookings',
+    OWNER_BOOKING_ACTION: (id: string, action: string) => `/owner/bookings/${id}/${action}`,
+    OWNER_DASHBOARD_OVERVIEW: '/owner/dashboard/overview',
+    OWNER_DASHBOARD_REVENUE: '/owner/dashboard/revenue-chart',
 
     // Reports (Admin)
     REPORTS_REVENUE: '/reports/revenue',

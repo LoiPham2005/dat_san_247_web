@@ -10,6 +10,8 @@ function AuthSync() {
     return null;
 }
 
+import { Toaster } from '@/components/ui/toaster';
+
 export default function Providers({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(() => new QueryClient({
         defaultOptions: {
@@ -25,6 +27,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <AuthSync />
             <QueryClientProvider client={queryClient}>
                 {children}
+                <Toaster />
             </QueryClientProvider>
         </SessionProvider>
     );

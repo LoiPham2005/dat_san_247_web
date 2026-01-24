@@ -10,8 +10,6 @@ import {
     SheetContent,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { venueService } from '@/lib/api/services/venue.service';
-import { Venue } from '@/types/venue.types';
 
 import { useVenueStore } from '@/lib/store/venue.store';
 

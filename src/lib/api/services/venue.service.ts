@@ -44,6 +44,11 @@ export const venueService = {
         return data.data;
     },
 
+    getVenueReviews: async (id: string, params?: any): Promise<any> => {
+        const { data } = await axiosInstance.get(`${API_ENDPOINTS.VENUE_BY_ID(id)}/reviews`, { params });
+        return data.data;
+    },
+
     // Owner Venues
     getOwnerVenues: async (params?: any): Promise<any> => {
         const { data } = await axiosInstance.get(API_ENDPOINTS.OWNER_VENUES, { params });
