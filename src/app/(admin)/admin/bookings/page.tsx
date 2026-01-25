@@ -1,13 +1,30 @@
 'use client';
 
-import { MOCK_BOOKINGS } from "@/lib/constants/mock-data";
 import { DataTable } from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { Button } from "@/components/ui/button";
-import { Calendar, Download, Search } from "lucide-react";
+import { Calendar, Download, Search, Loader2 } from "lucide-react";
+import { useAdminBooking } from "@/lib/hooks/useAdminBooking";
+import { useState } from "react";
+import { BookingStatus } from "@/types/booking.types";
 
 export default function BookingsPage() {
-    const data = MOCK_BOOKINGS as any[];
+    const [filters, setFilters] = useState({
+        page: 1,
+        limit: 10,
+        search: '',
+        status: undefined,
+    });
+
+    const { bookings, isLoading, error, meta } = useAdminBooking(filters);
+
+    if (error) {
+        return (
+            <div className="flex h-[400px] items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50 p-8 text-center">
+                <p className="text-red-600">Failed to load bookings. Please try again later.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -20,31 +37,29 @@ export default function BookingsPage() {
                         Monitor and handle all bookings and disputes.
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Calendar View
-                    </Button>
-                    <Button variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
-                    </Button>
-                </div>
             </div>
 
             <div className="rounded-xl bg-white p-1 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
                 <div className="p-4">
-                    <DataTable
-                        columns={columns}
-                        data={data}
-                        searchKey="customer"
-                        filterColumn="status"
-                        filterOptions={[
-                            { label: 'Completed', value: 'COMPLETED' },
-                            { label: 'Confirmed', value: 'CONFIRMED' },
-                            { label: 'Cancelled', value: 'CANCELLED' },
-                        ]}
-                    />
+                    {isLoading ? (
+                        <div className="flex h-[400px] items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+                        </div>
+                    ) : (
+                        <DataTable
+                            columns={columns}
+                            data={bookings}
+                            searchKey="customerName"
+                            filterColumn="status"
+                            filterOptions={[
+                                { label: 'Pending', value: BookingStatus.PENDING },
+                                { label: 'Confirmed', value: BookingStatus.CONFIRMED },
+                                { label: 'Checked In', value: BookingStatus.CHECKED_IN },
+                                { label: 'Completed', value: BookingStatus.COMPLETED },
+                                { label: 'Cancelled', value: BookingStatus.CANCELLED },
+                            ]}
+                        />
+                    )}
                 </div>
             </div>
         </div>

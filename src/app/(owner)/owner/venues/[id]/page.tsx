@@ -478,62 +478,125 @@ function ScheduleTab({ venue }: { venue: any }) {
 
     return (
         <div className="grid gap-8 lg:grid-cols-3">
-            {/* Courts List */}
+            {/* Courts List - Grouped by Sport Type */}
             <div className="lg:col-span-1 space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-lg">Courts List</h3>
+                    <div>
+                        <h3 className="font-bold text-lg">Danh Sách Sân</h3>
+                        <p className="text-xs text-gray-500">{courts.length} sân trong tổng số</p>
+                    </div>
                     <Button size="sm" onClick={() => setIsAddingCourt(true)}>
-                        <Plus className="h-4 w-4 mr-2" /> Add Court
+                        <Plus className="h-4 w-4 mr-2" /> Thêm Sân
                     </Button>
                 </div>
-                <div className="space-y-3">
-                    {courts.map((court) => (
-                        <div
-                            key={court.id}
-                            onClick={() => setSelectedCourt(court)}
-                            className={cn(
-                                "p-4 rounded-xl border transition-all cursor-pointer group",
-                                selectedCourt?.id === court.id
-                                    ? "bg-primary-50 border-primary-200 shadow-sm"
-                                    : "bg-white border-gray-100 hover:border-primary-200 dark:bg-gray-900 dark:border-gray-800"
-                            )}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="font-bold text-gray-900 dark:text-white uppercase">{court.name}</p>
-                                    <p className="text-xs text-gray-500">{court.sportType} • {court.isIndoor ? 'Indoor' : 'Outdoor'}</p>
+
+                {/* Group courts by sport type */}
+                {(() => {
+                    const grouped = courts.reduce((acc: any, court: any) => {
+                        if (!acc[court.sportType]) acc[court.sportType] = [];
+                        acc[court.sportType].push(court);
+                        return acc;
+                    }, {});
+
+                    const sportTypeLabels: Record<string, string> = {
+                        'BADMINTON': '🏸 Cầu Lông',
+                        'TENNIS': '🎾 Tennis',
+                        'FOOTBALL': '⚽ Bóng Đá',
+                        'BASKETBALL': '🏀 Bóng Rổ',
+                        'VOLLEYBALL': '🏐 Bóng Chuyền',
+                        'TABLE_TENNIS': '🏓 Bóng Bàn'
+                    };
+
+                    return Object.entries(grouped).map(([sportType, sportCourts]: [string, any]) => (
+                        <div key={sportType} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                            {/* Sport Type Header */}
+                            <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xl">{sportTypeLabels[sportType]?.split(' ')[0] || '🏆'}</span>
+                                    <div>
+                                        <h4 className="font-bold text-sm uppercase tracking-tight text-gray-900 dark:text-white">
+                                            {sportTypeLabels[sportType]?.split(' ').slice(1).join(' ') || sportType}
+                                        </h4>
+                                        <p className="text-[10px] text-gray-500 font-bold">{sportCourts.length} sân</p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setEditingCourt(court); }}
-                                        className="p-2 text-gray-400 hover:text-primary-600"
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteCourt(court.id); }}
-                                        className="p-2 text-gray-400 hover:text-red-500"
-                                    >
-                                        <Trash className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="mt-3 flex items-center justify-between">
-                                <span className="text-sm font-bold text-primary-600">
-                                    {new Intl.NumberFormat('vi-VN').format(court.pricePerHour)}đ <span className="text-[10px] text-gray-400 font-normal">/hour</span>
-                                </span>
-                                <Badge variant={court.isActive ? "default" : "secondary"} className="text-[10px]">
-                                    {court.isActive ? 'Active' : 'Inactive'}
+                                <Badge variant="outline" className="text-[10px] font-bold">
+                                    {sportCourts.filter((c: any) => c.isActive).length} hoạt động
                                 </Badge>
                             </div>
+
+                            {/* Courts under this sport type */}
+                            <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                                {sportCourts.map((court: any, idx: number) => (
+                                    <div
+                                        key={court.id}
+                                        onClick={() => setSelectedCourt(court)}
+                                        className={cn(
+                                            "p-4 transition-all cursor-pointer group hover:bg-gray-50 dark:hover:bg-gray-800",
+                                            selectedCourt?.id === court.id && "bg-primary-50 dark:bg-primary-900/20"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn(
+                                                    "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black",
+                                                    selectedCourt?.id === court.id
+                                                        ? "bg-primary-600 text-white"
+                                                        : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                                                )}>
+                                                    {idx + 1}
+                                                </div>
+                                                <div>
+                                                    <p className={cn(
+                                                        "font-bold text-sm",
+                                                        selectedCourt?.id === court.id ? "text-primary-600" : "text-gray-900 dark:text-white"
+                                                    )}>
+                                                        {court.name}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400">
+                                                        {court.isIndoor ? 'Trong nhà' : 'Ngoài trời'} • {new Intl.NumberFormat('vi-VN').format(court.pricePerHour)}đ/h
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setEditingCourt(court); }}
+                                                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-white dark:hover:bg-gray-900 rounded-lg"
+                                                >
+                                                    <Edit className="h-3.5 w-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteCourt(court.id); }}
+                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-white dark:hover:bg-gray-900 rounded-lg"
+                                                >
+                                                    <Trash className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Pricing Rules Count */}
+                                        {court.pricingRules?.length > 0 && (
+                                            <div className="mt-2 ml-11">
+                                                <Badge variant="secondary" className="text-[9px] bg-orange-100 text-orange-700 border-none">
+                                                    {court.pricingRules.length} quy tắc giá
+                                                </Badge>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    ))}
-                    {courts.length === 0 && (
-                        <div className="p-8 text-center border-2 border-dashed border-gray-100 rounded-2xl dark:border-gray-800">
-                            <p className="text-gray-400 text-sm">No courts added yet</p>
-                        </div>
-                    )}
-                </div>
+                    ));
+                })()}
+
+                {courts.length === 0 && (
+                    <div className="p-8 text-center border-2 border-dashed border-gray-100 rounded-2xl dark:border-gray-800">
+                        <p className="text-gray-400 text-sm">Chưa có sân nào</p>
+                        <Button size="sm" variant="outline" className="mt-4" onClick={() => setIsAddingCourt(true)}>
+                            <Plus className="h-4 w-4 mr-2" /> Thêm sân đầu tiên
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Pricing & Availability Panel */}
@@ -735,6 +798,19 @@ function CourtFormModal({ onClose, onSubmit, isLoading, initialData }: any) {
     const [isIndoor, setIsIndoor] = useState(initialData?.isIndoor ?? false);
     const [rules, setRules] = useState<any[]>(initialData?.pricingRules || []);
 
+    // New: Quantity for bulk creation
+    const [quantity, setQuantity] = useState(1);
+    const [namePrefix, setNamePrefix] = useState('Sân');
+
+    const sportTypeLabels: Record<string, string> = {
+        'BADMINTON': 'Cầu Lông',
+        'TENNIS': 'Tennis',
+        'FOOTBALL': 'Bóng Đá',
+        'BASKETBALL': 'Bóng Rổ',
+        'VOLLEYBALL': 'Bóng Chuyền',
+        'TABLE_TENNIS': 'Bóng Bàn'
+    };
+
     const addRule = () => {
         setRules([...rules, {
             startTime: '17:00:00',
@@ -754,18 +830,37 @@ function CourtFormModal({ onClose, onSubmit, isLoading, initialData }: any) {
         setRules(rules.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit({
-            name,
-            pricePerHour: Number(price),
-            sportType,
-            isIndoor,
-            pricingRules: rules.map(({ id, courtId, createdAt, updatedAt, ...rest }: any) => ({
-                ...rest,
-                price: Number(rest.price)
-            }))
-        });
+
+        if (initialData) {
+            // Editing existing court
+            onSubmit({
+                name,
+                pricePerHour: Number(price),
+                sportType,
+                isIndoor,
+                pricingRules: rules.map(({ id, courtId, createdAt, updatedAt, ...rest }: any) => ({
+                    ...rest,
+                    price: Number(rest.price)
+                }))
+            });
+        } else {
+            // Creating new courts (possibly bulk)
+            for (let i = 1; i <= quantity; i++) {
+                const courtName = quantity > 1 ? `${namePrefix} ${sportTypeLabels[sportType]} ${i}` : name;
+                await onSubmit({
+                    name: courtName,
+                    pricePerHour: Number(price),
+                    sportType,
+                    isIndoor,
+                    pricingRules: rules.map(({ id, courtId, createdAt, updatedAt, ...rest }: any) => ({
+                        ...rest,
+                        price: Number(rest.price)
+                    }))
+                });
+            }
+        }
     };
 
     return (
@@ -774,24 +869,86 @@ function CourtFormModal({ onClose, onSubmit, isLoading, initialData }: any) {
                 <div className="p-8 pb-4 border-b border-gray-100 dark:border-gray-800">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h3 className="text-2xl font-bold uppercase tracking-tight">{initialData ? 'Edit Court' : 'New Court'}</h3>
-                            <p className="text-sm text-gray-500">{initialData ? 'Update court information and pricing.' : 'Add a new court with custom pricing.'}</p>
+                            <h3 className="text-2xl font-bold uppercase tracking-tight">{initialData ? 'Chỉnh Sửa Sân' : 'Thêm Sân Mới'}</h3>
+                            <p className="text-sm text-gray-500">{initialData ? 'Cập nhật thông tin và giá sân.' : 'Thêm một hoặc nhiều sân cùng lúc.'}</p>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full dark:hover:bg-gray-800 transition-colors uppercase"><X className="h-6 w-6" /></button>
                     </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                    {/* Bulk Creation (only when adding new) */}
+                    {!initialData && (
+                        <div className="p-4 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-100 dark:border-primary-900/30">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Plus className="h-5 w-5 text-primary-600" />
+                                <h4 className="font-bold text-primary-700 dark:text-primary-400">Thêm Hàng Loạt</h4>
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-primary-600 uppercase tracking-widest ml-1">Số Lượng Sân</label>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                            className="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 font-bold text-lg"
+                                        >-</button>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="20"
+                                            className="flex-1 h-12 border border-gray-200 rounded-xl px-4 text-center text-lg bg-white dark:bg-gray-800 dark:border-gray-700 font-black"
+                                            value={quantity}
+                                            onChange={(e) => setQuantity(Math.min(20, Math.max(1, parseInt(e.target.value) || 1)))}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuantity(Math.min(20, quantity + 1))}
+                                            className="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 font-bold text-lg"
+                                        >+</button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-primary-600 uppercase tracking-widest ml-1">Tiền Tố Tên</label>
+                                    <input
+                                        type="text"
+                                        className="w-full h-12 border border-gray-200 rounded-xl px-4 text-sm bg-white dark:bg-gray-800 dark:border-gray-700 font-bold"
+                                        placeholder="Sân"
+                                        value={namePrefix}
+                                        onChange={(e) => setNamePrefix(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            {quantity > 1 && (
+                                <p className="text-xs text-primary-600 mt-3 font-medium">
+                                    Sẽ tạo: {Array.from({ length: quantity }, (_, i) => `"${namePrefix} ${sportTypeLabels[sportType]} ${i + 1}"`).slice(0, 3).join(', ')}{quantity > 3 ? ` và ${quantity - 3} sân nữa...` : ''}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {/* Basic Info */}
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Court Name</label>
+                        {(initialData || quantity === 1) && (
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tên Sân</label>
+                                <input
+                                    type="text"
+                                    className="w-full h-12 border border-gray-200 rounded-xl px-4 text-sm bg-gray-50 focus:ring-2 focus:ring-primary-500 outline-none transition-all dark:bg-gray-800 dark:border-gray-700 font-bold"
+                                    placeholder="VD: Sân Cầu Lông 1"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                            </div>
+                        )}
+                        <div className={cn("space-y-2", !initialData && quantity > 1 && "md:col-span-2")}>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Giá Tiêu Chuẩn (VNĐ/giờ)</label>
                             <input
-                                type="text"
+                                type="number"
                                 className="w-full h-12 border border-gray-200 rounded-xl px-4 text-sm bg-gray-50 focus:ring-2 focus:ring-primary-500 outline-none transition-all dark:bg-gray-800 dark:border-gray-700 font-bold"
-                                placeholder="e.g. Court #1"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                placeholder="80000"
+                                value={price}
+                                onChange={(e) => setPrice(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">

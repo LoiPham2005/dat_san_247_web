@@ -1,43 +1,48 @@
-import axiosInstance from "../axios";
-import { UserRole } from "@/types/auth.types";
-import { API_ENDPOINTS } from "../endpoints";
-
-export interface UserFilter {
-    page?: number;
-    limit?: number;
-    role?: UserRole;
-    search?: string;
-    isActive?: boolean | string;
-}
+import axiosInstance from '../axios';
+import { API_ENDPOINTS } from '../endpoints';
 
 export const userService = {
-    getUsers: async (filter: UserFilter = {}) => {
-        const { data } = await axiosInstance.get(API_ENDPOINTS.ADMIN_USERS, { params: filter });
-        return data.data;
+    getProfile: async (): Promise<any> => {
+        const response = await axiosInstance.get(API_ENDPOINTS.PROFILE);
+        return response.data;
     },
 
-    createUser: async (data: any) => {
+    updateProfile: async (data: any): Promise<any> => {
+        const response = await axiosInstance.put(API_ENDPOINTS.PROFILE, data);
+        return response.data;
+    },
+
+    changePassword: async (data: any): Promise<any> => {
+        const response = await axiosInstance.patch(API_ENDPOINTS.CHANGE_PASSWORD, data);
+        return response.data;
+    },
+
+    // Admin Methods
+    getUsers: async (params?: any): Promise<any> => {
+        const response = await axiosInstance.get(API_ENDPOINTS.ADMIN_USERS, { params });
+        // Return the 'data' field which contains { items, meta }
+        return response.data.data || response.data;
+    },
+
+    createUser: async (data: any): Promise<any> => {
         const response = await axiosInstance.post(API_ENDPOINTS.ADMIN_USERS, data);
-        return response.data.data;
+        return response.data.data || response.data;
     },
 
-    getUserById: async (id: string) => {
-        const { data: result } = await axiosInstance.get(API_ENDPOINTS.ADMIN_USER_BY_ID(id));
-        return result.data;
+    updateUser: async (id: string, data: any): Promise<any> => {
+        const response = await axiosInstance.put(API_ENDPOINTS.ADMIN_USER_BY_ID(id), data);
+        return response.data.data || response.data;
     },
 
-    updateUser: async (id: string, data: any) => {
-        const { data: result } = await axiosInstance.put(API_ENDPOINTS.ADMIN_USER_BY_ID(id), data);
-        return result.data;
+    deleteUser: async (id: string): Promise<any> => {
+        const response = await axiosInstance.delete(API_ENDPOINTS.ADMIN_USER_BY_ID(id));
+        return response.data.data || response.data;
     },
 
-    toggleUserStatus: async (id: string) => {
-        const { data } = await axiosInstance.post(`${API_ENDPOINTS.ADMIN_USER_BY_ID(id)}/toggle-status`);
-        return data.data;
-    },
-
-    deleteUser: async (id: string) => {
-        const { data } = await axiosInstance.delete(API_ENDPOINTS.ADMIN_USER_BY_ID(id));
-        return data.data;
+    toggleStatus: async (id: string): Promise<any> => {
+        const response = await axiosInstance.post(`${API_ENDPOINTS.ADMIN_USER_BY_ID(id)}/toggle-status`);
+        return response.data.data || response.data;
     },
 };
+
+export default userService;

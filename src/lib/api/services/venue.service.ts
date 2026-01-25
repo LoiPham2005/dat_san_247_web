@@ -37,8 +37,8 @@ export const venueService = {
         await axiosInstance.delete(API_ENDPOINTS.VENUE_BY_ID(id));
     },
 
-    getTimeSlots: async (id: string, date: string): Promise<TimeSlot[]> => {
-        const { data } = await axiosInstance.get(API_ENDPOINTS.VENUE_TIMESLOTS(id), {
+    getAvailability: async (id: string, date: string): Promise<any> => {
+        const { data } = await axiosInstance.get(API_ENDPOINTS.VENUE_AVAILABILITY(id), {
             params: { date },
         });
         return data.data;
@@ -100,6 +100,20 @@ export const venueService = {
 
     rejectVenue: async (id: string, reason: string): Promise<void> => {
         await axiosInstance.post(API_ENDPOINTS.STAFF_REJECT_VENUE(id), { reason });
+    },
+
+    // Admin Moderation
+    getAdminPendingVenues: async (params?: any): Promise<Venue[]> => {
+        const { data } = await axiosInstance.get(API_ENDPOINTS.ADMIN_PENDING_VENUES, { params });
+        return data.data.items || data.data;
+    },
+
+    adminApproveVenue: async (id: string): Promise<void> => {
+        await axiosInstance.post(API_ENDPOINTS.ADMIN_APPROVE_VENUE(id));
+    },
+
+    adminRejectVenue: async (id: string, reason: string): Promise<void> => {
+        await axiosInstance.post(API_ENDPOINTS.ADMIN_REJECT_VENUE(id), { reason });
     },
 
     // Owner Courts

@@ -5,11 +5,12 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
-export const formatCurrency = (amount: number): string => {
+export const formatCurrency = (amount: number | string): string => {
+    const value = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',
-    }).format(amount);
+    }).format(value || 0);
 };
 
 export const formatDate = (date: string | Date): string => {

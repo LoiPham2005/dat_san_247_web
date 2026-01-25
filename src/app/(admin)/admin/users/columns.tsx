@@ -11,6 +11,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { userService } from "@/lib/api/services/user.service";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 export type User = {
     id: string;
@@ -22,6 +27,79 @@ export type User = {
     createdAt: string;
     avatarUrl?: string;
 }
+
+const CellAction = ({ user }: { user: User }) => {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const toggleStatusMutation = useMutation({
+        mutationFn: () => userService.toggleStatus(user.id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+            toast({
+                title: "Thành công",
+                description: `Đã ${user.isActive ? 'khóa' : 'mở khóa'} tài khoản người dùng.`,
+                className: "bg-green-600 text-white border-none"
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Lỗi",
+                description: error.response?.data?.message || "Không thể thực hiện thao tác.",
+                variant: "destructive"
+            });
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: () => userService.deleteUser(user.id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+            toast({
+                title: "Đã xóa",
+                description: "Người dùng đã được xóa khỏi hệ thống.",
+                className: "bg-gray-900 text-white border-none"
+            });
+        }
+    });
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-xl border-gray-100 shadow-xl">
+                <DropdownMenuItem className="rounded-lg cursor-pointer">
+                    <Edit className="mr-2 h-4 w-4" /> Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    className="rounded-lg cursor-pointer"
+                    onClick={() => toggleStatusMutation.mutate()}
+                >
+                    {toggleStatusMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Lock className="mr-2 h-4 w-4" />
+                    )}
+                    {user.isActive ? 'Khóa tài khoản' : 'Mở khóa'}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    className="text-red-600 focus:text-red-700 focus:bg-red-50 rounded-lg cursor-pointer"
+                    onClick={() => {
+                        if (confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+                            deleteMutation.mutate();
+                        }
+                    }}
+                >
+                    <Trash className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+};
 
 export const columns: ColumnDef<User>[] = [
     {
@@ -87,27 +165,7 @@ export const columns: ColumnDef<User>[] = [
     },
     {
         id: "actions",
-        cell: ({ row }) => {
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => console.log('Edit', row.original.id)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => console.log('Lock', row.original.id)}>
-                            <Lock className="mr-2 h-4 w-4" /> Lock
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => console.log('Delete', row.original.id)}>
-                            <Trash className="mr-2 h-4 w-4 text-red-600" /> <span className="text-red-600">Delete</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )
-        }
+        cell: ({ row }) => <CellAction user={row.original} />
     },
 ];
+

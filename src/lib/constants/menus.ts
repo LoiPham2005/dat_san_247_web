@@ -31,6 +31,7 @@ export const ROLE_MENUS = {
         { label: 'Reviews', icon: MessageSquareQuote, href: '/admin/reviews' },
         { label: 'Notifications', icon: Bell, href: '/admin/notifications' },
         { label: 'Reports', icon: BarChart3, href: '/admin/reports' },
+        { label: 'Moderation', icon: Shield, href: '/admin/moderation' },
         { label: 'Settings', icon: Settings, href: '/admin/settings' },
     ],
     [UserRole.OWNER]: [

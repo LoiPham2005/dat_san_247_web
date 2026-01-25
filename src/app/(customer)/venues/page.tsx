@@ -154,6 +154,9 @@ export default function FindVenuesPage() {
                                         ? Math.min(...venue.courts.map((c: any) => Number(c.pricePerHour)))
                                         : 0;
 
+                                    const sportTypes = Array.from(new Set(venue.courts?.map((c: any) => c.sportType) || []));
+                                    const displayType = sportTypes.length > 1 ? 'Multi-Sports' : (sportTypes[0] || 'Sport');
+
                                     return viewMode === 'grid' ? (
                                         <VenueCard
                                             key={venue.id}
@@ -164,7 +167,7 @@ export default function FindVenuesPage() {
                                             price={minPrice}
                                             rating={Number(venue.rating) || 0}
                                             reviews={venue.totalReviews || 0}
-                                            type={venue.courts?.[0]?.sportType || 'Sport'}
+                                            type={displayType}
                                             isFavorite={false} // Would need favorite check logic
                                         />
                                     ) : (
@@ -192,7 +195,7 @@ export default function FindVenuesPage() {
                                                 </div>
                                                 <div className="mt-4 flex items-center justify-between">
                                                     <div className="flex gap-2 text-xs">
-                                                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded font-bold uppercase tracking-widest text-[8px]">{venue.courts?.[0]?.sportType || 'SPORT'}</span>
+                                                        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded font-bold uppercase tracking-widest text-[8px]">{displayType}</span>
                                                         {venue.amenities?.slice(0, 2).map((a: any) => (
                                                             <span key={a.id} className="px-2 py-1 bg-primary-50 text-primary-600 dark:bg-primary-900/20 rounded font-bold uppercase tracking-widest text-[8px]">{a.name}</span>
                                                         ))}

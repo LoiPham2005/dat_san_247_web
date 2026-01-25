@@ -5,6 +5,8 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
     REFRESH_TOKEN: '/auth/refresh',
     ME: '/auth/me',
+    PROFILE: '/profile',
+    CHANGE_PASSWORD: '/profile/change-password',
 
     // Users
     USERS: '/users',
@@ -15,7 +17,7 @@ export const API_ENDPOINTS = {
     // Venues
     VENUES: '/venues',
     VENUE_BY_ID: (id: string) => `/venues/${id}`,
-    VENUE_TIMESLOTS: (id: string) => `/venues/${id}/timeslots`,
+    VENUE_AVAILABILITY: (id: string) => `/venues/${id}/availability`,
     OWNER_VENUES: '/owner/venues',
     OWNER_VENUE_BY_ID: (id: string) => `/owner/venues/${id}`,
     OWNER_STAFF: '/owner/staff',
@@ -25,18 +27,34 @@ export const API_ENDPOINTS = {
     // Bookings
     BOOKINGS: '/bookings',
     BOOKING_BY_ID: (id: string) => `/bookings/${id}`,
-    MY_BOOKINGS: '/bookings/my-bookings',
+    MY_BOOKINGS: '/bookings/my',
     CANCEL_BOOKING: (id: string) => `/bookings/${id}/cancel`,
     OWNER_BOOKINGS: '/owner/bookings',
     OWNER_BOOKING_ACTION: (id: string, action: string) => `/owner/bookings/${id}/${action}`,
     OWNER_DASHBOARD_OVERVIEW: '/owner/dashboard/overview',
     OWNER_DASHBOARD_REVENUE: '/owner/dashboard/revenue-chart',
+    RESCHEDULE_BOOKING: (id: string) => `/bookings/${id}/reschedule`,
+    REQUEST_INVOICE: (id: string) => `/bookings/${id}/invoice-request`,
+    SUPPORT_TICKETS: '/support/tickets',
+
 
     // Reports (Admin)
     REPORTS_REVENUE: '/reports/revenue',
     REPORTS_BOOKINGS: '/reports/bookings',
 
-    // Staff Moderation
+    // Admin Moderation
+    ADMIN_PENDING_VENUES: '/admin/venues/pending',
+    ADMIN_APPROVE_VENUE: (id: string) => `/admin/venues/${id}/approve`,
+    ADMIN_REJECT_VENUE: (id: string) => `/admin/venues/${id}/reject`,
+
+    // Support (Tickets/Reports)
+    ADMIN_TICKETS: '/admin/support/tickets',
+    ADMIN_TICKET_BY_ID: (id: string) => `/admin/support/tickets/${id}`,
+
+    // Analytics/Audit
+    ADMIN_ACTIVITY_LOGS: '/admin/analytics/logs',
+
+    // Staff Moderation (Keep for STAFF role)
     STAFF_PENDING_VENUES: '/staff/moderation/venues/pending',
     STAFF_APPROVE_VENUE: (id: string) => `/staff/moderation/venues/${id}/approve`,
     STAFF_REJECT_VENUE: (id: string) => `/staff/moderation/venues/${id}/reject`,
@@ -51,4 +69,9 @@ export const API_ENDPOINTS = {
     CONTENT: '/content',
     BANNERS: '/content/banners',
     BANNER_BY_ID: (id: string) => `/content/banners/${id}`,
+    // Admin Bookings
+    ADMIN_ALL_BOOKINGS: '/staff/bookings',
+    ADMIN_BOOKING_BY_ID: (id: string) => `/staff/bookings/${id}`,
+    ADMIN_CANCEL_BOOKING: (id: string) => `/staff/bookings/${id}/cancel`,
+    ADMIN_REFUND_BOOKING: (id: string) => `/staff/bookings/${id}/refund`,
 };

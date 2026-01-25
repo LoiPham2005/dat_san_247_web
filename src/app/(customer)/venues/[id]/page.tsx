@@ -25,6 +25,7 @@ import { venueService } from '@/lib/api/services/venue.service';
 import { Venue } from '@/types/venue.types';
 import { cn } from '@/lib/utils/format';
 import { useToast } from '@/components/ui/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const AMENITY_ICONS: Record<string, any> = {
     'Parking': Car,
@@ -38,7 +39,16 @@ const AMENITY_ICONS: Record<string, any> = {
     'Default': Shield
 };
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+function Amenity({ icon: Icon, label }: any) {
+    return (
+        <div className="flex items-center gap-4 p-5 rounded-3xl border-2 border-gray-50 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:border-primary-500 hover:shadow-2xl hover:shadow-primary-500/10 transition-all group cursor-default">
+            <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-primary-600 group-hover:bg-primary-50 transition-all duration-300">
+                <Icon className="h-6 w-6" />
+            </div>
+            <span className="text-sm font-black uppercase tracking-tight text-gray-700 dark:text-gray-300">{label}</span>
+        </div>
+    );
+}
 
 export default function VenueDetailsPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
     const params = React.use(paramsPromise);
@@ -113,15 +123,12 @@ export default function VenueDetailsPage({ params: paramsPromise }: { params: Pr
         ? venue.images.map((img: any) => typeof img === 'string' ? img : img.imageUrl)
         : [venue.thumbnailUrl || "https://images.unsplash.com/photo-1544033527-b192daee1f5b?w=1200&h=800&fit=crop"];
 
-    // Ensure we have at least 5 images for the gallery or repeat
     const galleryImages = [...images];
     while (galleryImages.length < 5) {
         galleryImages.push(galleryImages[0]);
     }
 
-    const minPrice = venue.courts && venue.courts.length > 0
-        ? Math.min(...venue.courts.map((c: any) => Number(c.pricePerHour)))
-        : 0;
+    const sportTypes = Array.from(new Set(venue.courts?.map((c: any) => c.sportType) || []));
 
     return (
         <div className="container mx-auto px-4 pt-24 pb-12 max-w-7xl animate-in fade-in duration-700">
@@ -129,9 +136,17 @@ export default function VenueDetailsPage({ params: paramsPromise }: { params: Pr
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
                 <div className="space-y-4">
                     <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="bg-primary-600 text-white hover:bg-primary-700 border-none px-4 py-1.5 uppercase font-bold text-[10px] tracking-widest rounded-full">
-                            {venue.courts?.[0]?.sportType || 'Multi-Sports'}
-                        </Badge>
+                        {sportTypes.length > 0 ? (
+                            sportTypes.map((type: string) => (
+                                <Badge key={type} className="bg-primary-600 text-white hover:bg-primary-700 border-none px-4 py-1.5 uppercase font-bold text-[10px] tracking-widest rounded-full">
+                                    {type}
+                                </Badge>
+                            ))
+                        ) : (
+                            <Badge className="bg-primary-600 text-white hover:bg-primary-700 border-none px-4 py-1.5 uppercase font-bold text-[10px] tracking-widest rounded-full">
+                                Multi-Sports
+                            </Badge>
+                        )}
                         <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50 px-4 py-1.5 uppercase font-bold text-[10px] tracking-widest rounded-full">
                             <Shield className="h-3 w-3 mr-1" /> Verified Partner
                         </Badge>
@@ -186,81 +201,75 @@ export default function VenueDetailsPage({ params: paramsPromise }: { params: Pr
                 <VenueGallery images={galleryImages} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-                {/* Info Container */}
-                <div className="lg:col-span-8 space-y-16">
-                    {/* Detailed Section */}
-                    <section>
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="h-10 w-10 bg-primary-600 rounded-2xl flex items-center justify-center text-white font-black text-xl">D</div>
-                            <h2 className="text-3xl font-black uppercase tracking-tight">Facility Details</h2>
-                        </div>
-                        <div className="prose prose-xl dark:prose-invert text-gray-600 dark:text-gray-300 max-w-none leading-relaxed font-medium">
-                            <p className="whitespace-pre-wrap leading-loose">
-                                {venue.description || `${venue.name} is a premier sports destination in ${venue.city}. We offer top-tier ${venue.courts?.[0]?.sportType.toLowerCase() || 'multi-sport'} facilities designed for both casual and competitive play.`}
-                            </p>
-                        </div>
-                    </section>
-
-                    {/* Features Grid */}
-                    <section>
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-8 ml-1">Premium Amenities</h3>
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                            {venue.amenities && venue.amenities.length > 0 ? (
-                                venue.amenities.map((item: any) => (
-                                    <Amenity key={item.id} icon={AMENITY_ICONS[item.name] || AMENITY_ICONS.Default} label={item.name} />
-                                ))
-                            ) : (
-                                ['Parking', 'Security Access', 'Refreshments'].map(n => (
-                                    <Amenity key={n} icon={AMENITY_ICONS[n] || AMENITY_ICONS.Default} label={n} />
-                                ))
-                            )}
-                        </div>
-                    </section>
-
-                    {/* Schedule Block */}
-                    <section className="bg-gray-900 dark:bg-black rounded-[3rem] p-10 text-white relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                            <Clock className="h-32 w-32" />
-                        </div>
-                        <h2 className="text-xl font-black mb-10 uppercase tracking-widest text-primary-500">Business Hours</h2>
-                        <div className="flex items-center gap-16 relative z-10">
-                            <div>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Service Starts</p>
-                                <p className="text-5xl font-black">{venue.openingTime?.substring(0, 5) || "06:00"}</p>
-                            </div>
-                            <div className="h-16 w-px bg-white/10" />
-                            <div>
-                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Service Ends</p>
-                                <p className="text-5xl font-black text-gray-400">{venue.closingTime?.substring(0, 5) || "22:00"}</p>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Reviews */}
-                    <section id="reviews" className="pt-20 border-t-4 border-gray-50 dark:border-gray-800">
-                        <VenueReviews />
-                    </section>
-                </div>
-
-                {/* Sticky Widget Container */}
-                <div className="lg:col-span-4">
-                    <div className="sticky top-28">
-                        <BookingWidget venue={venue} />
+            {/* BOOKING SECTION - FULL WIDTH */}
+            <section id="booking" className="mb-16">
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="h-12 w-12 bg-primary-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl">🎾</div>
+                    <div>
+                        <h2 className="text-3xl font-black uppercase tracking-tight text-gray-900 dark:text-white">Đặt Sân Ngay</h2>
+                        <p className="text-gray-500 text-sm mt-1">Chọn ngày, giờ và thời lượng phù hợp với bạn</p>
                     </div>
                 </div>
-            </div>
-        </div>
-    );
-}
 
-function Amenity({ icon: Icon, label }: any) {
-    return (
-        <div className="flex items-center gap-4 p-5 rounded-3xl border-2 border-gray-50 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:border-primary-500 hover:shadow-2xl hover:shadow-primary-500/10 transition-all group cursor-default">
-            <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:text-primary-600 group-hover:bg-primary-50 transition-all duration-300">
-                <Icon className="h-6 w-6" />
+                {/* Full-width Booking Widget */}
+                <BookingWidget venue={venue} />
+            </section>
+
+            {/* Info Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-16">
+                {/* Detailed Section */}
+                <section>
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="h-10 w-10 bg-primary-600 rounded-2xl flex items-center justify-center text-white font-black text-xl">D</div>
+                        <h2 className="text-3xl font-black uppercase tracking-tight">Facility Details</h2>
+                    </div>
+                    <div className="prose prose-xl dark:prose-invert text-gray-600 dark:text-gray-300 max-w-none leading-relaxed font-medium">
+                        <p className="whitespace-pre-wrap leading-loose">
+                            {venue.description || `${venue.name} is a premier sports destination in ${venue.city}. We offer top-tier ${sportTypes[0]?.toLowerCase() || 'multi-sport'} facilities designed for both casual and competitive play.`}
+                        </p>
+                    </div>
+                </section>
+
+                {/* Schedule Block */}
+                <section className="bg-gray-900 dark:bg-black rounded-[3rem] p-10 text-white relative overflow-hidden group h-fit">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+                        <Clock className="h-32 w-32" />
+                    </div>
+                    <h2 className="text-xl font-black mb-10 uppercase tracking-widest text-primary-500">Business Hours</h2>
+                    <div className="flex items-center gap-16 relative z-10">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Service Starts</p>
+                            <p className="text-5xl font-black">{venue.openingTime?.substring(0, 5) || "06:00"}</p>
+                        </div>
+                        <div className="h-16 w-px bg-white/10" />
+                        <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Service Ends</p>
+                            <p className="text-5xl font-black text-gray-400">{venue.closingTime?.substring(0, 5) || "22:00"}</p>
+                        </div>
+                    </div>
+                </section>
             </div>
-            <span className="text-sm font-black uppercase tracking-tight text-gray-700 dark:text-gray-300">{label}</span>
+
+            {/* Features Grid */}
+            <section className="mb-16">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-8 ml-1">Premium Amenities</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    {venue.amenities && venue.amenities.length > 0 ? (
+                        venue.amenities.map((item: any) => (
+                            <Amenity key={item.id} icon={AMENITY_ICONS[item.name] || AMENITY_ICONS.Default} label={item.name} />
+                        ))
+                    ) : (
+                        ['Parking', 'Security Access', 'Refreshments', 'Equipment'].map(n => (
+                            <Amenity key={n} icon={AMENITY_ICONS[n] || AMENITY_ICONS.Default} label={n} />
+                        ))
+                    )}
+                </div>
+            </section>
+
+            {/* Reviews */}
+            <section id="reviews" className="pt-16 border-t-4 border-gray-50 dark:border-gray-800">
+                <VenueReviews />
+            </section>
         </div>
     );
 }

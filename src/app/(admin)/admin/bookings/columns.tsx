@@ -11,45 +11,54 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 
-export type Booking = {
-    id: string;
-    customer: string;
-    venue: string;
-    date: string;
-    time: string;
-    amount: string;
-    status: 'COMPLETED' | 'CONFIRMED' | 'CANCELLED';
-    payment: 'PAID' | 'PENDING' | 'REFUNDED';
-}
+import { Booking, BookingStatus } from "@/types/booking.types";
+import { formatCurrency, formatDate, formatTime } from "@/lib/utils/format";
 
 export const columns: ColumnDef<Booking>[] = [
     {
-        accessorKey: "id",
-        header: "Booking ID",
-        cell: ({ row }) => <span className="font-mono text-xs font-bold">{row.original.id}</span>
+        accessorKey: "bookingCode",
+        header: "Booking Code",
+        cell: ({ row }) => <span className="font-mono text-xs font-bold text-primary-600">#{row.original.bookingCode}</span>
     },
     {
-        accessorKey: "customer",
+        accessorKey: "customerName",
         header: "Customer",
-    },
-    {
-        accessorKey: "venue",
-        header: "Venue",
-        cell: ({ row }) => <span className="max-w-[150px] truncate block">{row.original.venue}</span>
-    },
-    {
-        accessorKey: "date",
-        header: "Date & Time",
         cell: ({ row }) => (
             <div className="flex flex-col">
-                <span className="text-sm font-medium">{row.original.date}</span>
-                <span className="text-xs text-gray-500">{row.original.time}</span>
+                <span className="font-medium">{row.original.customerName}</span>
+                <span className="text-xs text-gray-500">{row.original.customerPhone}</span>
             </div>
         )
     },
     {
-        accessorKey: "amount",
+        accessorKey: "venue",
+        header: "Venue",
+        cell: ({ row }) => (
+            <div className="flex flex-col">
+                <span className="text-sm font-medium truncate max-w-[150px]">{row.original.venue?.name}</span>
+                <span className="text-[10px] text-gray-400">{row.original.venue?.city}</span>
+            </div>
+        )
+    },
+    {
+        accessorKey: "bookingDate",
+        header: "Schedule",
+        cell: ({ row }) => {
+            const displayTime = (time: string) => time ? time.split(':').slice(0, 2).join(':') : 'N/A';
+            return (
+                <div className="flex flex-col">
+                    <span className="text-sm font-medium">{formatDate(row.original.bookingDate)}</span>
+                    <span className="text-xs text-gray-500">
+                        {displayTime(row.original.startTime)} - {displayTime(row.original.endTime)}
+                    </span>
+                </div>
+            )
+        }
+    },
+    {
+        accessorKey: "totalAmount",
         header: "Amount",
+        cell: ({ row }) => <span className="font-bold">{formatCurrency(row.original.totalAmount)}</span>
     },
     {
         accessorKey: "status",
@@ -58,32 +67,20 @@ export const columns: ColumnDef<Booking>[] = [
             const status = row.original.status;
             return (
                 <Badge variant={
-                    status === 'COMPLETED' ? 'success' :
-                        status === 'CONFIRMED' ? 'info' : 'danger'
+                    status === BookingStatus.COMPLETED ? 'success' :
+                        status === BookingStatus.CONFIRMED ? 'success' :
+                            status === BookingStatus.PENDING ? 'warning' :
+                                status === BookingStatus.CHECKED_IN ? 'info' : 'danger'
                 }>
-                    {status}
+                    {status.replace('_', ' ')}
                 </Badge>
-            )
-        }
-    },
-    {
-        accessorKey: "payment",
-        header: "Payment",
-        cell: ({ row }) => {
-            const payment = row.original.payment;
-            return (
-                <div className="flex items-center gap-1.5">
-                    <div className={`h-1.5 w-1.5 rounded-full ${payment === 'PAID' ? 'bg-green-500' :
-                        payment === 'PENDING' ? 'bg-yellow-500' : 'bg-red-500'
-                        }`} />
-                    <span className="text-xs font-medium">{payment}</span>
-                </div>
             )
         }
     },
     {
         id: "actions",
         cell: ({ row }) => {
+            const booking = row.original;
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -95,12 +92,16 @@ export const columns: ColumnDef<Booking>[] = [
                         <DropdownMenuItem>
                             <Eye className="mr-2 h-4 w-4" /> Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Confirm
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <XCircle className="mr-2 h-4 w-4 text-red-600" /> Cancel
-                        </DropdownMenuItem>
+                        {booking.status === BookingStatus.PENDING && (
+                            <DropdownMenuItem className="text-green-600">
+                                <CheckCircle className="mr-2 h-4 w-4" /> Confirm
+                            </DropdownMenuItem>
+                        )}
+                        {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) && (
+                            <DropdownMenuItem className="text-red-600">
+                                <XCircle className="mr-2 h-4 w-4" /> Cancel
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             )

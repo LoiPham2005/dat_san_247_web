@@ -28,6 +28,8 @@ export default function UsersPage() {
         return () => clearTimeout(timer);
     }, [search]);
 
+    console.log('userService object:', userService);
+
     const {
         data,
         isLoading,
@@ -37,11 +39,18 @@ export default function UsersPage() {
         isFetching
     } = useQuery({
         queryKey: ["admin-users", debouncedSearch, role],
-        queryFn: () => userService.getUsers({
-            search: debouncedSearch,
-            role: role === "" ? undefined : role
-        }),
+        queryFn: () => {
+            if (typeof userService.getUsers !== 'function') {
+                console.error('userService.getUsers is NOT a function!', userService);
+                throw new Error('userService.getUsers is not a function. Check console for object structure.');
+            }
+            return userService.getUsers({
+                search: debouncedSearch,
+                role: role === "" ? undefined : role
+            });
+        },
     });
+
 
     const usersList = data?.items || [];
 

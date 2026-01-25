@@ -42,10 +42,23 @@ export enum SportType {
 }
 
 export interface TimeSlot {
-    start: string;
-    end: string;
-    isAvailable: boolean;
+    time: string;
+    available: boolean;
     price: number;
+}
+
+export interface VenueAvailability {
+    venueId: string;
+    date: string;
+    openingTime: string;
+    closingTime: string;
+    courts: {
+        courtId: string;
+        courtName: string;
+        sportType: SportType;
+        pricePerHour: number;
+        slots: TimeSlot[];
+    }[];
 }
 
 export enum DayOfWeek {

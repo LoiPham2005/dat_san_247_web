@@ -4,19 +4,27 @@ import { Venue } from './venue.types';
 export enum BookingStatus {
     PENDING = 'PENDING',
     CONFIRMED = 'CONFIRMED',
+    CHECKED_IN = 'CHECKED_IN',
+    COMPLETED = 'COMPLETED',
     CANCELLED = 'CANCELLED',
-    COMPLETED = 'COMPLETED'
+    NO_SHOW = 'NO_SHOW',
 }
 
 export interface Booking {
     id: string;
-    userId: string;
+    bookingCode: string;
+    customerId: string;
+    courtId: string;
     venueId: string;
+    bookingDate: string;
     startTime: string;
     endTime: string;
-    totalPrice: number;
     status: BookingStatus;
-    notes?: string;
+    totalAmount: number;
+    depositAmount: number;
+    customerName: string;
+    customerPhone: string;
+    note?: string;
     createdAt: string;
     user?: User;
     venue?: Venue;
