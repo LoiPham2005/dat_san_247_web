@@ -1,76 +1,92 @@
 'use client';
 
-import { MOCK_PROMOTIONS } from "@/lib/constants/mock-data";
 import { DataTable } from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { Button } from "@/components/ui/button";
-import { Plus, Ticket, Zap, Clock, Calendar } from "lucide-react";
-import { StatsCard } from "@/components/ui/stats-card";
+import { Plus, RefreshCcw } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { promotionsService } from "@/lib/api/services/promotion.service";
+import { PromotionStatus } from "@/types/promotion.types";
+import { PromotionModal } from "@/components/admin/PromotionModal";
 
 export default function PromotionsPage() {
-    const data = MOCK_PROMOTIONS as any[];
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [statusFilter, setStatusFilter] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const queryClient = useQueryClient();
+
+    const { data, isLoading } = useQuery({
+        queryKey: ["admin-promotions", statusFilter, searchTerm],
+        queryFn: () => promotionsService.getAll({
+            status: statusFilter || undefined,
+            search: searchTerm || undefined
+        }),
+    });
+
+    const promotionList = data?.items || [];
+
+    const handleRefresh = () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-promotions"] });
+    };
 
     return (
-        <div className="space-y-8 pb-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-6 pb-10">
+            {/* Simple Header like the image */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between py-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                        Vouchers & Promotions
+                    <h1 className="text-2xl font-bold tracking-tight text-[#0f172a]">
+                        Promotions Management
                     </h1>
-                    <p className="mt-1 text-gray-500 dark:text-gray-400">
-                        Manage discount codes, flash sales, and seasonal campaigns.
+                    <p className="text-sm text-gray-500">
+                        Manage all promotions and discount codes in the system.
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline">Campaigns</Button>
-                    <Button>
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={handleRefresh}
+                        className="h-10 px-4 text-gray-600 border-gray-200"
+                    >
+                        <RefreshCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
+                    <Button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="h-10 px-4 bg-[#3e8a42] hover:bg-[#336e37] text-white border-none shadow-sm"
+                    >
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Voucher
+                        Add New Promotion
                     </Button>
                 </div>
             </div>
 
-            {/* Promo Types Quick View */}
-            <div className="grid gap-6 md:grid-cols-4">
-                <PromoTypeCard title="Flash Sales" icon={Zap} count={2} active color="bg-orange-500" />
-                <PromoTypeCard title="Happy Hour" icon={Clock} count={5} active color="bg-blue-500" />
-                <PromoTypeCard title="Weekend Deals" icon={Calendar} count={0} color="bg-indigo-500" />
-                <PromoTypeCard title="Seasonal" icon={Ticket} count={1} active color="bg-primary-500" />
-            </div>
-
-            <div className="rounded-xl bg-white p-1 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
-                <div className="p-4">
+            {/* Main Table Content */}
+            <div className="rounded-xl bg-white border border-gray-100 shadow-sm dark:bg-gray-900 dark:border-gray-800">
+                <div className="p-6">
                     <DataTable
                         columns={columns}
-                        data={data}
+                        data={promotionList}
+                        isLoading={isLoading}
                         searchKey="name"
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        filterValue={statusFilter}
+                        onFilterChange={setStatusFilter}
                         filterColumn="status"
                         filterOptions={[
-                            { label: 'Active', value: 'ACTIVE' },
-                            { label: 'Expired', value: 'EXPIRED' },
-                            { label: 'Deactivated', value: 'DEACTIVATED' },
+                            { label: 'Active', value: PromotionStatus.ACTIVE },
+                            { label: 'Expired', value: PromotionStatus.EXPIRED },
+                            { label: 'Inactive', value: PromotionStatus.INACTIVE },
                         ]}
                     />
                 </div>
             </div>
+
+            <PromotionModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+            />
         </div>
     );
-}
-
-function PromoTypeCard({ title, icon: Icon, count, active, color }: any) {
-    return (
-        <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900/50 group transition-all hover:border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-                <div className={`p-2 rounded-xl text-white ${color}`}>
-                    <Icon className="h-5 w-5" />
-                </div>
-                {active && <span className="flex h-2 w-2 rounded-full bg-green-500 ring-4 ring-green-500/10" />}
-            </div>
-            <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{title}</h3>
-                <p className="text-2xl font-black mt-1">{count}</p>
-                <p className="text-[10px] text-gray-400 uppercase mt-1">Active Programs</p>
-            </div>
-        </div>
-    )
 }

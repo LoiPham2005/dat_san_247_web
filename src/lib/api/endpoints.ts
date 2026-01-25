@@ -54,6 +54,10 @@ export const API_ENDPOINTS = {
     // Analytics/Audit
     ADMIN_ACTIVITY_LOGS: '/admin/analytics/logs',
 
+    // Promotions
+    ADMIN_PROMOTIONS: '/admin/promotions',
+    ADMIN_PROMOTION_BY_ID: (id: string) => `/admin/promotions/${id}`,
+
     // Staff Moderation (Keep for STAFF role)
     STAFF_PENDING_VENUES: '/staff/moderation/venues/pending',
     STAFF_APPROVE_VENUE: (id: string) => `/staff/moderation/venues/${id}/approve`,

@@ -8,34 +8,49 @@ import React, {
     useEffect,
     ReactNode
 } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils/format';
 
 interface DropdownContextType {
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
+    triggerRect: DOMRect | null;
+    setTriggerRect: (rect: DOMRect | null) => void;
 }
 
 const DropdownContext = createContext<DropdownContextType | undefined>(undefined);
 
+export const DropdownMenuLabel = ({ children, className }: { children: ReactNode, className?: string }) => (
+    <div className={cn("px-3 py-1.5 text-xs font-semibold text-gray-500", className)}>
+        {children}
+    </div>
+);
+
 export const DropdownMenu = ({ children }: { children: ReactNode }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (ref.current && !ref.current.contains(event.target as Node)) {
-                setIsOpen(false);
+                // If we use Portal, the content is outside ref. 
+                // We'll handle closer in DropdownMenuContent
             }
         };
 
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
+            window.addEventListener('scroll', () => setIsOpen(false), { once: true });
+            window.addEventListener('resize', () => setIsOpen(false), { once: true });
         }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, [isOpen]);
 
     return (
-        <DropdownContext.Provider value={{ isOpen, setIsOpen }}>
+        <DropdownContext.Provider value={{ isOpen, setIsOpen, triggerRect, setTriggerRect }}>
             <div ref={ref} className="relative inline-block text-left">
                 {children}
             </div>
@@ -51,10 +66,25 @@ export const DropdownMenuTrigger = ({
     asChild?: boolean
 }) => {
     const context = useContext(DropdownContext);
+    const triggerRef = useRef<HTMLDivElement>(null);
+
     if (!context) throw new Error("DropdownMenuTrigger must be used within DropdownMenu");
 
+    const handleToggle = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (triggerRef.current) {
+            context.setTriggerRect(triggerRef.current.getBoundingClientRect());
+        }
+        context.setIsOpen(!context.isOpen);
+    };
+
     return (
-        <div onClick={() => context.setIsOpen(!context.isOpen)} className="cursor-pointer inline-flex">
+        <div
+            ref={triggerRef}
+            onClick={handleToggle}
+            className="cursor-pointer inline-flex"
+        >
             {children}
         </div>
     );
@@ -62,7 +92,7 @@ export const DropdownMenuTrigger = ({
 
 interface DropdownMenuContentProps {
     children: ReactNode;
-    align?: 'start' | 'end' | 'center'; // mapped to left/right/center
+    align?: 'start' | 'end' | 'center';
     className?: string;
 }
 
@@ -72,23 +102,72 @@ export const DropdownMenuContent = ({
     className
 }: DropdownMenuContentProps) => {
     const context = useContext(DropdownContext);
-    if (!context) throw new Error("DropdownMenuContent must be used within DropdownMenu");
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
 
-    if (!context.isOpen) return null;
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
-    let alignClass = 'left-0';
-    if (align === 'end') alignClass = 'right-0';
-    if (align === 'center') alignClass = 'left-1/2 -translate-x-1/2';
+    if (!context || !context.isOpen || !context.triggerRect || !mounted) return null;
 
-    return (
-        <div className={cn(
-            "absolute top-full mt-2 w-56 rounded-xl border border-gray-100 bg-white shadow-xl z-50 dark:border-gray-800 dark:bg-gray-900 animate-in fade-in zoom-in-95 duration-100",
-            alignClass,
-            className
-        )}>
-            <div className="p-1">{children}</div>
-        </div>
+    const { triggerRect } = context;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    const contentWidth = 224; // w-56 = 14rem = 224px
+    const distanceToBottom = viewportHeight - triggerRect.bottom;
+    const openUp = distanceToBottom < 250;
+
+    // Calculate position
+    let top = openUp ? triggerRect.top - 8 : triggerRect.bottom + 8;
+    let left = triggerRect.left;
+
+    if (align === 'end') {
+        left = triggerRect.right - contentWidth;
+    } else if (align === 'center') {
+        left = triggerRect.left + (triggerRect.width / 2) - (contentWidth / 2);
+    }
+
+    // Boundary checks
+    if (left < 10) left = 10;
+    if (left + contentWidth > viewportWidth - 10) left = viewportWidth - contentWidth - 10;
+
+    const transformOrigin = openUp ? 'bottom' : 'top';
+    const translateClass = openUp ? '-translate-y-full' : '';
+
+    const content = (
+        <>
+            {/* Backdrop for closing */}
+            <div
+                className="fixed inset-0 z-[9998]"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    context.setIsOpen(false);
+                }}
+            />
+            <div
+                ref={contentRef}
+                style={{
+                    position: 'fixed',
+                    top: `${top}px`,
+                    left: `${left}px`,
+                    transformOrigin
+                }}
+                className={cn(
+                    "w-56 rounded-xl border border-gray-100 bg-white shadow-2xl z-[9999] dark:border-gray-800 dark:bg-gray-900 animate-in fade-in zoom-in-95 duration-100",
+                    translateClass,
+                    className
+                )}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="p-1">{children}</div>
+            </div>
+        </>
     );
+
+    return createPortal(content, document.body);
 };
 
 export const DropdownMenuItem = ({
@@ -99,7 +178,7 @@ export const DropdownMenuItem = ({
     closeOnClick = true
 }: {
     children: ReactNode;
-    onClick?: () => void;
+    onClick?: (e?: React.MouseEvent) => void;
     className?: string;
     asChild?: boolean;
     closeOnClick?: boolean;
@@ -107,6 +186,7 @@ export const DropdownMenuItem = ({
     const context = useContext(DropdownContext);
 
     const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault();
         e.stopPropagation();
         onClick?.();
         if (closeOnClick) {
