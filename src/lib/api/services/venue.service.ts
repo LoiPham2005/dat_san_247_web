@@ -116,6 +116,15 @@ export const venueService = {
         await axiosInstance.post(API_ENDPOINTS.ADMIN_REJECT_VENUE(id), { reason });
     },
 
+    adminDeleteVenue: async (id: string): Promise<void> => {
+        await axiosInstance.delete(API_ENDPOINTS.ADMIN_VENUE_BY_ID(id));
+    },
+
+    adminUpdateVenue: async (id: string, venueData: any): Promise<Venue> => {
+        const { data } = await axiosInstance.put(API_ENDPOINTS.ADMIN_VENUE_BY_ID(id), venueData);
+        return data.data;
+    },
+
     // Owner Courts
     getOwnerCourts: async (venueId: string): Promise<any[]> => {
         const { data } = await axiosInstance.get(API_ENDPOINTS.OWNER_COURTS_BY_VENUE(venueId));

@@ -26,7 +26,9 @@ export interface Venue {
     amenities?: any[];
     courts?: any[];
     isActive: boolean;
+    isFeatured: boolean;
     rating: number;
+
     totalReviews: number;
     openingTime: string;
     closingTime: string;

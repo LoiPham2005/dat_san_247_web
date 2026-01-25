@@ -74,4 +74,10 @@ export const API_ENDPOINTS = {
     ADMIN_BOOKING_BY_ID: (id: string) => `/staff/bookings/${id}`,
     ADMIN_CANCEL_BOOKING: (id: string) => `/staff/bookings/${id}/cancel`,
     ADMIN_REFUND_BOOKING: (id: string) => `/staff/bookings/${id}/refund`,
+
+
+    // ADMIN_ALL_BOOKINGS: '/admin/bookings',
+    // ADMIN_BOOKING_BY_ID: (id: string) => `/admin/bookings/${id}`,
+    // ADMIN_CANCEL_BOOKING: (id: string) => `/admin/bookings/${id}/cancel`,
+    // ADMIN_REFUND_BOOKING: (id: string) => `/admin/bookings/${id}/refund`,
 };

@@ -1,5 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { logger } from './lib/utils/logger';
 
 export default withAuth(
     function middleware(req) {
@@ -39,9 +40,11 @@ export default withAuth(
 
         // Staff routes protection
         if (url.startsWith('/staff') && token?.role !== 'staff' && token?.role !== 'admin') {
+            logger.info(`[Middleware] Redirecting unauthorized STAFF access: User Role=${token?.role}, URL=${url}`);
             return NextResponse.redirect(new URL('/', req.url));
         }
 
+        logger.info(`[Middleware] Allow: Role=${token?.role || 'Guest'}, URL=${url}`);
         return NextResponse.next();
     },
     {
