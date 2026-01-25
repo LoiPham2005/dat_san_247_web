@@ -1,42 +1,93 @@
 'use client';
 
-import { useSettingsStore } from '@/lib/store/settings.store';
+import { useState, useMemo } from 'react';
+import { BarChart3, LineChart as LineChartIcon, AreaChart as AreaChartIcon, TrendingUp, Layers, GitCompare } from 'lucide-react';
+import { DateRangeSelector, DateRange, generateMockData } from './DateRangeSelector';
+import { BarChartViz } from './charts/BarChartViz';
+import { LineChartViz } from './charts/LineChartViz';
+import { AreaChartViz } from './charts/AreaChartViz';
+import { SmoothLineChartViz } from './charts/SmoothLineChartViz';
+import { StackedBarChartViz } from './charts/StackedBarChartViz';
+import { ComparisonChartViz } from './charts/ComparisonChartViz';
+
+type ChartType = 'bar' | 'line' | 'area' | 'smooth' | 'stacked' | 'comparison';
+
+const chartTypes = [
+    { id: 'bar' as ChartType, name: 'Bar', icon: BarChart3, description: 'So sánh giá trị theo ngày' },
+    { id: 'line' as ChartType, name: 'Line', icon: LineChartIcon, description: 'Theo dõi xu hướng' },
+    { id: 'area' as ChartType, name: 'Area', icon: AreaChartIcon, description: 'Trực quan hóa tích lũy' },
+    { id: 'smooth' as ChartType, name: 'Smooth', icon: TrendingUp, description: 'Phân tích mượt mà' },
+    { id: 'stacked' as ChartType, name: 'Stacked', icon: Layers, description: 'So sánh nhiều nguồn' },
+    { id: 'comparison' as ChartType, name: 'Compare', icon: GitCompare, description: 'So sánh tuần này/trước' },
+];
 
 export const RevenueChart = () => {
-    const { theme } = useSettingsStore();
-    const isDark = theme === 'dark';
+    const [selectedChart, setSelectedChart] = useState<ChartType>('bar');
+    const [dateRange, setDateRange] = useState<DateRange>('today');
 
-    // SVG Mock Chart for Stability and Premium Look
+    // Generate mock data based on selected date range
+    const chartData = useMemo(() => generateMockData(dateRange), [dateRange]);
+
+    const renderChart = () => {
+        switch (selectedChart) {
+            case 'bar':
+                return <BarChartViz data={chartData} />;
+            case 'line':
+                return <LineChartViz data={chartData} />;
+            case 'area':
+                return <AreaChartViz data={chartData} />;
+            case 'smooth':
+                return <SmoothLineChartViz data={chartData} />;
+            case 'stacked':
+                return <StackedBarChartViz dateRange={dateRange} />;
+            case 'comparison':
+                return <ComparisonChartViz dateRange={dateRange} />;
+            default:
+                return <BarChartViz data={chartData} />;
+        }
+    };
+
     return (
-        <div className="h-[350px] w-full flex items-end justify-between gap-2 pt-10 relative">
-            {[40, 60, 45, 90, 75, 100, 85].map((height, i) => (
-                <div key={i} className="group relative flex-1 flex flex-col items-center justify-end h-full z-10">
-                    {/* Tooltip hint */}
-                    <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 bg-gray-900 text-white text-[10px] px-2 py-1 rounded shadow-xl pointer-events-none whitespace-nowrap z-20 dark:bg-gray-100 dark:text-gray-900 font-bold">
-                        ${height * 10} Revenue
-                    </div>
+        <div className="h-full w-full flex flex-col overflow-hidden">
+            {/* Header with Chart Type Selector and Date Range */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+                {/* Chart Type Buttons */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    {chartTypes.map((type) => {
+                        const Icon = type.icon;
+                        const isActive = selectedChart === type.id;
+                        return (
+                            <button
+                                key={type.id}
+                                onClick={() => setSelectedChart(type.id)}
+                                className={`
+                                    group relative flex items-center gap-2 px-3 py-2 rounded-xl font-medium text-xs
+                                    transition-all duration-300 hover:scale-105
+                                    ${isActive
+                                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:bg-gray-800'
+                                    }
+                                `}
+                            >
+                                <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`} />
+                                <span className="hidden md:inline">{type.name}</span>
 
-                    {/* Bar */}
-                    <div
-                        style={{ height: `${height}%` }}
-                        className="w-full max-w-[40px] bg-gradient-to-t from-primary-500/20 to-primary-500 rounded-t-lg transition-all duration-500 group-hover:from-primary-500/40 group-hover:to-primary-600 shadow-sm"
-                    />
-
-                    {/* Label */}
-                    <span className="mt-4 text-xs font-medium text-gray-400 dark:text-gray-500">
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]}
-                    </span>
-
-                    {/* Hover Glow */}
-                    <div className="absolute inset-x-0 bottom-8 h-full bg-primary-500/5 blur-xl group-hover:bg-primary-500/10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap dark:bg-gray-100 dark:text-gray-900 z-50">
+                                    {type.description}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
-            ))}
 
-            {/* Horizontal Grid lines (visual only) */}
-            <div className="absolute inset-0 pointer-events-none border-b border-gray-100 dark:border-gray-800 flex flex-col justify-between py-10 opacity-30">
-                <div className="border-t border-gray-100 dark:border-gray-800 w-full" />
-                <div className="border-t border-gray-100 dark:border-gray-800 w-full" />
-                <div className="border-t border-gray-100 dark:border-gray-800 w-full" />
+                {/* Date Range Selector */}
+                <DateRangeSelector value={dateRange} onChange={setDateRange} />
+            </div>
+
+            {/* Chart Container */}
+            <div className="flex-1 min-h-0 relative">
+                {renderChart()}
             </div>
         </div>
     );

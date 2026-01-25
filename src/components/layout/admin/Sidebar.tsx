@@ -4,15 +4,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/format';
 import { useAuthStore } from '@/lib/store/auth.store';
+import { useSidebarStore } from '@/lib/store/sidebar.store';
 import { ROLE_MENUS } from '@/lib/constants/menus';
 import { UserRole } from '@/types/auth.types';
-import { LogOut } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 
-export const AdminSidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) => {
+export const AdminSidebar = () => {
     const pathname = usePathname();
     const { user } = useAuthStore();
     const { logout } = useAuth();
+    const { isCollapsed, isMobileOpen, toggleCollapse, setMobileOpen } = useSidebarStore();
 
     const menus = user && user.role in ROLE_MENUS ? ROLE_MENUS[user.role as keyof typeof ROLE_MENUS] : [];
 
@@ -22,26 +24,53 @@ export const AdminSidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: 
             <div
                 className={cn(
                     "fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm transition-opacity md:hidden",
-                    isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                    isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
                 )}
-                onClick={onClose}
+                onClick={() => setMobileOpen(false)}
             />
 
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-50 w-64 transform bg-white/80 backdrop-blur-xl border-r border-gray-200 transition-transform duration-300 ease-in-out md:translate-x-0 dark:bg-gray-900/80 dark:border-gray-800",
-                isOpen ? "translate-x-0" : "-translate-x-full"
+                "fixed inset-y-0 left-0 z-50 transform bg-white/95 backdrop-blur-xl border-r border-gray-200 transition-all duration-300 ease-in-out dark:bg-gray-900/95 dark:border-gray-800",
+                // Desktop: show based on collapsed state
+                "md:translate-x-0",
+                isCollapsed ? "md:w-20" : "md:w-64",
+                // Mobile: show/hide based on isMobileOpen
+                isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full"
             )}>
 
-                <div className="flex h-16 items-center justify-center border-b border-gray-200 px-6 dark:border-gray-800">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary-600">
-                        <div className="h-8 w-8 rounded-lg bg-primary-600 flex items-center justify-center text-white">
+                {/* Logo Header */}
+                <div className={cn(
+                    "flex h-16 items-center border-b border-gray-200 dark:border-gray-800 transition-all",
+                    isCollapsed ? "justify-center px-2" : "justify-between px-4"
+                )}>
+                    <Link href="/" className={cn(
+                        "flex items-center gap-2 font-bold text-xl text-primary-600",
+                        isCollapsed && "justify-center"
+                    )}>
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-primary-500/30">
                             DS
                         </div>
-                        <span>DatSan247</span>
+                        {!isCollapsed && <span className="hidden md:inline">DatSan247</span>}
                     </Link>
+
+                    {/* Collapse Toggle Button - Desktop only */}
+                    <button
+                        onClick={toggleCollapse}
+                        className={cn(
+                            "hidden md:flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700",
+                            isCollapsed && "absolute -right-3 top-6 bg-white border border-gray-200 shadow-md dark:bg-gray-900 dark:border-gray-700"
+                        )}
+                        title={isCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+                    >
+                        {isCollapsed ? (
+                            <ChevronRight className="h-4 w-4" />
+                        ) : (
+                            <ChevronLeft className="h-4 w-4" />
+                        )}
+                    </button>
                 </div>
 
-                <div className="flex flex-col justify-between h-[calc(100vh-4rem)] p-4">
+                <div className="flex flex-col justify-between h-[calc(100vh-4rem)] p-3">
                     <nav className="space-y-1">
                         {menus.map((item: any) => {
                             const Icon = item.icon;
@@ -51,27 +80,60 @@ export const AdminSidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: 
                                 <Link
                                     key={item.href}
                                     href={item.href}
+                                    onClick={() => setMobileOpen(false)}
                                     className={cn(
-                                        'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200',
+                                        'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200',
+                                        isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3',
                                         isActive
                                             ? 'bg-primary-50 text-primary-600 shadow-sm dark:bg-primary-900/20 dark:text-primary-400'
                                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50'
                                     )}
+                                    title={isCollapsed ? item.label : undefined}
                                 >
-                                    <Icon className={cn("h-5 w-5", isActive ? "text-primary-600 dark:text-primary-400" : "text-gray-400")} />
-                                    {item.label}
+                                    <Icon className={cn(
+                                        "h-5 w-5 flex-shrink-0",
+                                        isActive ? "text-primary-600 dark:text-primary-400" : "text-gray-400"
+                                    )} />
+
+                                    {/* Label - hidden when collapsed on desktop */}
+                                    <span className={cn(
+                                        "transition-opacity duration-200",
+                                        isCollapsed ? "md:hidden" : ""
+                                    )}>
+                                        {item.label}
+                                    </span>
+
+                                    {/* Tooltip for collapsed state */}
+                                    {isCollapsed && (
+                                        <div className="absolute left-full ml-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 dark:bg-gray-100 dark:text-gray-900 hidden md:block">
+                                            {item.label}
+                                        </div>
+                                    )}
                                 </Link>
                             );
                         })}
                     </nav>
 
-                    <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+                    <div className="border-t border-gray-200 pt-3 dark:border-gray-800">
                         <button
                             onClick={() => logout()}
-                            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className={cn(
+                                'group relative flex w-full items-center rounded-xl text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20',
+                                isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'
+                            )}
+                            title={isCollapsed ? "Đăng xuất" : undefined}
                         >
-                            <LogOut className="h-5 w-5" />
-                            Sign Out
+                            <LogOut className="h-5 w-5 flex-shrink-0" />
+                            <span className={cn(isCollapsed ? "md:hidden" : "")}>
+                                Đăng xuất
+                            </span>
+
+                            {/* Tooltip for collapsed state */}
+                            {isCollapsed && (
+                                <div className="absolute left-full ml-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 dark:bg-gray-100 dark:text-gray-900 hidden md:block">
+                                    Đăng xuất
+                                </div>
+                            )}
                         </button>
                     </div>
                 </div>

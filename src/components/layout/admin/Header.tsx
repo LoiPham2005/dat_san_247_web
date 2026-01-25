@@ -2,6 +2,7 @@
 
 import { useSettingsStore } from '@/lib/store/settings.store';
 import { useAuthStore } from '@/lib/store/auth.store';
+import { useSidebarStore } from '@/lib/store/sidebar.store';
 import {
     Bell,
     Search,
@@ -10,42 +11,53 @@ import {
     Leaf,
     Globe,
     ChevronDown,
-    Menu
+    Menu,
+    PanelLeftClose,
+    PanelLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { GlobalSearch } from './GlobalSearch';
 
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils/format';
 
-export const AdminHeader = ({ onMenuClick }: { onMenuClick?: () => void }) => {
+export const AdminHeader = () => {
     const { theme, setTheme, language, setLanguage } = useSettingsStore();
     const { user } = useAuthStore();
+    const { isCollapsed, toggleCollapse, setMobileOpen } = useSidebarStore();
 
     // Simple Dropdown State
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isThemeOpen, setIsThemeOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-    // Close on click outside (simplified)
-    // In a real app I'd use a hook like useOnClickOutside
-
     return (
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-gray-200 bg-white/80 px-6 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/80">
             <div className="flex items-center gap-4">
+                {/* Mobile Menu Button */}
                 <button
-                    onClick={onMenuClick}
-                    className="mr-2 md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-md"
+                    onClick={() => setMobileOpen(true)}
+                    className="mr-2 md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg dark:hover:bg-gray-800"
                 >
                     <Menu className="h-5 w-5" />
                 </button>
 
-                <div className="relative hidden sm:block">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Search anything..."
-                        className="h-10 w-64 rounded-full border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    />
+                {/* Desktop Sidebar Toggle */}
+                <button
+                    onClick={toggleCollapse}
+                    className="hidden md:flex items-center gap-2 p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors dark:hover:bg-gray-800"
+                    title={isCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+                >
+                    {isCollapsed ? (
+                        <PanelLeft className="h-5 w-5" />
+                    ) : (
+                        <PanelLeftClose className="h-5 w-5" />
+                    )}
+                </button>
+
+                {/* Global Search */}
+                <div className="hidden sm:block">
+                    <GlobalSearch />
                 </div>
             </div>
 
@@ -60,11 +72,14 @@ export const AdminHeader = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                         <span className="hidden sm:inline-block uppercase">{language}</span>
                     </button>
                     {isLangOpen && (
-                        <div className="absolute right-0 mt-2 w-32 origin-top-right rounded-lg border border-gray-200 bg-white p-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-700 dark:bg-gray-800">
-                            <button onClick={() => { setLanguage('en'); setIsLangOpen(false); }} className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">English</button>
-                            <button onClick={() => { setLanguage('vi'); setIsLangOpen(false); }} className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">Tiếng Việt</button>
-                            <button onClick={() => { setLanguage('ja'); setIsLangOpen(false); }} className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">日本語</button>
-                        </div>
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setIsLangOpen(false)} />
+                            <div className="absolute right-0 mt-2 w-32 origin-top-right rounded-lg border border-gray-200 bg-white p-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-gray-700 dark:bg-gray-800 z-50">
+                                <button onClick={() => { setLanguage('en'); setIsLangOpen(false); }} className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">English</button>
+                                <button onClick={() => { setLanguage('vi'); setIsLangOpen(false); }} className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">Tiếng Việt</button>
+                                <button onClick={() => { setLanguage('ja'); setIsLangOpen(false); }} className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">日本語</button>
+                            </div>
+                        </>
                     )}
                 </div>
 
