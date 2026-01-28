@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { AdminSidebar } from '@/components/layout/admin/Sidebar';
 import { AdminHeader } from '@/components/layout/admin/Header';
