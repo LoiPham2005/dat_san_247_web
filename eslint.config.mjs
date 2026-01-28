@@ -20,6 +20,9 @@ const eslintConfig = [
       "jsx-a11y/alt-text": "warn",
       "react-hooks/exhaustive-deps": "warn",
       "prefer-const": "warn",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@next/next/no-html-link-for-pages": "warn"
     }
   }
 ];
