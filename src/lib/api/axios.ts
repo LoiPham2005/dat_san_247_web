@@ -3,8 +3,13 @@ import { useAuthStore } from '@/lib/store/auth.store';
 import { signOut } from 'next-auth/react';
 import { logger } from '@/lib/utils/logger';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-// const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dat-san-247.up.railway.app/api/v1';
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+// Đảm bảo URL luôn bắt đầu bằng http hoặc https
+const BASE_URL = rawBaseUrl.startsWith('http') ? rawBaseUrl : `https://${rawBaseUrl}`;
+
+if (typeof window !== 'undefined') {
+    console.log('🌐 [Client Axios] URL:', BASE_URL);
+}
 
 const axiosInstance: AxiosInstance = axios.create({
     baseURL: BASE_URL,
