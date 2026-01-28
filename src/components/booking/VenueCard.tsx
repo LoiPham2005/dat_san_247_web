@@ -19,8 +19,8 @@ export const VenueCard = ({ venue }: VenueCardProps) => {
                     <h3 className="font-bold text-lg mb-1">{venue.name}</h3>
                     <p className="text-gray-500 text-sm mb-2 line-clamp-2">{venue.address}</p>
                     <div className="flex justify-between items-center mt-4">
-                        <span className="font-semibold text-primary-600">{venue.pricePerHour.toLocaleString()} VND/h</span>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">Rating: {venue.rating}</span>
+                        <span className="font-semibold text-primary-600">{(venue.pricePerHour || 0).toLocaleString()} VND/h</span>
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">Rating: {venue.rating || 0}</span>
                     </div>
                 </CardContent>
             </Card>

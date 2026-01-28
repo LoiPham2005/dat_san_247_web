@@ -30,6 +30,7 @@ export interface Venue {
     rating: number;
 
     totalReviews: number;
+    pricePerHour?: number;
     openingTime: string;
     closingTime: string;
     createdAt: string;
