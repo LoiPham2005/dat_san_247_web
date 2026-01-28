@@ -4,6 +4,7 @@ import { signOut } from 'next-auth/react';
 import { logger } from '@/lib/utils/logger';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dat-san-247.up.railway.app/api/v1';
 
 const axiosInstance: AxiosInstance = axios.create({
     baseURL: BASE_URL,
