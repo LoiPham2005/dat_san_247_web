@@ -16,7 +16,7 @@ export const BookingCard = ({ booking, onCancel }: BookingCardProps) => {
                 <div>
                     <h3 className="font-bold text-lg">{booking.venue?.name}</h3>
                     <p className="text-gray-600">{formatDate(booking.startTime)} | {formatTime(booking.startTime)} - {formatTime(booking.endTime)}</p>
-                    <p className="font-semibold text-primary-600">{formatCurrency(booking.totalPrice)}</p>
+                    <p className="font-semibold text-primary-600">{formatCurrency(booking.totalAmount)}</p>
                     <span className={`inline-block px-2 py-1 rounded text-xs mt-2 ${booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                         {booking.status}
                     </span>
