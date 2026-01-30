@@ -30,5 +30,36 @@ export const bookingService = {
     requestInvoice: async (id: string, data: any): Promise<any> => {
         const response = await axiosInstance.post(API_ENDPOINTS.REQUEST_INVOICE(id), data);
         return response.data;
+    },
+
+    // Owner Bookings
+    getOwnerBookings: async (params?: any): Promise<any> => {
+        const response = await axiosInstance.get(API_ENDPOINTS.OWNER_BOOKINGS, { params });
+        return response.data;
+    },
+
+    ownerConfirm: async (id: string): Promise<any> => {
+        const response = await axiosInstance.post(API_ENDPOINTS.OWNER_BOOKING_ACTION(id, 'confirm'));
+        return response.data;
+    },
+
+    ownerCheckIn: async (id: string): Promise<any> => {
+        const response = await axiosInstance.post(API_ENDPOINTS.OWNER_BOOKING_ACTION(id, 'check-in'));
+        return response.data;
+    },
+
+    ownerComplete: async (id: string): Promise<any> => {
+        const response = await axiosInstance.post(API_ENDPOINTS.OWNER_BOOKING_ACTION(id, 'complete'));
+        return response.data;
+    },
+
+    ownerCancel: async (id: string, reason: string): Promise<any> => {
+        const response = await axiosInstance.post(API_ENDPOINTS.OWNER_BOOKING_ACTION(id, 'cancel'), { reason });
+        return response.data;
+    },
+
+    createWalkIn: async (data: any): Promise<any> => {
+        const response = await axiosInstance.post(API_ENDPOINTS.OWNER_BOOKINGS, data);
+        return response.data;
     }
 };

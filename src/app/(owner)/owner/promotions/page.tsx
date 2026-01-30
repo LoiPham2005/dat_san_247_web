@@ -13,8 +13,116 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { useState } from 'react';
+import { useOwnerPromotions } from '@/lib/hooks/useOwnerPromotions';
+import { PromotionModal } from '@/components/owner/PromotionModal';
+import { Input } from '@/components/ui/input';
+import { RotateCcw } from 'lucide-react';
+import { Promotion, DiscountType } from '@/types/promotion.types';
 
 export default function OwnerPromotionsPage() {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const {
+        promotions,
+        isLoading,
+        isFetching,
+        refetch,
+        deletePromotion
+    } = useOwnerPromotions({
+        search: searchTerm
+    });
+
+    const columns: ColumnDef<Promotion>[] = [
+        {
+            accessorKey: "name",
+            header: "Promotion Name",
+            cell: ({ row }) => (
+                <div>
+                    <p className="font-semibold text-sm">{row.original.name}</p>
+                    <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 dark:bg-gray-800 font-mono">{row.original.code}</code>
+                </div>
+            )
+        },
+        {
+            accessorKey: "discount",
+            header: "Discount",
+            cell: ({ row }) => {
+                const isPercent = row.original.discountType === DiscountType.PERCENTAGE;
+                return (
+                    <div className="font-bold text-sm">
+                        {isPercent ? `${row.original.discountValue}% OFF` : `${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(row.original.discountValue)} OFF`}
+                    </div>
+                )
+            }
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => (
+                <Badge variant={row.original.status === 'ACTIVE' ? 'success' : 'secondary'}>
+                    {row.original.status}
+                </Badge>
+            )
+        },
+        {
+            accessorKey: "usage",
+            header: "Usage",
+            cell: ({ row }) => {
+                const used = row.original.usageCount || 0;
+                const limit = row.original.usageLimit || 0;
+                const percent = limit > 0 ? (used / limit) * 100 : 0;
+                return (
+                    <div className="w-[120px] space-y-1">
+                        <div className="flex justify-between text-[10px] text-gray-500">
+                            <span>{used} used</span>
+                            <span>{limit} total</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden dark:bg-gray-800">
+                            <div className="h-full bg-primary-500 rounded-full" style={{ width: `${Math.min(percent, 100)}%` }} />
+                        </div>
+                    </div>
+                )
+            }
+        },
+        {
+            accessorKey: "expiry",
+            header: "Expires",
+            cell: ({ row }) => <span className="text-xs text-gray-500">{new Date(row.original.validTo).toLocaleDateString()}</span>
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                            navigator.clipboard.writeText(row.original.code);
+                        }}>
+                            <Copy className="mr-2 h-4 w-4" /> Copy Code
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => {
+                                if (confirm('Are you sure you want to delete this promotion?')) {
+                                    deletePromotion(row.original.id);
+                                }
+                            }}
+                        >
+                            Delete Promotion
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )
+        }
+    ];
+
     return (
         <div className="space-y-8 pb-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -30,32 +138,45 @@ export default function OwnerPromotionsPage() {
                     <Button variant="outline">
                         <BarChart3 className="mr-2 h-4 w-4" /> Performance
                     </Button>
-                    <Button>
+                    <Button onClick={() => setIsModalOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Create New Deal
                     </Button>
                 </div>
             </div>
 
+            <PromotionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
             {/* Promo Types Quick View */}
             <div className="grid gap-6 md:grid-cols-4">
-                <PromoTypeCard title="Flash Sales" icon={Zap} count={1} active color="bg-orange-500" />
-                <PromoTypeCard title="Happy Hour" icon={Clock} count={2} active color="bg-blue-500" />
-                <PromoTypeCard title="Member Deals" icon={UsersIcon} count={5} color="bg-purple-500" />
-                <PromoTypeCard title="Vouchers" icon={Ticket} count={3} active color="bg-green-500" />
+                <PromoTypeCard title="Flash Sales" icon={Zap} count={promotions.filter((p: any) => p.discountType === DiscountType.PERCENTAGE && p.discountValue > 50).length} active color="bg-orange-500" />
+                <PromoTypeCard title="Happy Hour" icon={Clock} count={promotions.filter((p: any) => p.name.toLowerCase().includes('happy hour')).length} active color="bg-blue-500" />
+                <PromoTypeCard title="Member Deals" icon={UsersIcon} count={promotions.filter((p: any) => p.description?.toLowerCase().includes('member')).length} color="bg-purple-500" />
+                <PromoTypeCard title="Vouchers" icon={Ticket} count={promotions.length} active color="bg-green-500" />
+            </div>
+
+            <div className="flex gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                    <Input
+                        placeholder="Search by code..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-4"
+                    />
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => refetch()}>
+                    <RotateCcw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                </Button>
             </div>
 
             <div className="rounded-xl bg-white p-1 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
                 <div className="p-4">
                     <DataTable
                         columns={columns}
-                        data={MOCK_PROMOTIONS}
-                        searchKey="name"
-                        filterColumn="status"
-                        filterOptions={[
-                            { label: 'Active', value: 'ACTIVE' },
-                            { label: 'Expired', value: 'EXPIRED' },
-                        ]}
+                        data={promotions}
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        isLoading={isLoading}
                     />
                 </div>
             </div>
@@ -63,83 +184,6 @@ export default function OwnerPromotionsPage() {
     );
 }
 
-const columns: ColumnDef<any>[] = [
-    {
-        accessorKey: "name",
-        header: "Promotion Name",
-        cell: ({ row }) => (
-            <div>
-                <p className="font-semibold text-sm">{row.original.name}</p>
-                <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 dark:bg-gray-800 font-mono">{row.original.code}</code>
-            </div>
-        )
-    },
-    {
-        accessorKey: "discount",
-        header: "Discount",
-        cell: ({ row }) => {
-            const isPercent = row.original.type === 'PERCENTAGE';
-            return (
-                <div className="font-bold text-sm">
-                    {isPercent ? `${row.original.value}% OFF` : `-${row.original.value.toLocaleString()}đ`}
-                </div>
-            )
-        }
-    },
-    {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => (
-            <Badge variant={row.original.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                {row.original.status}
-            </Badge>
-        )
-    },
-    {
-        accessorKey: "usage",
-        header: "Usage",
-        cell: ({ row }) => {
-            const percent = (row.original.usedCount / row.original.usageLimit) * 100;
-            return (
-                <div className="w-[120px] space-y-1">
-                    <div className="flex justify-between text-[10px] text-gray-500">
-                        <span>{row.original.usedCount} used</span>
-                        <span>{row.original.usageLimit} total</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden dark:bg-gray-800">
-                        <div className="h-full bg-primary-500 rounded-full" style={{ width: `${percent}%` }} />
-                    </div>
-                </div>
-            )
-        }
-    },
-    {
-        accessorKey: "expiry",
-        header: "Expires",
-        cell: ({ row }) => <span className="text-xs text-gray-500">{new Date(row.original.expiry).toLocaleDateString()}</span>
-    },
-    {
-        id: "actions",
-        cell: ({ row }) => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                        <Copy className="mr-2 h-4 w-4" /> Copy Code
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
-                        Stop Campaign
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        )
-    }
-];
 
 function PromoTypeCard({ title, icon: Icon, count, active, color }: any) {
     return (

@@ -32,6 +32,7 @@ export const ROLE_MENUS = {
         { label: 'Notifications', icon: Bell, href: '/admin/notifications' },
         { label: 'Reports', icon: BarChart3, href: '/admin/reports' },
         { label: 'Moderation', icon: Shield, href: '/admin/moderation' },
+        { label: 'Roles', icon: Shield, href: '/admin/roles' },
         { label: 'Settings', icon: Settings, href: '/admin/settings' },
     ],
     [UserRole.OWNER]: [

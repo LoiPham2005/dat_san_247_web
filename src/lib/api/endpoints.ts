@@ -63,6 +63,8 @@ export const API_ENDPOINTS = {
     // Promotions
     ADMIN_PROMOTIONS: '/admin/promotions',
     ADMIN_PROMOTION_BY_ID: (id: string) => `/admin/promotions/${id}`,
+    OWNER_PROMOTIONS: '/owner/promotions',
+    OWNER_PROMOTION_BY_ID: (id: string) => `/owner/promotions/${id}`,
     PUBLIC_PROMOTIONS: '/promotions',
 
     // Staff Moderation (Keep for STAFF role)

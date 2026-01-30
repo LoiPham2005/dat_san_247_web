@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Calendar as CalendarIcon,
     ListFilter,
@@ -11,13 +11,14 @@ import {
     XCircle,
     MoreHorizontal,
     Printer,
-    MessageCircle
+    MessageCircle,
+    RotateCcw,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { MOCK_BOOKINGS } from "@/lib/constants/mock-data";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -25,9 +26,169 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { useOwnerBookings } from '@/lib/hooks/useOwnerBookings';
+import { useVenueStore } from '@/lib/store/venue.store';
+import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { NewBookingModal } from '@/components/owner/NewBookingModal';
+import { BookingCalendar } from '@/components/owner/BookingCalendar';
+import { BookingTimeline } from '@/components/owner/BookingTimeline';
 
 export default function OwnerBookingsPage() {
     const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'timeline'>('list');
+    const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
+
+    // Filters state
+    const [searchTerm, setSearchTerm] = useState('');
+    const [venueId, setVenueId] = useState('');
+    const [status, setStatus] = useState('');
+    const [date, setDate] = useState('');
+
+    const {
+        bookings,
+        isLoading,
+        isFetching,
+        confirmBooking,
+        checkInBooking,
+        completeBooking,
+        cancelBooking,
+        refetch
+    } = useOwnerBookings({
+        search: searchTerm,
+        venueId: venueId === 'all' ? '' : venueId,
+        status: status === 'all' ? '' : status,
+        date: date
+    });
+
+    const { venues, fetchOwnerVenues } = useVenueStore();
+    const { toast } = useToast();
+
+    useEffect(() => {
+        fetchOwnerVenues();
+    }, [fetchOwnerVenues]);
+
+    const handleAction = (action: string, id: string) => {
+        switch (action) {
+            case 'confirm':
+                confirmBooking(id);
+                break;
+            case 'check-in':
+                checkInBooking(id);
+                break;
+            case 'complete':
+                completeBooking(id);
+                break;
+            case 'cancel':
+                const reason = window.prompt('Enter cancellation reason:');
+                if (reason !== null) {
+                    cancelBooking({ id, reason });
+                }
+                break;
+        }
+    };
+
+    const columns: ColumnDef<any>[] = [
+        {
+            accessorKey: "bookingCode",
+            header: "ID",
+            cell: ({ row }) => <span className="font-mono text-xs font-bold text-gray-500">#{row.original.bookingCode || row.original.id.slice(0, 8)}</span>
+        },
+        {
+            header: "Customer",
+            cell: ({ row }) => (
+                <div>
+                    <p className="font-medium text-sm text-gray-900 dark:text-white">{row.original.customer?.fullName || 'Walk-in'}</p>
+                    <p className="text-xs text-gray-500">{row.original.customer?.phone || 'N/A'}</p>
+                </div>
+            )
+        },
+        {
+            header: "Venue / Court",
+            cell: ({ row }) => (
+                <div>
+                    <p className="text-sm font-medium">{row.original.venue?.name}</p>
+                    <p className="text-xs text-gray-500">{row.original.court?.name}</p>
+                </div>
+            )
+        },
+        {
+            header: "Schedule",
+            cell: ({ row }) => (
+                <div>
+                    <p className="text-sm font-medium">{row.original.bookingDate}</p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> {row.original.startTime?.slice(0, 5)} - {row.original.endTime?.slice(0, 5)}
+                    </p>
+                </div>
+            )
+        },
+        {
+            header: "Price",
+            cell: ({ row }) => <span className="font-bold text-primary-600">
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(row.original.totalPrice)}
+            </span>
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => {
+                const status = row.original.status;
+                const variants: Record<string, any> = {
+                    'COMPLETED': 'success',
+                    'CONFIRMED': 'info',
+                    'PENDING': 'warning',
+                    'CANCELLED': 'danger',
+                    'CHECKED_IN': 'info'
+                };
+                return (
+                    <Badge variant={variants[status] || 'secondary'}>
+                        {status}
+                    </Badge>
+                )
+            }
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {row.original.status === 'PENDING' && (
+                            <DropdownMenuItem onClick={() => handleAction('confirm', row.original.id)}>
+                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Confirm Booking
+                            </DropdownMenuItem>
+                        )}
+                        {row.original.status === 'CONFIRMED' && (
+                            <DropdownMenuItem onClick={() => handleAction('check-in', row.original.id)}>
+                                <CheckCircle2 className="mr-2 h-4 w-4 text-blue-600" /> Check In
+                            </DropdownMenuItem>
+                        )}
+                        {row.original.status === 'CHECKED_IN' && (
+                            <DropdownMenuItem onClick={() => handleAction('complete', row.original.id)}>
+                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Complete
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem>
+                            <MessageCircle className="mr-2 h-4 w-4 text-gray-600" /> Chat Customer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <Printer className="mr-2 h-4 w-4" /> Print Invoice
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {(row.original.status === 'PENDING' || row.original.status === 'CONFIRMED') && (
+                            <DropdownMenuItem onClick={() => handleAction('cancel', row.original.id)} className="text-red-600">
+                                <XCircle className="mr-2 h-4 w-4" /> Cancel Booking
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )
+        }
+    ];
 
     return (
         <div className="space-y-8 pb-8">
@@ -61,38 +222,51 @@ export default function OwnerBookingsPage() {
                             Timeline
                         </button>
                     </div>
-                    <Button>
+                    <Button onClick={() => setIsNewBookingModalOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         New Booking
                     </Button>
                 </div>
             </div>
 
+            <NewBookingModal
+                isOpen={isNewBookingModalOpen}
+                onClose={() => setIsNewBookingModalOpen(false)}
+            />
+
             {/* Filters Row */}
-            <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                        placeholder="Search by customer name, phone or booking ID..."
-                        className="h-10 w-full rounded-lg border border-gray-200 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-800"
-                    />
-                </div>
-                <select className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:border-primary-500 focus:outline-none dark:bg-gray-900 dark:border-gray-800">
-                    <option>All Venues</option>
-                    <option>Sân 1</option>
-                    <option>Sân 2</option>
-                </select>
-                <select className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:border-primary-500 focus:outline-none dark:bg-gray-900 dark:border-gray-800">
-                    <option>All Status</option>
-                    <option>Confirmed</option>
-                    <option>Pending</option>
-                    <option>Completed</option>
-                    <option>Cancelled</option>
-                </select>
-                <input
-                    type="date"
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <select
                     className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:border-primary-500 focus:outline-none dark:bg-gray-900 dark:border-gray-800"
+                    value={venueId}
+                    onChange={(e) => setVenueId(e.target.value)}
+                >
+                    <option value="all">All Venues</option>
+                    {venues.map(v => (
+                        <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                </select>
+                <select
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:border-primary-500 focus:outline-none dark:bg-gray-900 dark:border-gray-800"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                >
+                    <option value="all">All Status</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="CHECKED_IN">Checked In</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+                <Input
+                    type="date"
+                    className="h-10 w-auto"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                 />
+                <Button variant="ghost" size="icon" onClick={() => refetch()}>
+                    <RotateCcw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                </Button>
             </div>
 
             {/* Main Content */}
@@ -101,119 +275,26 @@ export default function OwnerBookingsPage() {
                     <div className="p-4">
                         <DataTable
                             columns={columns}
-                            data={MOCK_BOOKINGS}
-                            searchKey="customer"
+                            data={bookings}
+                            searchValue={searchTerm}
+                            onSearchChange={(val) => {
+                                setSearchTerm(val);
+                            }}
+                            isLoading={isFetching}
                         />
                     </div>
                 )}
                 {viewMode === 'calendar' && (
-                    <div className="h-[600px] flex items-center justify-center text-gray-400">
-                        <div className="text-center">
-                            <CalendarIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                            <p>Calendar View Integration Required</p>
-                        </div>
+                    <div className="h-[700px] p-2">
+                        <BookingCalendar bookings={bookings} />
                     </div>
                 )}
                 {viewMode === 'timeline' && (
-                    <div className="h-[600px] flex items-center justify-center text-gray-400">
-                        <div className="text-center">
-                            <Clock className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                            <p>Timeline View Integration Required</p>
-                        </div>
+                    <div className="h-[700px] p-2">
+                        <BookingTimeline bookings={bookings} venueId={venueId} />
                     </div>
                 )}
             </div>
         </div>
     );
 }
-
-const columns: ColumnDef<any>[] = [
-    {
-        accessorKey: "id",
-        header: "Booking ID",
-        cell: ({ row }) => <span className="font-mono text-xs font-bold text-gray-500">#{row.original.id}</span>
-    },
-    {
-        accessorKey: "customer",
-        header: "Customer",
-        cell: ({ row }) => (
-            <div>
-                <p className="font-medium text-sm text-gray-900 dark:text-white">{row.original.customer}</p>
-                <p className="text-xs text-gray-500">0901234567</p>
-            </div>
-        )
-    },
-    {
-        accessorKey: "venue",
-        header: "Venue",
-        cell: ({ row }) => (
-            <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
-                <span className="text-sm">{row.original.venue}</span>
-            </div>
-        )
-    },
-    {
-        accessorKey: "schedule",
-        header: "Schedule",
-        cell: ({ row }) => (
-            <div>
-                <p className="text-sm font-medium">{row.original.date}</p>
-                <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {row.original.time}
-                </p>
-            </div>
-        )
-    },
-    {
-        accessorKey: "amount",
-        header: "Price",
-        cell: ({ row }) => <span className="font-bold text-primary-600">{row.original.amount}</span>
-    },
-    {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-            const status = row.original.status;
-            return (
-                <Badge variant={
-                    status === 'COMPLETED' ? 'success' :
-                        status === 'CONFIRMED' ? 'info' :
-                            status === 'PENDING' ? 'warning' : 'danger'
-                }>
-                    {status}
-                </Badge>
-            )
-        }
-    },
-    {
-        id: "actions",
-        cell: ({ row }) => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                        <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Check In
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <MessageCircle className="mr-2 h-4 w-4 text-blue-600" /> Chat Customer
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <Printer className="mr-2 h-4 w-4" /> Print Invoice
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                        <Clock className="mr-2 h-4 w-4" /> Reschedule
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        <XCircle className="mr-2 h-4 w-4 text-red-600" /> Cancel Booking
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        )
-    }
-];
