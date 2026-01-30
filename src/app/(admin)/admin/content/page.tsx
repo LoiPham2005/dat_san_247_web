@@ -33,11 +33,17 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from '@/components/ui/textarea';
+import axiosInstance from '@/lib/api/axios';
+import { API_ENDPOINTS } from '@/lib/api/endpoints';
 
 export default function ContentPage() {
     const [activeTab, setActiveTab] = useState('banners');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBanner, setEditingBanner] = useState<any>(null);
+    const [editingBlog, setEditingBlog] = useState<any>(null);
+    const [isBlogModalOpen, setIsBlogModalOpen] = useState(false);
+    const [editingEmail, setEditingEmail] = useState<any>(null);
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -57,6 +63,12 @@ export default function ContentPage() {
         if (activeTab === 'banners') {
             setEditingBanner(null);
             setIsModalOpen(true);
+        } else if (activeTab === 'blog') {
+            setEditingBlog(null);
+            setIsBlogModalOpen(true);
+        } else if (activeTab === 'email') {
+            setEditingEmail(null);
+            setIsEmailModalOpen(true);
         }
     };
 
@@ -102,8 +114,14 @@ export default function ContentPage() {
                     setEditingBanner(banner);
                     setIsModalOpen(true);
                 }} />}
-                {activeTab === 'blog' && <BlogSection />}
-                {activeTab === 'email' && <EmailSection />}
+                {activeTab === 'blog' && <BlogSection onEdit={(post) => {
+                    setEditingBlog(post);
+                    setIsBlogModalOpen(true);
+                }} />}
+                {activeTab === 'email' && <EmailSection onEdit={(template) => {
+                    setEditingEmail(template);
+                    setIsEmailModalOpen(true);
+                }} />}
                 {activeTab === 'push' && <PushSection />}
             </div>
 
@@ -111,6 +129,18 @@ export default function ContentPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 banner={editingBanner}
+            />
+
+            <BlogModal
+                isOpen={isBlogModalOpen}
+                onClose={() => setIsBlogModalOpen(false)}
+                post={editingBlog}
+            />
+
+            <EmailModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                template={editingEmail}
             />
         </div>
     );
@@ -347,53 +377,338 @@ function BannerModal({ isOpen, onClose, banner }: { isOpen: boolean, onClose: ()
     );
 }
 
-function BlogSection() {
+function BlogSection({ onEdit }: { onEdit: (post: any) => void }) {
+    const { useBlogsQuery, deleteBlogMutation } = useContent();
+    const { data: posts, isLoading } = useBlogsQuery();
+    const { toast } = useToast();
+
+    if (isLoading) {
+        return <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-24 animate-pulse bg-gray-100 rounded-2xl" />)}</div>
+    }
+
+    const handleDelete = async (id: string) => {
+        if (confirm('Delete this post?')) {
+            try {
+                await deleteBlogMutation.mutateAsync(id);
+                toast({ title: 'Deleted' });
+            } catch (err) {
+                toast({ title: 'Error', variant: 'destructive' });
+            }
+        }
+    }
+
+    const postList = Array.isArray(posts) ? posts : [];
+
     return (
         <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-6 p-4 rounded-2xl border border-gray-100 bg-white hover:border-primary-500 transition-all dark:border-gray-800 dark:bg-gray-900 shadow-sm">
-                    <div className="h-20 w-32 rounded-lg bg-gray-100 overflow-hidden shrink-0">
-                        <img src={`https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&auto=format&fit=crop&q=60&index=${i}`} className="w-full h-full object-cover" />
+            {postList.map((post: any) => (
+                <div key={post.id} className="flex items-center gap-6 p-4 rounded-2xl border border-gray-100 bg-white hover:border-primary-500 transition-all dark:border-gray-800 dark:bg-gray-900 shadow-sm group">
+                    <div className="h-20 w-32 rounded-lg bg-gray-100 overflow-hidden shrink-0 border border-gray-50 dark:border-gray-800">
+                        {post.content?.thumbnailUrl ? (
+                            <img src={post.content.thumbnailUrl} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                <ImageIcon className="h-6 w-6" />
+                            </div>
+                        )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="info">Sport</Badge>
-                            <span className="text-[11px] text-gray-400">Published 5 hours ago</span>
+                            <Badge variant="info" className="uppercase text-[9px]">{post.category}</Badge>
+                            <span className="text-[11px] text-gray-400">
+                                {post.content?.status} • {formatDate(post.publishedAt || post.createdAt)}
+                            </span>
                         </div>
-                        <h4 className="font-bold text-gray-900 dark:text-white">Top {i * 3} Soccer Fields in Ho Chi Minh City 2024</h4>
-                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-                            <span className="flex items-center gap-1"><ExternalLink className="h-3 w-3" /> {i * 400} views</span>
-                            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> 5 min read</span>
+                        <h4 className="font-bold text-gray-900 dark:text-white truncate">{post.content?.title}</h4>
+                        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500 font-medium">
+                            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {post.readingTime} min read</span>
+                            <span className="flex items-center gap-1 font-bold text-primary-600">By {post.author}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">Edit</Button>
-                        <Button variant="ghost" size="sm">Actions</Button>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="outline" size="sm" onClick={() => onEdit(post)}>
+                            <Edit3 className="h-4 w-4 mr-2" /> Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDelete(post.id)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
             ))}
+
+            {postList.length === 0 && (
+                <div className="py-12 text-center text-gray-500">No blog posts found.</div>
+            )}
         </div>
     )
 }
 
-function EmailSection() {
+function BlogModal({ isOpen, onClose, post }: { isOpen: boolean, onClose: () => void, post?: any }) {
+    const { createBlogMutation, updateBlogMutation } = useContent();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [thumbnail, setThumbnail] = useState<File | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const formData = new FormData(e.currentTarget);
+        if (thumbnail) formData.append('thumbnail', thumbnail);
+
+        try {
+            if (post) {
+                await updateBlogMutation.mutateAsync({ id: post.id, formData });
+                toast({ title: 'Blog updated' });
+            } else {
+                await createBlogMutation.mutateAsync(formData);
+                toast({ title: 'Blog created' });
+            }
+            onClose();
+        } catch (error) {
+            toast({ title: 'Error', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[700px]">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>{post ? 'Edit Post' : 'Create New Post'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-1">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Title</Label>
+                                <Input name="title" defaultValue={post?.content?.title} required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Category</Label>
+                                <Select
+                                    name="category"
+                                    defaultValue={post?.category || 'NEWS'}
+                                    options={[
+                                        { value: 'NEWS', label: 'News' },
+                                        { value: 'GUIDE', label: 'Guide' },
+                                        { value: 'HEALTH', label: 'Health' },
+                                        { value: 'SPORT', label: 'Sport' },
+                                    ]}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Description</Label>
+                            <Input name="description" defaultValue={post?.content?.description} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Full Content (Markdown/HTML Support)</Label>
+                            <Textarea name="content" className="min-h-[200px]" defaultValue={post?.content?.content} required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Author Name</Label>
+                                <Input name="author" defaultValue={post?.author || 'Admin'} required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Reading Time (min)</Label>
+                                <Input name="readingTime" type="number" defaultValue={post?.readingTime || 5} />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Thumbnail</Label>
+                                <Input type="file" accept="image/*" onChange={e => setThumbnail(e.target.files?.[0] || null)} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Status</Label>
+                                <Select
+                                    name="status"
+                                    defaultValue={post?.content?.status || 'PUBLISHED'}
+                                    options={[
+                                        { value: 'PUBLISHED', label: 'Published' },
+                                        { value: 'DRAFT', label: 'Draft' },
+                                    ]}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                        <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Post'}</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function EmailSection({ onEdit }: { onEdit: (template: any) => void }) {
+    const { useEmailTemplatesQuery, deleteEmailTemplateMutation } = useContent();
+    const { data: templates, isLoading } = useEmailTemplatesQuery();
+    const { toast } = useToast();
+
+    if (isLoading) return <div className="grid gap-6 md:grid-cols-4">{[1, 2, 3].map(i => <div key={i} className="h-48 animate-pulse bg-gray-100 rounded-2xl" />)}</div>
+
+    const handleDelete = async (id: string) => {
+        if (confirm('Delete template?')) {
+            try {
+                await deleteEmailTemplateMutation.mutateAsync(id);
+                toast({ title: 'Deleted' });
+            } catch (err) {
+                toast({ title: 'Error', variant: 'destructive' });
+            }
+        }
+    }
+
+    const handleSendTest = async (id: string) => {
+        const email = prompt('Enter email address to send test:');
+        if (!email) return;
+
+        try {
+            await axiosInstance.post(API_ENDPOINTS.EMAIL_TEMPLATE_BY_ID(id) + '/send-test', { email });
+            toast({ title: 'Test email sent!' });
+        } catch (err) {
+            toast({ title: 'Failed to send test email', variant: 'destructive' });
+        }
+    }
+
+    const templateList = Array.isArray(templates) ? templates : [];
+
     return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {['Welcome Email', 'Booking Confirmation', 'Password Reset', 'Marketing Monthly'].map((name, i) => (
-                <div key={i} className="p-6 rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900 shadow-sm group">
+            {templateList.map((template: any) => (
+                <div key={template.id} className="p-6 rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900 shadow-sm group relative overflow-hidden">
                     <div className="h-12 w-12 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600 mb-4 dark:bg-primary-900/20">
                         <Mail className="h-6 w-6" />
                     </div>
-                    <h4 className="font-bold text-sm mb-1">{name}</h4>
-                    <p className="text-xs text-gray-500 mb-4">Last update: Mar 20, 2024</p>
+                    <Badge className="absolute top-4 right-4 bg-gray-50 text-gray-500 font-bold border-none text-[8px] tracking-widest uppercase">
+                        {template.templateType}
+                    </Badge>
+                    <h4 className="font-bold text-sm mb-1 truncate">{template.templateName}</h4>
+                    <p className="text-[10px] text-gray-400 mb-4 truncate italic">{template.subject}</p>
                     <div className="flex flex-col gap-2">
-                        <Button variant="outline" size="sm" className="w-full text-xs">Edit Template</Button>
-                        <Button variant="ghost" size="sm" className="w-full text-[10px] text-gray-400">Send Test</Button>
+                        <Button variant="outline" size="sm" className="w-full text-xs font-black uppercase tracking-widest" onClick={() => onEdit(template)}>
+                            <Edit3 className="mr-2 h-3 w-3" /> Edit Template
+                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" className="flex-1 text-[10px] text-primary-600 font-bold uppercase" onClick={() => handleSendTest(template.id)}>
+                                Send Test
+                            </Button>
+                            <Button variant="ghost" size="sm" className="flex-1 text-[10px] text-red-500 hover:text-red-600 font-bold uppercase" onClick={() => handleDelete(template.id)}>
+                                Delete
+                            </Button>
+                        </div>
                     </div>
                 </div>
             ))}
+
+            {templateList.length === 0 && (
+                <div className="col-span-full py-12 text-center text-gray-500">No email templates found.</div>
+            )}
         </div>
     )
+}
+
+function EmailModal({ isOpen, onClose, template }: { isOpen: boolean, onClose: () => void, template?: any }) {
+    const { createEmailTemplateMutation, updateEmailTemplateMutation } = useContent();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const formData = new FormData(e.currentTarget);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            if (template) {
+                await updateEmailTemplateMutation.mutateAsync({ id: template.id, payload: data });
+                toast({ title: 'Template updated' });
+            } else {
+                await createEmailTemplateMutation.mutateAsync(data);
+                toast({ title: 'Template created' });
+            }
+            onClose();
+        } catch (error) {
+            toast({ title: 'Error', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[800px]">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>{template ? 'Edit Template' : 'Create New Template'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-1">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Internal Title</Label>
+                                <Input name="title" defaultValue={template?.content?.title} placeholder="e.g. Welcome Email Admin" required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Template Key</Label>
+                                <Input name="templateName" defaultValue={template?.templateName} placeholder="WELCOME_USER" required />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Subject Line</Label>
+                                <Input name="subject" defaultValue={template?.subject} required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Template Type</Label>
+                                <Select
+                                    name="templateType"
+                                    defaultValue={template?.templateType || 'CUSTOM'}
+                                    options={[
+                                        { value: 'WELCOME', label: 'Welcome' },
+                                        { value: 'BOOKING_CONFIRMATION', label: 'Booking Confirmation' },
+                                        { value: 'BOOKING_REMINDER', label: 'Booking Reminder' },
+                                        { value: 'PAYMENT_RECEIPT', label: 'Payment Receipt' },
+                                        { value: 'PASSWORD_RESET', label: 'Password Reset' },
+                                        { value: 'PROMOTION', label: 'Promotion' },
+                                        { value: 'NEWSLETTER', label: 'Newsletter' },
+                                        { value: 'TRANSACTIONAL', label: 'Transactional' },
+                                        { value: 'MARKETING', label: 'Marketing' },
+                                        { value: 'SYSTEM', label: 'System' },
+                                        { value: 'CUSTOM', label: 'Custom' },
+                                    ]}
+                                />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>HTML Content</Label>
+                            <Textarea name="htmlContent" className="min-h-[300px] font-mono text-xs" defaultValue={template?.htmlContent} required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>From Name</Label>
+                                <Input name="fromName" defaultValue={template?.fromName || 'DatSan247'} required />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>From Email</Label>
+                                <Input name="fromEmail" type="email" defaultValue={template?.fromEmail || 'hello@datsan247.com'} required />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Preheader (Optional)</Label>
+                            <Input name="preheader" defaultValue={template?.preheader} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                        <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save Template'}</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 function PushSection() {

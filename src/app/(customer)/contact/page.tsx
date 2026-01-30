@@ -1,12 +1,43 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Mail, Phone, MapPin, Send, MessageSquare, Clock } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { supportService } from '@/lib/api/services/support.service';
 
 export default function ContactPage() {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        const formData = new FormData(e.currentTarget);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            await supportService.submitContact(data);
+            toast({
+                title: "Message Sent!",
+                description: "We've received your message and will get back to you soon.",
+            });
+            (e.target as HTMLFormElement).reset();
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to send message. Please try again later.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="container mx-auto px-4 pt-24 pb-16">
             <div className="text-center max-w-3xl mx-auto mb-16">
@@ -43,27 +74,27 @@ export default function ContactPage() {
                 <div className="lg:col-span-2">
                     <Card className="border-gray-100 dark:border-gray-800 shadow-xl shadow-gray-200/20 dark:shadow-none">
                         <CardContent className="p-8">
-                            <form className="space-y-6">
+                            <form className="space-y-6" onSubmit={handleSubmit}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-                                        <Input placeholder="John Doe" className="h-12 border-gray-200" />
+                                        <Input name="name" placeholder="John Doe" className="h-12 border-gray-200" required />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
-                                        <Input type="email" placeholder="john@example.com" className="h-12 border-gray-200" />
+                                        <Input name="email" type="email" placeholder="john@example.com" className="h-12 border-gray-200" required />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
-                                    <Input placeholder="How can we help?" className="h-12 border-gray-200" />
+                                    <Input name="subject" placeholder="How can we help?" className="h-12 border-gray-200" required />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
-                                    <Textarea placeholder="Tell us more about your inquiry..." className="min-h-[150px] border-gray-200 pt-3" />
+                                    <Textarea name="message" placeholder="Tell us more about your inquiry..." className="min-h-[150px] border-gray-200 pt-3" required />
                                 </div>
-                                <Button className="w-full h-12 bg-primary-600 hover:bg-primary-700 text-lg font-bold gap-2">
-                                    Send Message <Send className="h-4 w-4" />
+                                <Button className="w-full h-12 bg-primary-600 hover:bg-primary-700 text-lg font-bold gap-2" disabled={isLoading}>
+                                    {isLoading ? 'Sending...' : 'Send Message'} <Send className="h-4 w-4" />
                                 </Button>
                             </form>
                         </CardContent>

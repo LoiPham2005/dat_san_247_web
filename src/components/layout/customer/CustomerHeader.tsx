@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth.store';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCartStore } from '@/lib/store/cart.store';
@@ -38,6 +38,8 @@ export const CustomerHeader = () => {
     const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const router = useRouter();
 
     // Transparent header logic for landing pages
     const isTransparentPage = pathname === '/' || pathname === '/about';
@@ -84,6 +86,30 @@ export const CustomerHeader = () => {
                         DatSan247
                     </span>
                 </Link>
+
+                {/* Quick Search */}
+                {/* <div className="hidden lg:flex flex-1 max-w-sm mx-6">
+                    <div className="relative w-full group">
+                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-primary-500 transition-colors">
+                            <Search className="h-4 w-4" />
+                        </div>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    router.push(`/venues?search=${encodeURIComponent(searchQuery)}`);
+                                }
+                            }}
+                            className={cn(
+                                "w-full border-none rounded-full py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary-500/50 transition-all placeholder:text-gray-500 font-medium",
+                                showTransparent ? "bg-white/10 text-white placeholder:text-gray-300" : "bg-gray-100 dark:bg-gray-800/50 text-gray-900 dark:text-white"
+                            )}
+                            placeholder="Tìm kiếm nhanh sân, khu vực..."
+                        />
+                    </div>
+                </div> */}
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center gap-8">
@@ -148,7 +174,6 @@ export const CustomerHeader = () => {
                                     <Link
                                         href="/profile"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                                        onClick={() => setIsMobileMenuOpen(false)}
                                     >
                                         <User className="mr-2 h-4 w-4" /> My Profile
                                     </Link>
@@ -157,7 +182,6 @@ export const CustomerHeader = () => {
                                     <Link
                                         href="/bookings"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                                        onClick={() => setIsMobileMenuOpen(false)}
                                     >
                                         <CreditCard className="mr-2 h-4 w-4" /> My Bookings
                                     </Link>
@@ -166,7 +190,6 @@ export const CustomerHeader = () => {
                                     <Link
                                         href="/favorites"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                                        onClick={() => setIsMobileMenuOpen(false)}
                                     >
                                         <Heart className="mr-2 h-4 w-4" /> Favorites
                                     </Link>
@@ -175,7 +198,6 @@ export const CustomerHeader = () => {
                                     <Link
                                         href="/profile?tab=security"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                                        onClick={() => setIsMobileMenuOpen(false)}
                                     >
                                         <Settings className="mr-2 h-4 w-4" /> Settings
                                     </Link>

@@ -13,14 +13,19 @@ export interface CartItem {
     endTime: string;
     price: number;
     thumbnailUrl: string;
+    selected?: boolean;
 }
 
 interface CartStore {
     items: CartItem[];
     addItem: (item: CartItem) => void;
     removeItem: (id: string) => void;
+    toggleSelection: (id: string) => void;
+    toggleAll: (selected: boolean) => void;
     clearCart: () => void;
+    clearSelectedItems: () => void;
     getTotal: () => number;
+    getSelectedItems: () => CartItem[];
 }
 
 export const useCartStore = create<CartStore>()(
@@ -30,14 +35,34 @@ export const useCartStore = create<CartStore>()(
             addItem: (item) => {
                 const exists = get().items.find(i => i.id === item.id);
                 if (exists) return;
-                set((state) => ({ items: [...state.items, item] }));
+                set((state) => ({ items: [...state.items, { ...item, selected: true }] }));
             },
             removeItem: (id) => {
                 set((state) => ({ items: state.items.filter(i => i.id !== id) }));
             },
+            toggleSelection: (id) => {
+                set((state) => ({
+                    items: state.items.map(item =>
+                        item.id === id ? { ...item, selected: !item.selected } : item
+                    )
+                }));
+            },
+            toggleAll: (selected) => {
+                set((state) => ({
+                    items: state.items.map(item => ({ ...item, selected }))
+                }));
+            },
             clearCart: () => set({ items: [] }),
+            clearSelectedItems: () => {
+                set((state) => ({ items: state.items.filter(item => !item.selected) }));
+            },
             getTotal: () => {
-                return get().items.reduce((total, item) => total + item.price, 0);
+                return get().items
+                    .filter(item => item.selected)
+                    .reduce((total, item) => total + item.price, 0);
+            },
+            getSelectedItems: () => {
+                return get().items.filter(item => item.selected);
             },
         }),
         {

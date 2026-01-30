@@ -1,22 +1,16 @@
 import { create } from 'zustand';
 import { Promotion } from '@/types/promotion.types';
 
-interface PromotionState {
+interface PromotionStore {
     promotions: Promotion[];
-    isLoading: boolean;
     setPromotions: (promotions: Promotion[]) => void;
-    setLoading: (isLoading: boolean) => void;
-    updatePromotionStatus: (id: string, status: Promotion['status']) => void;
+    isLoading: boolean;
+    setIsLoading: (isLoading: boolean) => void;
 }
 
-export const usePromotionStore = create<PromotionState>((set) => ({
+export const usePromotionStore = create<PromotionStore>((set) => ({
     promotions: [],
-    isLoading: false,
     setPromotions: (promotions) => set({ promotions }),
-    setLoading: (isLoading) => set({ isLoading }),
-    updatePromotionStatus: (id, status) => set((state) => ({
-        promotions: state.promotions.map((p) =>
-            p.id === id ? { ...p, status } : p
-        )
-    })),
+    isLoading: false,
+    setIsLoading: (isLoading) => set({ isLoading }),
 }));

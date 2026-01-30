@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
     RESCHEDULE_BOOKING: (id: string) => `/bookings/${id}/reschedule`,
     REQUEST_INVOICE: (id: string) => `/bookings/${id}/invoice-request`,
     SUPPORT_TICKETS: '/support/tickets',
+    SUPPORT_CONTACT: '/support/contact',
 
 
     // Reports (Admin)
@@ -62,6 +63,7 @@ export const API_ENDPOINTS = {
     // Promotions
     ADMIN_PROMOTIONS: '/admin/promotions',
     ADMIN_PROMOTION_BY_ID: (id: string) => `/admin/promotions/${id}`,
+    PUBLIC_PROMOTIONS: '/promotions',
 
     // Staff Moderation (Keep for STAFF role)
     STAFF_PENDING_VENUES: '/staff/moderation/venues/pending',
@@ -78,6 +80,10 @@ export const API_ENDPOINTS = {
     CONTENT: '/content',
     BANNERS: '/content/banners',
     BANNER_BY_ID: (id: string) => `/content/banners/${id}`,
+    BLOGS: '/content/blogs',
+    BLOG_BY_ID: (id: string) => `/content/blogs/${id}`,
+    EMAIL_TEMPLATES: '/content/email-templates',
+    EMAIL_TEMPLATE_BY_ID: (id: string) => `/content/email-templates/${id}`,
     // Admin Bookings
     ADMIN_ALL_BOOKINGS: '/staff/bookings',
     ADMIN_BOOKING_BY_ID: (id: string) => `/staff/bookings/${id}`,

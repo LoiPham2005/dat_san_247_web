@@ -186,7 +186,7 @@ export const DropdownMenuItem = ({
     const context = useContext(DropdownContext);
 
     const handleClick = (e: React.MouseEvent) => {
-        e.preventDefault();
+        // Remove preventDefault to allow Link components to work
         e.stopPropagation();
         onClick?.();
         if (closeOnClick) {

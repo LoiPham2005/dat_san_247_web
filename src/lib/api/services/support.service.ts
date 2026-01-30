@@ -6,4 +6,9 @@ export const supportService = {
         const response = await axiosInstance.post(API_ENDPOINTS.SUPPORT_TICKETS, data);
         return response.data;
     },
+
+    submitContact: async (data: any): Promise<any> => {
+        const response = await axiosInstance.post(API_ENDPOINTS.SUPPORT_CONTACT, data);
+        return response.data;
+    },
 };
