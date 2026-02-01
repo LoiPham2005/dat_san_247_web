@@ -16,6 +16,7 @@ import {
     Wrench,
     Clock,
     MessageSquare,
+    Sparkles,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth.types';
 
@@ -26,6 +27,7 @@ export const ROLE_MENUS = {
         { label: 'Venues', icon: MapPin, href: '/admin/venues' },
         { label: 'Bookings', icon: Calendar, href: '/admin/bookings' },
         { label: 'Finance', icon: Wallet, href: '/admin/finance' },
+        { label: 'AI Assistant', icon: Sparkles, href: '/admin/ai-assistant' },
         { label: 'Promotions', icon: Shield, href: '/admin/promotions' },
         { label: 'Content', icon: FileText, href: '/admin/content' },
         { label: 'Reviews', icon: MessageSquareQuote, href: '/admin/reviews' },
@@ -41,6 +43,7 @@ export const ROLE_MENUS = {
         { label: 'My Venues', icon: MapPin, href: '/owner/venues' },
         { label: 'Bookings', icon: Calendar, href: '/owner/bookings' },
         { label: 'Revenue', icon: Wallet, href: '/owner/revenue' },
+        { label: 'AI Assistant', icon: Sparkles, href: '/owner/ai-assistant' },
         { label: 'Staff', icon: Users, href: '/owner/staff' },
         { label: 'Promotions', icon: Shield, href: '/owner/promotions' },
         { label: 'Analytics', icon: BarChart3, href: '/owner/analytics' },
@@ -65,5 +68,6 @@ export const ROLE_MENUS = {
     ],
     [UserRole.CUSTOMER]: [
         { label: 'Home', icon: LayoutDashboard, href: '/' },
+        { label: 'AI Assistant', icon: Sparkles, href: '/ai-assistant' },
     ]
 };

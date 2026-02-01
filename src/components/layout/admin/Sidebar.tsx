@@ -70,8 +70,8 @@ export const AdminSidebar = () => {
                     </button>
                 </div>
 
-                <div className="flex flex-col justify-between h-[calc(100vh-4rem)] p-3">
-                    <nav className="space-y-1">
+                <div className="flex flex-col h-[calc(100vh-4rem)]">
+                    <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1 custom-scrollbar">
                         {menus.map((item: any) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
@@ -114,7 +114,7 @@ export const AdminSidebar = () => {
                         })}
                     </nav>
 
-                    <div className="border-t border-gray-200 pt-3 dark:border-gray-800">
+                    <div className="p-3 border-t border-gray-200 dark:border-gray-800">
                         <button
                             onClick={() => logout()}
                             className={cn(
