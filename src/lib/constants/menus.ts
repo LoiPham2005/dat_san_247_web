@@ -17,6 +17,8 @@ import {
     Clock,
     MessageSquare,
     Sparkles,
+    BrainCircuit,
+    Bot,
 } from 'lucide-react';
 import { UserRole } from '@/types/auth.types';
 
@@ -28,6 +30,7 @@ export const ROLE_MENUS = {
         { label: 'Bookings', icon: Calendar, href: '/admin/bookings' },
         { label: 'Finance', icon: Wallet, href: '/admin/finance' },
         { label: 'AI Assistant', icon: Sparkles, href: '/admin/ai-assistant' },
+        { label: 'AI System', icon: BrainCircuit, href: '/admin/ai-system' },
         { label: 'Promotions', icon: Shield, href: '/admin/promotions' },
         { label: 'Content', icon: FileText, href: '/admin/content' },
         { label: 'Reviews', icon: MessageSquareQuote, href: '/admin/reviews' },
@@ -44,6 +47,7 @@ export const ROLE_MENUS = {
         { label: 'Bookings', icon: Calendar, href: '/owner/bookings' },
         { label: 'Revenue', icon: Wallet, href: '/owner/revenue' },
         { label: 'AI Assistant', icon: Sparkles, href: '/owner/ai-assistant' },
+        { label: 'AI Chatbot', icon: Bot, href: '/owner/ai-chatbot' },
         { label: 'Staff', icon: Users, href: '/owner/staff' },
         { label: 'Promotions', icon: Shield, href: '/owner/promotions' },
         { label: 'Analytics', icon: BarChart3, href: '/owner/analytics' },
@@ -60,6 +64,7 @@ export const ROLE_MENUS = {
     ],
     [UserRole.VENUE_STAFF]: [
         { label: 'Dashboard', icon: LayoutDashboard, href: '/venue-staff/dashboard' },
+        { label: 'AI Helper', icon: Bot, href: '/venue-staff/ai-helper' },
         { label: 'Bookings', icon: Calendar, href: '/venue-staff/bookings' },
         { label: 'My Venues', icon: MapPin, href: '/venue-staff/venues' },
         { label: 'Schedule', icon: Clock, href: '/venue-staff/schedule' },

@@ -21,19 +21,24 @@ import {
     Video,
     MoreVertical,
     CheckCircle2,
-    Settings
+    Settings,
+    Swords
 } from 'lucide-react';
 import { cn } from '@/lib/utils/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import '@/app/ai-chat.css';
 
+import { VenueSuggestionCard } from './widgets/VenueSuggestionCard';
+import { PricingAnalysisCard } from './widgets/PricingAnalysisCard';
+import { CompetitorAnalysisCard } from './widgets/CompetitorAnalysisCard';
+
 interface Message {
     id: string;
     content: string;
     isAi: boolean;
     timestamp: Date;
-    type?: 'text' | 'action' | 'analysis' | 'recommendation';
+    type?: 'text' | 'action' | 'analysis' | 'recommendation' | 'pricing' | 'competitor' | 'venue-list';
     metadata?: any;
 }
 
@@ -44,15 +49,80 @@ interface AIChatViewProps {
 }
 
 export const AIChatView = ({ role, currentUserId, userName }: AIChatViewProps) => {
-    const [messages, setMessages] = useState<Message[]>([
-        {
+    // Initial State based on Role to demo features
+    const getInitialMessages = (): Message[] => {
+        const baseMsg = {
             id: '1',
             content: `Hello ${userName}! I am your AI Assistant for the ${role} portal. How can I help you today?`,
             isAi: true,
             timestamp: new Date(),
-            type: 'text'
+            type: 'text' as const
+        };
+
+        if (role === 'owner') {
+            return [
+                baseMsg,
+                {
+                    id: '2',
+                    content: "I've analyzed your upcoming weekend schedule. Demand is high!",
+                    isAi: true,
+                    timestamp: new Date(Date.now() + 1000),
+                    type: 'pricing' as const,
+                    metadata: {
+                        venueName: "Sân ABC - 7v7",
+                        timeSlot: "Saturday 18:00 - 20:00",
+                        currentPrice: 500000,
+                        suggestedPrice: 650000,
+                        reason: ["Local Championship Final nearby", "High booking velocity (+45%)", "Competitor Avg: 620k"],
+                        predictions: { bookings: "85%", revenue: "+2.4M", margin: "+25%" },
+                        confidence: 87
+                    }
+                }
+            ];
+        } else if (role === 'customer') {
+            return [
+                baseMsg,
+                {
+                    id: '2',
+                    content: "Here are some top-rated venues near you with available slots tonight:",
+                    isAi: true,
+                    timestamp: new Date(Date.now() + 1000),
+                    type: 'venue-list' as const,
+                    metadata: {
+                        venues: [
+                            {
+                                id: 'v1',
+                                name: "Sân Bóng Đá K34",
+                                address: "123 Bach Dang, Tan Binh",
+                                image: "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?q=80&w=2070&auto=format&fit=crop",
+                                rating: 4.8,
+                                reviews: 124,
+                                price: "300k - 500k",
+                                distance: "1.2 km",
+                                availableSlots: ["17:00", "19:00", "20:30"],
+                                promotion: "-20% Today"
+                            },
+                            {
+                                id: 'v2',
+                                name: "Sân Chảo Lửa",
+                                address: "30 Phan Thuc Duyen",
+                                image: "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?q=80&w=2076&auto=format&fit=crop",
+                                rating: 4.5,
+                                reviews: 89,
+                                price: "250k - 450k",
+                                distance: "2.5 km",
+                                availableSlots: ["18:00", "21:00"]
+                            }
+                        ]
+                    }
+                }
+            ];
         }
-    ]);
+
+        return [baseMsg];
+    };
+
+    const [messages, setMessages] = useState<Message[]>(getInitialMessages());
     const [input, setInput] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -68,19 +138,19 @@ export const AIChatView = ({ role, currentUserId, userName }: AIChatViewProps) =
             case 'owner':
                 return [
                     { label: 'Analyze this month\'s revenue', icon: BarChart3 },
-                    { label: 'Identify low-traffic time slots', icon: BrainCircuit },
-                    { label: 'Suggest a promotion for new users', icon: Zap }
+                    { label: 'Analyze Competitors', icon: Swords },
+                    { label: 'Suggest a promotion', icon: Zap }
                 ];
             case 'admin':
                 return [
-                    { label: 'Detect potential fraudulent activity', icon: ShieldCheck },
-                    { label: 'Summarize system performance', icon: Terminal },
-                    { label: 'Users requiring moderation', icon: Search }
+                    { label: 'Detect potential fraud', icon: ShieldCheck },
+                    { label: 'System health check', icon: Terminal },
+                    { label: 'User report summary', icon: Search }
                 ];
             default:
                 return [
                     { label: 'Quick technical summary', icon: Terminal },
-                    { label: 'Check support queue status', icon: MessageSquare }
+                    { label: 'Check support queue', icon: MessageSquare }
                 ];
         }
     };
@@ -99,15 +169,55 @@ export const AIChatView = ({ role, currentUserId, userName }: AIChatViewProps) =
         setInput('');
         setIsThinking(true);
 
-        // Mock AI response
+        // Mock AI response logic
         setTimeout(() => {
-            const aiMsg: Message = {
+            let aiMsg: Message = {
                 id: (Date.now() + 1).toString(),
-                content: `I'm processing your request regarding "${text}". In a real implementation, I would connect to the LLM API and analyze your data as a ${role}.`,
+                content: `I'm processing "${text}".`,
                 isAi: true,
                 timestamp: new Date(),
                 type: 'text'
             };
+
+            // DEMO RESPONSES BASED ON KEYWORDS
+            if (role === 'owner' && text.toLowerCase().includes('competitor')) {
+                aiMsg = {
+                    ...aiMsg,
+                    content: "Here is a competitive analysis of your venue vs the top player in your area.",
+                    type: 'competitor',
+                    metadata: {
+                        rank: 2,
+                        topCompetitor: { name: "Sân VIP Pro", priceDiff: "+40% Higher", strength: "Facilities" },
+                        marketShare: 18,
+                        opportunities: ["Improve facilities to match VIP Pro", "Emphasize 'Best Value' proposition", "Target their price-sensitive customers"]
+                    }
+                };
+            } else if (role === 'customer' && (text.toLowerCase().includes('find') || text.toLowerCase().includes('sân'))) {
+                aiMsg = {
+                    ...aiMsg,
+                    content: "I found a few great matches for you based on your preferences:",
+                    type: 'venue-list',
+                    metadata: {
+                        venues: [
+                            {
+                                id: 'v3',
+                                name: "Sân Bóng Đá Empire",
+                                address: "456 Cong Hoa, Tan Binh",
+                                image: "https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=2070&auto=format&fit=crop",
+                                rating: 4.9,
+                                reviews: 200,
+                                price: "400k",
+                                distance: "3.0 km",
+                                availableSlots: ["19:00", "20:00"],
+                                promotion: "Free Water"
+                            }
+                        ]
+                    }
+                };
+            } else {
+                aiMsg.content = `I understand you are asking about "${text}". As an AI, I would connect to the backend services to fetch real-time data. for now, try asking about 'competitors' (Owner) or 'find venues' (Customer).`;
+            }
+
             setMessages(prev => [...prev, aiMsg]);
             setIsThinking(false);
         }, 1500);
@@ -119,17 +229,51 @@ export const AIChatView = ({ role, currentUserId, userName }: AIChatViewProps) =
         }
     }, [messages, isThinking]);
 
+    const renderMessageContent = (msg: Message) => {
+        if (msg.type === 'pricing' && msg.metadata) {
+            return (
+                <div className="space-y-3">
+                    <p>{msg.content}</p>
+                    <PricingAnalysisCard data={msg.metadata} />
+                </div>
+            );
+        }
+        if (msg.type === 'competitor' && msg.metadata) {
+            return (
+                <div className="space-y-3">
+                    <p>{msg.content}</p>
+                    <CompetitorAnalysisCard data={msg.metadata} />
+                </div>
+            );
+        }
+        if (msg.type === 'venue-list' && msg.metadata) {
+            return (
+                <div className="space-y-3">
+                    <p>{msg.content}</p>
+                    <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x no-scrollbar">
+                        {msg.metadata.venues.map((v: any) => (
+                            <div key={v.id} className="snap-center shrink-0 w-[280px]">
+                                <VenueSuggestionCard data={v} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+        return msg.content;
+    };
+
     return (
-        <div className="flex h-[800px] w-full overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl dark:border-gray-800 dark:bg-slate-900 ai-chat-container">
+        <div className="flex h-[calc(100vh-140px)] w-full overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl dark:border-gray-800 dark:bg-slate-900 ai-chat-container">
             {/* Sidebar - Chat History */}
-            <div className="hidden w-[300px] flex-col border-r border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-slate-900/50 lg:flex">
-                <div className="p-6">
+            <div className="hidden w-[280px] flex-col border-r border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-slate-900/50 lg:flex">
+                <div className="p-4">
                     <Button className="w-full gap-2 rounded-xl bg-primary-600 font-bold text-white shadow-lg shadow-primary-500/20">
                         <PlusCircle className="h-4 w-4" /> New Session
                     </Button>
                 </div>
-                <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
-                    <div className="mb-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2">Recent Insights</div>
+                <div className="flex-1 overflow-y-auto px-3 custom-scrollbar">
+                    <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2 mt-2">Recent Insights</div>
                     <div className="space-y-1">
                         {[1, 2, 3].map(i => (
                             <button key={i} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-white dark:hover:bg-slate-800 group">
@@ -201,16 +345,16 @@ export const AIChatView = ({ role, currentUserId, userName }: AIChatViewProps) =
                                 {msg.isAi ? <Bot className="h-6 w-6" /> : userName[0]}
                             </div>
                             <div className={cn(
-                                "flex flex-col gap-2 max-w-[80%]",
+                                "flex flex-col gap-2 max-w-[85%] md:max-w-[70%]",
                                 msg.isAi ? "items-start" : "items-end"
                             )}>
                                 <div className={cn(
-                                    "px-5 py-3.5 rounded-2xl text-[14px] leading-relaxed",
+                                    "px-5 py-3.5 rounded-2xl text-[14px] leading-relaxed w-full",
                                     msg.isAi
                                         ? "ai-message-ai text-gray-800 dark:text-gray-100 rounded-tl-none font-medium"
                                         : "bg-gray-900 text-white rounded-tr-none shadow-lg dark:bg-white dark:text-gray-900 font-semibold"
                                 )}>
-                                    {msg.content}
+                                    {renderMessageContent(msg)}
                                 </div>
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter px-1">
                                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
