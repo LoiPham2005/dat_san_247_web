@@ -17,7 +17,8 @@ import {
     Heart,
     LogOut,
     Settings,
-    CreditCard
+    CreditCard,
+    MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -152,6 +153,19 @@ export const CustomerHeader = () => {
                         </div>
                     </Link>
 
+                    {/* Messages */}
+                    {user && (
+                        <Link href="/messages" className="relative group">
+                            <div className={cn(
+                                "p-2 rounded-full transition-colors",
+                                showTransparent ? "text-white hover:bg-white/10" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                            )}>
+                                <MessageCircle className="h-5 w-5" />
+                                <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500 border-2 border-white dark:border-gray-900 animate-pulse" />
+                            </div>
+                        </Link>
+                    )}
+
                     {user ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -184,6 +198,14 @@ export const CustomerHeader = () => {
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                                     >
                                         <CreditCard className="mr-2 h-4 w-4" /> My Bookings
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href="/messages"
+                                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                                    >
+                                        <MessageCircle className="mr-2 h-4 w-4" /> My Messages
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>

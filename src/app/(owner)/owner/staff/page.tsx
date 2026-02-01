@@ -24,25 +24,116 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { useStaffStore } from "@/lib/store/staff.store";
-import { useEffect, useState } from "react";
+import { useOwnerStaff } from "@/lib/hooks/useOwnerStaff";
+import { useState } from "react";
 import { StaffModal } from "@/components/owner/StaffModal";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 export default function OwnerStaffPage() {
-    const { staff, isLoading, error, fetchStaff, removeStaff } = useStaffStore();
+    const { staff, isLoading, error, refetch, removeStaff, isRemoving, toggleStatus } = useOwnerStaff();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-        fetchStaff();
-    }, [fetchStaff]);
-
-    if (!isMounted) return null;
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
 
     const staffList = Array.isArray(staff) ? staff : [];
     const totalStaff = staffList.length;
     const onDutyCount = staffList.filter(s => s.user?.isActive).length;
+
+    const handleRemoveClick = (id: string) => {
+        setSelectedStaffId(id);
+        setIsConfirmOpen(true);
+    };
+
+    const handleConfirmRemove = async () => {
+        if (selectedStaffId) {
+            removeStaff(selectedStaffId, {
+                onSuccess: () => {
+                    setIsConfirmOpen(false);
+                    setSelectedStaffId(null);
+                }
+            });
+        }
+    };
+
+    const columns: ColumnDef<any>[] = [
+        {
+            id: "name",
+            accessorFn: (row) => row.user?.fullName,
+            header: "Staff Member",
+            cell: ({ row }) => (
+                <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 overflow-hidden">
+                        {row.original.user?.avatarUrl ? (
+                            <img src={row.original.user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                            row.original.user?.fullName?.[0] || '?'
+                        )}
+                    </div>
+                    <div>
+                        <p className="font-semibold text-sm">{row.original.user?.fullName}</p>
+                        <p className="text-xs text-gray-500">{row.original.user?.email}</p>
+                    </div>
+                </div>
+            )
+        },
+        {
+            id: "role",
+            header: "Role",
+            cell: ({ row }) => <Badge variant="outline">{row.original.user?.role?.name || 'Staff'}</Badge>
+        },
+        {
+            id: "venue",
+            header: "Assigned Venue",
+            cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.venue?.name}</span>
+        },
+        {
+            id: "status",
+            header: "Status",
+            cell: ({ row }) => {
+                const isActive = row.original.user?.isActive;
+                return (
+                    <Badge variant={isActive ? 'success' : 'secondary'}>
+                        {isActive ? 'ACTIVE' : 'SUSPENDED'}
+                    </Badge>
+                )
+            }
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const isActive = row.original.user?.isActive;
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => toggleStatus(row.original.id)}>
+                                {isActive ? (
+                                    <>
+                                        <Lock className="mr-2 h-4 w-4 text-orange-500" />
+                                        <span>Suspend Account</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Unlock className="mr-2 h-4 w-4 text-green-500" />
+                                        <span>Activate Account</span>
+                                    </>
+                                )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleRemoveClick(row.original.id)} className="text-red-600">
+                                <Shield className="mr-2 h-4 w-4" />
+                                <span>Unassign Staff</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                );
+            }
+        }
+    ];
 
     return (
         <div className="space-y-8 pb-8">
@@ -91,12 +182,12 @@ export default function OwnerStaffPage() {
                         <div className="flex h-64 flex-col items-center justify-center gap-2 text-red-500">
                             <AlertCircle className="h-10 w-10" />
                             <p className="font-medium">Failed to load staff</p>
-                            <p className="text-xs text-gray-500">{error}</p>
-                            <Button variant="outline" size="sm" onClick={() => fetchStaff()}>Try Again</Button>
+                            <p className="text-xs text-gray-500">{(error as any).message || 'Something went wrong'}</p>
+                            <Button variant="outline" size="sm" onClick={() => refetch()}>Try Again</Button>
                         </div>
                     ) : (
                         <DataTable
-                            columns={getColumns(removeStaff)}
+                            columns={columns}
                             data={staffList}
                             searchKey="user_fullName"
                         />
@@ -108,68 +199,17 @@ export default function OwnerStaffPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
             />
+
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleConfirmRemove}
+                title="Unassign Staff"
+                description="Are you sure you want to unassign this staff member? They will no longer have access to manage this venue."
+                confirmLabel="Unassign"
+                isLoading={isRemoving}
+            />
         </div>
     );
 }
 
-const getColumns = (removeStaff: (id: string) => void): ColumnDef<any>[] => [
-    {
-        id: "name",
-        accessorFn: (row) => row.user?.fullName,
-        header: "Staff Member",
-        cell: ({ row }) => (
-            <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 overflow-hidden">
-                    {row.original.user?.avatarUrl ? (
-                        <img src={row.original.user.avatarUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                        row.original.user?.fullName?.[0] || '?'
-                    )}
-                </div>
-                <div>
-                    <p className="font-semibold text-sm">{row.original.user?.fullName}</p>
-                    <p className="text-xs text-gray-500">{row.original.user?.email}</p>
-                </div>
-            </div>
-        )
-    },
-    {
-        id: "role",
-        header: "Role",
-        cell: ({ row }) => <Badge variant="outline">{row.original.user?.role?.name || 'Staff'}</Badge>
-    },
-    {
-        id: "venue",
-        header: "Assigned Venue",
-        cell: ({ row }) => <span className="text-sm text-gray-600">{row.original.venue?.name}</span>
-    },
-    {
-        id: "status",
-        header: "Status",
-        cell: ({ row }) => {
-            const isActive = row.original.user?.isActive;
-            return (
-                <Badge variant={isActive ? 'success' : 'secondary'}>
-                    {isActive ? 'ONLINE' : 'OFFLINE'}
-                </Badge>
-            )
-        }
-    },
-    {
-        id: "actions",
-        cell: ({ row }) => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => removeStaff(row.original.id)} className="text-red-600">
-                        <Shield className="mr-2 h-4 w-4" /> Unassign Staff
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        )
-    }
-];

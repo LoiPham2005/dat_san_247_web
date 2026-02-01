@@ -88,6 +88,11 @@ export const venueService = {
         await axiosInstance.delete(`${API_ENDPOINTS.OWNER_STAFF}/${id}`);
     },
 
+    toggleOwnerStaffStatus: async (id: string): Promise<any> => {
+        const { data } = await axiosInstance.put(`${API_ENDPOINTS.OWNER_STAFF}/${id}/toggle-status`);
+        return data.data;
+    },
+
     // Staff Moderation
     getPendingVenues: async (): Promise<Venue[]> => {
         const { data } = await axiosInstance.get(API_ENDPOINTS.STAFF_PENDING_VENUES);

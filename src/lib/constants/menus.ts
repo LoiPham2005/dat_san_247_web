@@ -33,6 +33,7 @@ export const ROLE_MENUS = {
         { label: 'Reports', icon: BarChart3, href: '/admin/reports' },
         { label: 'Moderation', icon: Shield, href: '/admin/moderation' },
         { label: 'Roles', icon: Shield, href: '/admin/roles' },
+        { label: 'Chat', icon: MessageSquare, href: '/admin/messages' },
         { label: 'Settings', icon: Settings, href: '/admin/settings' },
     ],
     [UserRole.OWNER]: [
@@ -43,6 +44,7 @@ export const ROLE_MENUS = {
         { label: 'Staff', icon: Users, href: '/owner/staff' },
         { label: 'Promotions', icon: Shield, href: '/owner/promotions' },
         { label: 'Analytics', icon: BarChart3, href: '/owner/analytics' },
+        { label: 'Chat', icon: MessageSquare, href: '/owner/messages' },
         { label: 'Settings', icon: Settings, href: '/owner/settings' },
     ],
     [UserRole.STAFF]: [
@@ -51,6 +53,7 @@ export const ROLE_MENUS = {
         { label: 'Technical', icon: Wrench, href: '/staff/technical' },
         { label: 'Finance', icon: Wallet, href: '/staff/finance' },
         { label: 'Moderation', icon: Shield, href: '/staff/moderation' },
+        { label: 'Chat', icon: MessageSquare, href: '/staff/messages' },
     ],
     [UserRole.VENUE_STAFF]: [
         { label: 'Dashboard', icon: LayoutDashboard, href: '/venue-staff/dashboard' },

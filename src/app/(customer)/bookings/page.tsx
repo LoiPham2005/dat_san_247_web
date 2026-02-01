@@ -1,6 +1,7 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from "@/components/ui/input";
@@ -670,9 +671,11 @@ function BookingCard({
                                 <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 transition-all hidden sm:block" />
                             </Button>
                             <div className="flex w-full gap-2">
-                                <Button variant="outline" className="flex-1 h-11 rounded-xl border-gray-200 hover:bg-gray-50 transition-colors" size="icon">
-                                    <MessageCircle className="h-5 w-5" />
-                                </Button>
+                                <Link href="/messages" className="flex-1">
+                                    <Button variant="outline" className="w-full h-11 rounded-xl border-gray-200 hover:bg-gray-50 transition-colors" size="icon">
+                                        <MessageCircle className="h-5 w-5" />
+                                    </Button>
+                                </Link>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="outline" className="flex-1 h-11 rounded-xl border-gray-200 hover:bg-gray-50 transition-colors" size="icon">

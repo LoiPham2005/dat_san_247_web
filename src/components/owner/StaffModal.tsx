@@ -15,13 +15,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
-import { useStaffStore } from '@/lib/store/staff.store';
+import { useOwnerStaff } from '@/lib/hooks/useOwnerStaff';
 import { useVenueStore } from '@/lib/store/venue.store';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const staffSchema = z.object({
-    userId: z.string().min(1, 'Please select a user'),
+    email: z.string().email('Please enter a valid email address'),
     venueId: z.string().min(1, 'Please select a venue'),
 });
 
@@ -33,19 +33,13 @@ interface StaffModalProps {
 }
 
 export const StaffModal = ({ isOpen, onClose }: StaffModalProps) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const { addStaff } = useStaffStore();
+    const { addStaff, isAdding } = useOwnerStaff();
     const { venues, fetchOwnerVenues } = useVenueStore();
     const { toast } = useToast();
-
-    // In a real app, we might search for users with 'STAFF' role
-    // For now, we'll just use a text input for userId or a simplified search
-    // But since the API expects userId and venueId, we need those.
 
     const {
         register,
         handleSubmit,
-        setValue,
         formState: { errors },
         reset,
     } = useForm<StaffFormValues>({
@@ -59,22 +53,13 @@ export const StaffModal = ({ isOpen, onClose }: StaffModalProps) => {
     }, [isOpen, fetchOwnerVenues]);
 
     const onSubmit = async (data: StaffFormValues) => {
-        setIsLoading(true);
         try {
             await addStaff(data);
-            toast({
-                title: 'Staff added successfully',
-            });
             reset();
             onClose();
         } catch (error: any) {
+            // Error handling is already done in the hook's onError
             console.error('Failed to add staff:', error);
-            toast({
-                title: 'Failed to add staff',
-                description: error.message || 'Check if the user ID is valid',
-            });
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -86,14 +71,15 @@ export const StaffModal = ({ isOpen, onClose }: StaffModalProps) => {
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="userId">User ID (Staff Account)</Label>
+                        <Label htmlFor="email">Staff Email</Label>
                         <Input
-                            id="userId"
-                            placeholder="Enter the staff user UUID"
-                            {...register('userId')}
+                            id="email"
+                            type="email"
+                            placeholder="staff@example.com"
+                            {...register('email')}
                         />
-                        {errors.userId && (
-                            <p className="text-xs text-red-500">{errors.userId.message}</p>
+                        {errors.email && (
+                            <p className="text-xs text-red-500">{errors.email.message}</p>
                         )}
                     </div>
 
@@ -107,11 +93,11 @@ export const StaffModal = ({ isOpen, onClose }: StaffModalProps) => {
                     </div>
 
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+                        <Button type="button" variant="outline" onClick={onClose} disabled={isAdding}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={isAdding}>
+                            {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Assign Staff
                         </Button>
                     </DialogFooter>
