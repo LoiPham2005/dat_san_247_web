@@ -27,7 +27,7 @@ export default function VenueStaffDashboard() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                        Chào ngày mới, {user?.name?.split(' ')[0] || 'Staff'}!
+                        Chào ngày mới, {user?.fullName?.split(' ')[0] || 'Staff'}!
                     </h1>
                     <p className="mt-1 text-gray-500 dark:text-gray-400">
                         Hôm nay bạn có 12 booking tại 2 sân được gán.

@@ -82,20 +82,20 @@ export default function CheckoutPage() {
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</Label>
-                                <Input defaultValue={user?.name || "Tuan Pham"} className="h-12 rounded-xl bg-gray-50 border-none focus:ring-primary-500" />
+                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Họ và tên</Label>
+                                <Input defaultValue={user?.fullName || ""} className="h-12 rounded-xl bg-gray-50 border-none focus:ring-primary-500" />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Phone Number</Label>
-                                <Input defaultValue={user?.phone || "+84 987 654 321"} className="h-12 rounded-xl bg-gray-50 border-none focus:ring-primary-500" />
+                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Số điện thoại</Label>
+                                <Input defaultValue={user?.phone || ""} className="h-12 rounded-xl bg-gray-50 border-none focus:ring-primary-500" />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Email Address</Label>
-                                <Input value={user?.email || "tuan.pham@example.com"} disabled className="h-12 rounded-xl bg-gray-100 text-gray-500 border-none cursor-not-allowed" />
+                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Địa chỉ Email</Label>
+                                <Input value={user?.email || ""} disabled className="h-12 rounded-xl bg-gray-100 text-gray-500 border-none cursor-not-allowed" />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Special Requests (Optional)</Label>
-                                <Input placeholder="Need separate bibs, water..." className="h-12 rounded-xl bg-gray-50 border-none focus:ring-primary-500" />
+                                <Label className="text-xs font-bold uppercase tracking-widest text-gray-400">Ghi chú thêm (Không bắt buộc)</Label>
+                                <Input placeholder="Yêu cầu về áo bib, nước uống..." className="h-12 rounded-xl bg-gray-50 border-none focus:ring-primary-500" />
                             </div>
                         </div>
                     </section>

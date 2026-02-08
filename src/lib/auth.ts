@@ -21,21 +21,21 @@ export const authOptions: NextAuthOptions = {
                         password: credentials.password,
                     });
 
-                    // The backend returns { accessToken, refreshToken, user: { ... } }
                     if (data && data.user) {
                         return {
                             id: data.user.id,
                             email: data.user.email,
-                            name: data.user.fullName,
+                            fullName: data.user.fullName,
                             role: data.user.role,
                             accessToken: data.accessToken,
                             refreshToken: data.refreshToken,
                         };
                     }
                     return null;
-                } catch (error) {
-                    console.error("Login failed:", error);
-                    return null;
+                } catch (error: any) {
+                    // Extract error message from axios error
+                    const errorMsg = error.response?.data?.message || error.message || 'Login failed';
+                    throw new Error(errorMsg);
                 }
             }
         })
@@ -45,6 +45,7 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.fullName = user.fullName;
                 token.accessToken = user.accessToken;
                 token.refreshToken = user.refreshToken;
             }
@@ -54,6 +55,7 @@ export const authOptions: NextAuthOptions = {
             if (session.user) {
                 (session.user as any).id = token.id;
                 (session.user as any).role = token.role;
+                (session.user as any).fullName = token.fullName;
                 (session as any).accessToken = token.accessToken;
             }
             return session;

@@ -14,19 +14,19 @@ export default function RegisterPage() {
                 <div className="glass shadow-2xl rounded-2xl p-8 backdrop-blur-xl bg-white/70 border-white/50">
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-2">
-                            Create Account
+                            Đăng ký tài khoản
                         </h1>
                         <p className="text-sm text-gray-600">
-                            Join the community of sports enthusiasts
+                            Tham gia cộng đồng những người đam mê thể thao
                         </p>
                     </div>
 
                     <RegisterForm />
 
                     <div className="mt-6 text-center text-sm">
-                        <span className="text-gray-500">Already have an account? </span>
+                        <span className="text-gray-500">Đã có tài khoản? </span>
                         <Link href="/login" className="font-semibold text-primary-600 hover:text-primary-500 transition-colors">
-                            Sign in
+                            Đăng nhập
                         </Link>
                     </div>
                 </div>

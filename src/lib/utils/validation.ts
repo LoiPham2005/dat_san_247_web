@@ -2,19 +2,19 @@ import { z } from 'zod';
 import { UserRole } from '@/types/auth.types';
 
 export const loginSchema = z.object({
-    email: z.string().email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    email: z.string().email('Địa chỉ email không hợp lệ'),
+    password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
 });
 
 export const registerSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    email: z.string().email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    phone: z.string().regex(/^[0-9]{10}$/, 'Phone number must be 10 digits'),
+    fullName: z.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự'),
+    email: z.string().email('Địa chỉ email không hợp lệ'),
+    password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    phone: z.string().regex(/^[0-9]{10}$/, 'Số điện thoại phải có 10 chữ số'),
     role: z.nativeEnum(UserRole),
     confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: "Mật khẩu xác nhận không khớp",
     path: ["confirmPassword"],
 });
 

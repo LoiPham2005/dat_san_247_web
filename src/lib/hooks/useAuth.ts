@@ -16,7 +16,7 @@ export const useAuth = () => {
             const sessionUser: any = {
                 id: (session.user as any).id,
                 email: session.user.email!,
-                name: session.user.name!,
+                fullName: (session.user as any).fullName || session.user.name || '',
                 role: (session.user as any).role,
                 isActive: true, // Assuming active if logged in
                 createdAt: new Date().toISOString(), // Placeholder

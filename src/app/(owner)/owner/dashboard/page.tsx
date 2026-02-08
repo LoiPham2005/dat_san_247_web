@@ -24,10 +24,10 @@ export default function OwnerDashboardPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                        Welcome back, {user?.name || 'Owner'}!
+                        Chào mừng trở lại, {user?.fullName || 'Chủ sân'}!
                     </h1>
                     <p className="mt-2 text-gray-500 dark:text-gray-400">
-                        Here's what's happening with your venues today.
+                        Dưới đây là tình hình hoạt động của các sân hôm nay.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">

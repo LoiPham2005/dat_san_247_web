@@ -3,7 +3,7 @@ import { useAuthStore } from '@/lib/store/auth.store';
 import { signOut } from 'next-auth/react';
 import { logger } from '@/lib/utils/logger';
 
-const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001/api/v1';
 // Đảm bảo URL luôn bắt đầu bằng http hoặc https
 const BASE_URL = rawBaseUrl.startsWith('http') ? rawBaseUrl : `https://${rawBaseUrl}`;
 

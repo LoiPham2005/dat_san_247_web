@@ -10,10 +10,10 @@ export enum UserRole {
 export interface User {
     id: string;
     email: string;
-    name: string;
+    fullName: string;
     phone?: string;
     role: UserRole;
-    avatar?: string;
+    avatarUrl?: string;
     venueId?: string;
     isActive: boolean;
     createdAt: string;
@@ -31,7 +31,8 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData extends LoginCredentials {
-    name: string;
+    fullName: string;
     phone: string;
     role?: UserRole;
+    confirmPassword: string;
 }

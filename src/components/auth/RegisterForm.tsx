@@ -11,11 +11,15 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { UserRole } from '@/types/auth.types';
 
+import { useToast } from '@/components/ui/use-toast';
+import { handleApiError } from '@/lib/utils/error-handler';
+
 type FormData = z.infer<typeof registerSchema>;
 
 export const RegisterForm = () => {
     const { register: registerAuth } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
@@ -27,8 +31,16 @@ export const RegisterForm = () => {
         setIsLoading(true);
         try {
             await registerAuth(data);
-        } catch (error) {
-            console.error('Registration failed:', error);
+            toast({
+                title: 'Thành công',
+                description: 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.',
+            });
+        } catch (error: any) {
+            toast({
+                title: 'Lỗi đăng ký',
+                description: handleApiError(error),
+                variant: 'destructive',
+            });
         } finally {
             setIsLoading(false);
         }
@@ -37,44 +49,44 @@ export const RegisterForm = () => {
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Input
-                label="Full Name"
-                placeholder="Enter your full name"
-                error={errors.name?.message}
-                {...register('name')}
+                label="Họ và tên"
+                placeholder="Nhập họ và tên"
+                error={errors.fullName?.message}
+                {...register('fullName')}
             />
             <Input
-                label="Email Address"
+                label="Địa chỉ Email"
                 type="email"
-                placeholder="name@example.com"
+                placeholder="ten@vi-du.com"
                 error={errors.email?.message}
                 {...register('email')}
             />
             <Input
-                label="Phone Number"
+                label="Số điện thoại"
                 placeholder="0123456789"
                 error={errors.phone?.message}
                 {...register('phone')}
             />
             <Select
-                label="I am a..."
+                label="Tôi là..."
                 options={[
-                    { value: UserRole.CUSTOMER, label: 'Customer (I want to book)' },
-                    { value: UserRole.OWNER, label: 'Venue Owner (I have a field)' },
-                    { value: UserRole.VENUE_STAFF, label: 'Venue Staff' },
+                    { value: UserRole.CUSTOMER, label: 'Khách hàng (Tôi muốn đặt sân)' },
+                    { value: UserRole.OWNER, label: 'Chủ sân (Tôi có sân cho thuê)' },
+                    { value: UserRole.VENUE_STAFF, label: 'Nhân viên sân' },
                 ]}
                 error={errors.role?.message}
                 {...register('role')}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                    label="Password"
+                    label="Mật khẩu"
                     type="password"
                     placeholder="••••••••"
                     error={errors.password?.message}
                     {...register('password')}
                 />
                 <Input
-                    label="Confirm Password"
+                    label="Xác nhận mật khẩu"
                     type="password"
                     placeholder="••••••••"
                     error={errors.confirmPassword?.message}
@@ -83,7 +95,7 @@ export const RegisterForm = () => {
             </div>
 
             <Button type="submit" className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all" isLoading={isLoading}>
-                Create Account
+                Đăng ký tài khoản
             </Button>
         </form>
     );

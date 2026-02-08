@@ -172,8 +172,8 @@ export const CustomerHeader = () => {
                                 <button className="flex items-center gap-2 pl-2">
                                     <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white/50 shadow-sm">
                                         <img
-                                            src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
-                                            alt={user.name}
+                                            src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.fullName}&background=random`}
+                                            alt={user.fullName}
                                             className="h-full w-full object-cover"
                                         />
                                     </div>
@@ -181,7 +181,7 @@ export const CustomerHeader = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
                                 <div className="p-2 border-b border-gray-100 dark:border-gray-800">
-                                    <p className="font-semibold text-sm">{user.name}</p>
+                                    <p className="font-semibold text-sm">{user.fullName}</p>
                                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                                 </div>
                                 <DropdownMenuItem asChild>
@@ -189,7 +189,7 @@ export const CustomerHeader = () => {
                                         href="/profile"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                                     >
-                                        <User className="mr-2 h-4 w-4" /> My Profile
+                                        <User className="mr-2 h-4 w-4" /> Hồ sơ của tôi
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
@@ -197,7 +197,7 @@ export const CustomerHeader = () => {
                                         href="/bookings"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                                     >
-                                        <CreditCard className="mr-2 h-4 w-4" /> My Bookings
+                                        <CreditCard className="mr-2 h-4 w-4" /> Đơn đặt sân
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
@@ -205,7 +205,7 @@ export const CustomerHeader = () => {
                                         href="/messages"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                                     >
-                                        <MessageCircle className="mr-2 h-4 w-4" /> My Messages
+                                        <MessageCircle className="mr-2 h-4 w-4" /> Tin nhắn
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
@@ -213,7 +213,7 @@ export const CustomerHeader = () => {
                                         href="/favorites"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                                     >
-                                        <Heart className="mr-2 h-4 w-4" /> Favorites
+                                        <Heart className="mr-2 h-4 w-4" /> Sân yêu thích
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
@@ -221,12 +221,12 @@ export const CustomerHeader = () => {
                                         href="/profile?tab=security"
                                         className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
                                     >
-                                        <Settings className="mr-2 h-4 w-4" /> Settings
+                                        <Settings className="mr-2 h-4 w-4" /> Cài đặt
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => logout()} className="text-red-600 cursor-pointer">
-                                    <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                                    <LogOut className="mr-2 h-4 w-4" /> Đăng xuất
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -239,14 +239,14 @@ export const CustomerHeader = () => {
                                         showTransparent ? "text-white hover:bg-white/10" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     )}
                                 >
-                                    Login
+                                    Đăng nhập
                                 </Button>
                             </Link>
                             <Link href="/register">
                                 <Button className={cn(
                                     showTransparent ? "bg-white text-primary-600 hover:bg-gray-100" : "bg-primary-600 text-white"
                                 )}>
-                                    Sign Up
+                                    Đăng ký
                                 </Button>
                             </Link>
                         </div>

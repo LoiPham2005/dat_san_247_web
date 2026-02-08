@@ -114,12 +114,12 @@ export const AdminHeader = () => {
                 {/* User Profile */}
                 <div className="flex items-center gap-3 border-l border-gray-200 pl-4 dark:border-gray-700 max-w-[200px]">
                     <div className="hidden text-right sm:block truncate">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.name || 'User'}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.fullName || 'User'}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">{user?.role || 'Guest'}</p>
                     </div>
                     <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-white shadow-sm ring-1 ring-gray-200 dark:border-gray-800 dark:ring-gray-700">
                         <img
-                            src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=random`}
+                            src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${user?.fullName || 'User'}&background=random`}
                             alt="User"
                             className="h-full w-full object-cover"
                         />

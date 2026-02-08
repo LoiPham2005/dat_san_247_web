@@ -14,19 +14,19 @@ export default function LoginPage() {
                 <div className="glass shadow-2xl rounded-2xl p-8 backdrop-blur-xl bg-white/70 border-white/50">
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-2">
-                            Welcome Back
+                            Chào mừng trở lại
                         </h1>
                         <p className="text-sm text-gray-600">
-                            Please sign in to your account
+                            Vui lòng đăng nhập vào tài khoản của bạn
                         </p>
                     </div>
 
                     <LoginForm />
 
                     <div className="mt-6 text-center text-sm">
-                        <span className="text-gray-500">Don't have an account? </span>
+                        <span className="text-gray-500">Chưa có tài khoản? </span>
                         <Link href="/register" className="font-semibold text-primary-600 hover:text-primary-500 transition-colors">
-                            Sign up now
+                            Đăng ký ngay
                         </Link>
                     </div>
                 </div>

@@ -308,7 +308,7 @@ export const BookingWidget = ({ venue }: { venue: Venue }) => {
             totalHours: getSelectedDuration() / 60,
             pricePerHour: court.pricePerHour,
             totalAmount: calculateTotal(),
-            customerName: user?.name || 'Khách hàng',
+            customerName: user?.fullName || 'Khách hàng',
             customerPhone: user?.phone || '0000000000',
             customerEmail: user?.email || '',
             status: 'CONFIRMED',
