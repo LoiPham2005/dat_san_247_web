@@ -151,6 +151,18 @@ function BannerSection({ onEdit }: { onEdit: (banner: any) => void }) {
     const { data: banners, isLoading } = useBannersQuery();
     const { toast } = useToast();
 
+    if (banners) {
+        console.log('🖼️ [BannerDebug] Raw Banners Data:', banners);
+        if (Array.isArray(banners)) {
+            banners.forEach((b, index) => {
+                console.log(`   🔸 Banner [${index}] ID: ${b.id}`);
+                console.log(`      - ImageURL: ${b.imageUrl}`);
+                console.log(`      - MobileImage: ${b.mobileImageUrl}`);
+                console.log(`      - Type: ${b.type}`);
+            });
+        }
+    }
+
     if (isLoading) {
         return (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -238,22 +250,24 @@ function BannerModal({ isOpen, onClose, banner }: { isOpen: boolean, onClose: ()
     const [file, setFile] = useState<File | null>(null);
     const [mobileFile, setMobileFile] = useState<File | null>(null);
 
+    // Reset file states when modal opens/closes or banner changes
+    useEffect(() => {
+        setFile(null);
+        setMobileFile(null);
+    }, [isOpen, banner]);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsLoading(true);
 
         const formData = new FormData(e.currentTarget);
-
-        // Ensure files are appended manually if state managed, or just rely on native name if not
+        // Explicitly set files if they exist in state (handles potential input value issues)
         if (file) formData.set('image', file);
         if (mobileFile) formData.set('mobileImage', mobileFile);
 
-        // Filter out empty strings from the FormData to avoid DTO validation errors (like for endDate)
         const filteredData = new FormData();
         formData.forEach((value, key) => {
-            if (value !== '') {
-                filteredData.append(key, value);
-            }
+            if (value !== '') filteredData.append(key, value);
         });
 
         try {
@@ -274,88 +288,142 @@ function BannerModal({ isOpen, onClose, banner }: { isOpen: boolean, onClose: ()
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[500px]">
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>{banner ? 'Edit Banner' : 'Create New Banner'}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                        <div className="grid gap-2">
-                            <Label htmlFor="title">Title</Label>
-                            <Input id="title" name="title" defaultValue={banner?.content?.title} required />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" name="description" defaultValue={banner?.content?.description} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2">
+                    <DialogTitle className="text-xl">{banner ? 'Edit Banner' : 'Create New Banner'}</DialogTitle>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                        <div className="space-y-4">
                             <div className="grid gap-2">
-                                <Label>Position</Label>
-                                <Select
-                                    name="position"
-                                    defaultValue={banner?.position || 'HOME_HERO'}
-                                    options={[
-                                        { value: 'HOME_HERO', label: 'Home Hero' },
-                                        { value: 'HOME_MIDDLE', label: 'Home Middle' },
-                                        { value: 'VENUE_LIST', label: 'Venue List' },
-                                    ]}
+                                <Label htmlFor="title">Title</Label>
+                                <Input id="title" name="title" defaultValue={banner?.content?.title} required className="bg-gray-50/50" />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="description">Description (Optional)</Label>
+                                <Textarea id="description" name="description" defaultValue={banner?.content?.description} className="resize-none bg-gray-50/50" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div className="grid gap-2">
+                                    <Label>Position</Label>
+                                    <Select
+                                        name="position"
+                                        defaultValue={banner?.position || 'HOME_HERO'}
+                                        options={[
+                                            { value: 'HOME_HERO', label: 'Home Hero' },
+                                            { value: 'HOME_MIDDLE', label: 'Home Middle' },
+                                            { value: 'VENUE_LIST', label: 'Venue List' },
+                                        ]}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="displayOrder">Display Order</Label>
+                                    <Input id="displayOrder" name="displayOrder" type="number" defaultValue={banner?.displayOrder || 0} />
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="grid gap-2">
+                                    <Label>Content Type</Label>
+                                    <Select
+                                        name="type"
+                                        defaultValue={banner?.type || 'IMAGE'}
+                                        options={[
+                                            { value: 'IMAGE', label: 'Image' },
+                                            { value: 'VIDEO', label: 'Video' },
+                                        ]}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Status</Label>
+                                    <Select
+                                        name="status"
+                                        defaultValue={banner?.content?.status || 'PUBLISHED'}
+                                        options={[
+                                            { value: 'PUBLISHED', label: 'Published' },
+                                            { value: 'DRAFT', label: 'Draft' },
+                                        ]}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Image Data Section */}
+                        <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Media Assets</h4>
+
+                            {/* Desktop Image */}
+                            <div className="grid gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800">
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="image" className="text-base font-medium">Desktop Image (16:9)</Label>
+                                    <span className="text-xs text-gray-500">{banner ? '(Keep empty to preserve)' : '(Required)'}</span>
+                                </div>
+
+                                {banner?.imageUrl && !file && (
+                                    <div className="flex items-start gap-4 p-3 bg-white dark:bg-gray-950 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm group">
+                                        <div className="h-16 w-28 bg-gray-100 rounded-md overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700">
+                                            <img src={banner.imageUrl} alt="Current" className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="flex-1 min-w-0 overflow-hidden">
+                                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Current Image</p>
+                                            <a href={banner.imageUrl} target="_blank" rel="noopener" className="text-[10px] text-blue-500 hover:text-blue-600 hover:underline truncate block w-full">
+                                                {banner.imageUrl}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <Input
+                                    id="image"
+                                    type="file"
+                                    accept="image/*"
+                                    className="bg-white dark:bg-gray-950"
+                                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                    required={!banner}
                                 />
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="displayOrder">Display Order</Label>
-                                <Input id="displayOrder" name="displayOrder" type="number" defaultValue={banner?.displayOrder || 0} />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label>Content Type</Label>
-                                <Select
-                                    name="type"
-                                    defaultValue={banner?.type || 'IMAGE'}
-                                    options={[
-                                        { value: 'IMAGE', label: 'Image' },
-                                        { value: 'VIDEO', label: 'Video' },
-                                    ]}
+
+                            {/* Mobile Image */}
+                            <div className="grid gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800">
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="mobileImage" className="text-base font-medium">Mobile Image (9:16)</Label>
+                                    <span className="text-xs text-gray-500">(Optional)</span>
+                                </div>
+
+                                {banner?.mobileImageUrl && !mobileFile && (
+                                    <div className="flex items-start gap-4 p-3 bg-white dark:bg-gray-950 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
+                                        <div className="h-16 w-10 bg-gray-100 rounded-md overflow-hidden shrink-0 border border-gray-200 dark:border-gray-700">
+                                            <img src={banner.mobileImageUrl} alt="Current Mobile" className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="flex-1 min-w-0 overflow-hidden">
+                                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Current Mobile Image</p>
+                                            <a href={banner.mobileImageUrl} target="_blank" rel="noopener" className="text-[10px] text-blue-500 hover:text-blue-600 hover:underline truncate block w-full">
+                                                {banner.mobileImageUrl}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <Input
+                                    id="mobileImage"
+                                    type="file"
+                                    accept="image/*"
+                                    className="bg-white dark:bg-gray-950"
+                                    onChange={(e) => setMobileFile(e.target.files?.[0] || null)}
                                 />
                             </div>
-                            <div className="grid gap-2">
-                                <Label>Status</Label>
-                                <Select
-                                    name="status"
-                                    defaultValue={banner?.content?.status || 'PUBLISHED'}
-                                    options={[
-                                        { value: 'PUBLISHED', label: 'Published' },
-                                        { value: 'DRAFT', label: 'Draft' },
-                                    ]}
-                                />
-                            </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="image">Desktop Image (16:9) {banner && '(Optional)'}</Label>
-                            <Input
-                                id="image"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                required={!banner}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="mobileImage">Mobile Image (9:16) (Optional)</Label>
-                            <Input
-                                id="mobileImage"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setMobileFile(e.target.files?.[0] || null)}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+
+                        <div className="grid grid-cols-2 gap-6 pt-2 border-t border-gray-100 dark:border-gray-800">
                             <div className="grid gap-2">
                                 <Label htmlFor="startDate">Start Date</Label>
                                 <Input id="startDate" name="startDate" type="date" defaultValue={banner?.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]} required />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="endDate">End Date (Optional)</Label>
+                                <Label htmlFor="endDate">End Date</Label>
                                 <Input id="endDate" name="endDate" type="date" defaultValue={banner?.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : ''} />
                             </div>
                         </div>
@@ -365,10 +433,11 @@ function BannerModal({ isOpen, onClose, banner }: { isOpen: boolean, onClose: ()
                             <input type="hidden" name="actionType" value="LINK" />
                         </div>
                     </div>
-                    <DialogFooter className="mt-4">
+
+                    <DialogFooter className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 mt-auto">
                         <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save Banner'}
+                            {isLoading ? 'Saving...' : banner ? 'Save Changes' : 'Create Banner'}
                         </Button>
                     </DialogFooter>
                 </form>

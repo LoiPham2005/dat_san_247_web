@@ -1,65 +1,60 @@
-'use client';
+"use client"
 
-// Simple Observer Pattern
+import React from "react"
+import { toast as sonnerToast } from "sonner"
+
 type ToastProps = {
-    id: string;
     title?: string;
-    description?: string;
-    className?: string;
+    description?: React.ReactNode;
+    variant?: "default" | "destructive" | "success" | "warning" | "info";
     duration?: number;
-    variant?: 'default' | 'destructive';
-};
-
-type Listener = (toasts: ToastProps[]) => void;
-
-let memoryToasts: ToastProps[] = [];
-let listeners: Listener[] = [];
-
-function emitChange() {
-    listeners.forEach((listener) => listener([...memoryToasts]));
+    action?: React.ReactNode;
+    [key: string]: any;
 }
 
-function toast({ duration = 3000, ...props }: Omit<ToastProps, "id">) {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newToast = { id, duration, ...props };
+function toast({ title, description, variant = "default", ...props }: ToastProps) {
+    const options = {
+        description,
+        ...props
+    }
 
-    memoryToasts = [...memoryToasts, newToast];
-    emitChange();
+    let id: string | number;
 
-    if (duration > 0) {
-        setTimeout(() => {
-            dismiss(id);
-        }, duration);
+    switch (variant) {
+        case "destructive":
+            id = sonnerToast.error(title, options)
+            break
+        case "success":
+            id = sonnerToast.success(title, options)
+            break
+        case "warning":
+            id = sonnerToast.warning(title, options)
+            break
+        case "info":
+            id = sonnerToast.info(title, options)
+            break
+        case "default":
+        default:
+            // Default to success for positive feedback, or simple message
+            // Given the context of "dat san", default usually means success/info.
+            // But if user wants neutral, sonnerToast.message() is neutral.
+            // Previous implementation used check circle (success) for default.
+            // So we stick to success for default to maintain behavior.
+            id = sonnerToast.success(title, options)
+            break
     }
 
     return {
         id,
-        dismiss: () => dismiss(id),
-    };
+        dismiss: () => sonnerToast.dismiss(id)
+    }
 }
 
-function dismiss(id: string) {
-    memoryToasts = memoryToasts.filter((t) => t.id !== id);
-    emitChange();
-}
-
-const useToast = () => {
-    const [toasts, setToasts] = React.useState<ToastProps[]>(memoryToasts);
-
-    React.useEffect(() => {
-        listeners.push(setToasts);
-        return () => {
-            listeners = listeners.filter((l) => l !== setToasts);
-        };
-    }, []);
-
+function useToast() {
     return {
         toast,
-        dismiss,
-        toasts,
-    };
-};
+        dismiss: (id?: string | number) => sonnerToast.dismiss(id)
+    }
+}
 
-import * as React from 'react';
-
-export { useToast, toast };
+export { useToast, toast }
