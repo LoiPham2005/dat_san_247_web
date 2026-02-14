@@ -35,6 +35,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Textarea } from '@/components/ui/textarea';
 import axiosInstance from '@/lib/api/axios';
 import { API_ENDPOINTS } from '@/lib/api/endpoints';
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function ContentPage() {
     const [activeTab, setActiveTab] = useState('banners');
@@ -163,6 +164,23 @@ function BannerSection({ onEdit }: { onEdit: (banner: any) => void }) {
         }
     }
 
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDelete = (id: string) => {
+        setDeleteId(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await deleteBannerMutation.mutateAsync(deleteId);
+            toast({ title: 'Success', description: 'Banner deleted successfully', className: 'bg-green-600 text-white border-none' });
+            setDeleteId(null);
+        } catch (err) {
+            toast({ title: 'Error', description: 'Failed to delete banner', variant: 'destructive' });
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -172,17 +190,6 @@ function BannerSection({ onEdit }: { onEdit: (banner: any) => void }) {
             </div>
         );
     }
-
-    const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this banner?')) {
-            try {
-                await deleteBannerMutation.mutateAsync(id);
-                toast({ title: 'Success', description: 'Banner deleted successfully' });
-            } catch (err) {
-                toast({ title: 'Error', description: 'Failed to delete banner', variant: 'destructive' });
-            }
-        }
-    };
 
     const bannerList = Array.isArray(banners) ? banners : [];
 
@@ -239,6 +246,15 @@ function BannerSection({ onEdit }: { onEdit: (banner: any) => void }) {
                     No banners found. Click "New Banner" to create one.
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Banner"
+                description="Are you sure you want to delete this banner? This action cannot be undone."
+                isLoading={deleteBannerMutation.isPending}
+            />
         </div>
     )
 }
@@ -451,19 +467,25 @@ function BlogSection({ onEdit }: { onEdit: (post: any) => void }) {
     const { data: posts, isLoading } = useBlogsQuery();
     const { toast } = useToast();
 
-    if (isLoading) {
-        return <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-24 animate-pulse bg-gray-100 rounded-2xl" />)}</div>
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const handleDelete = (id: string) => {
+        setDeleteId(id);
     }
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Delete this post?')) {
-            try {
-                await deleteBlogMutation.mutateAsync(id);
-                toast({ title: 'Deleted' });
-            } catch (err) {
-                toast({ title: 'Error', variant: 'destructive' });
-            }
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await deleteBlogMutation.mutateAsync(deleteId);
+            toast({ title: 'Deleted', description: 'Blog post has been removed.', className: 'bg-green-600 text-white border-none' });
+            setDeleteId(null);
+        } catch (err) {
+            toast({ title: 'Error', variant: 'destructive' });
         }
+    }
+
+    if (isLoading) {
+        return <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-24 animate-pulse bg-gray-100 rounded-2xl" />)}</div>
     }
 
     const postList = Array.isArray(posts) ? posts : [];
@@ -508,6 +530,15 @@ function BlogSection({ onEdit }: { onEdit: (post: any) => void }) {
             {postList.length === 0 && (
                 <div className="py-12 text-center text-gray-500">No blog posts found.</div>
             )}
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Blog Post"
+                description="Are you sure you want to delete this post? This action cannot be undone."
+                isLoading={deleteBlogMutation.isPending}
+            />
         </div>
     )
 }
@@ -618,18 +649,24 @@ function EmailSection({ onEdit }: { onEdit: (template: any) => void }) {
     const { data: templates, isLoading } = useEmailTemplatesQuery();
     const { toast } = useToast();
 
-    if (isLoading) return <div className="grid gap-6 md:grid-cols-4">{[1, 2, 3].map(i => <div key={i} className="h-48 animate-pulse bg-gray-100 rounded-2xl" />)}</div>
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Delete template?')) {
-            try {
-                await deleteEmailTemplateMutation.mutateAsync(id);
-                toast({ title: 'Deleted' });
-            } catch (err) {
-                toast({ title: 'Error', variant: 'destructive' });
-            }
+    const handleDelete = (id: string) => {
+        setDeleteId(id);
+    }
+
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await deleteEmailTemplateMutation.mutateAsync(deleteId);
+            toast({ title: 'Deleted', description: 'Template has been removed.', className: 'bg-green-600 text-white border-none' });
+            setDeleteId(null);
+        } catch (err) {
+            toast({ title: 'Error', variant: 'destructive' });
         }
     }
+
+    if (isLoading) return <div className="grid gap-6 md:grid-cols-4">{[1, 2, 3].map(i => <div key={i} className="h-48 animate-pulse bg-gray-100 rounded-2xl" />)}</div>
 
     const handleSendTest = async (id: string) => {
         const email = prompt('Enter email address to send test:');
@@ -676,6 +713,15 @@ function EmailSection({ onEdit }: { onEdit: (template: any) => void }) {
             {templateList.length === 0 && (
                 <div className="col-span-full py-12 text-center text-gray-500">No email templates found.</div>
             )}
+
+            <ConfirmDialog
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={confirmDelete}
+                title="Delete Template"
+                description="Are you sure you want to delete this email template?"
+                isLoading={deleteEmailTemplateMutation.isPending}
+            />
         </div>
     )
 }

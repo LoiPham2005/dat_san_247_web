@@ -43,6 +43,11 @@ export const userService = {
         const response = await axiosInstance.post(`${API_ENDPOINTS.ADMIN_USER_BY_ID(id)}/toggle-status`);
         return response.data.data || response.data;
     },
+
+    restoreUser: async (id: string): Promise<any> => {
+        const response = await axiosInstance.post(`${API_ENDPOINTS.ADMIN_USER_BY_ID(id)}/restore`);
+        return response.data.data || response.data;
+    },
 };
 
 export default userService;

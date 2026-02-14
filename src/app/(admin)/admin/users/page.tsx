@@ -3,7 +3,8 @@
 import { DataTable } from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Loader2, Search, AlertCircle, RefreshCw } from "lucide-react";
+import { Plus, Download, Loader2, Search, AlertCircle, RefreshCw, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import { userService } from "@/lib/api/services/user.service";
 import { UserModal } from "@/components/admin/UserModal";
@@ -17,6 +18,7 @@ import { UserRole } from "@/types/auth.types";
 export default function UsersPage() {
     const [search, setSearch] = useState("");
     const [role, setRole] = useState<UserRole | "">("");
+    const [isDeleted, setIsDeleted] = useState(false);
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -28,8 +30,6 @@ export default function UsersPage() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    console.log('userService object:', userService);
-
     const {
         data,
         isLoading,
@@ -38,15 +38,12 @@ export default function UsersPage() {
         refetch,
         isFetching
     } = useQuery({
-        queryKey: ["admin-users", debouncedSearch, role],
+        queryKey: ["admin-users", debouncedSearch, role, isDeleted],
         queryFn: () => {
-            if (typeof userService.getUsers !== 'function') {
-                console.error('userService.getUsers is NOT a function!', userService);
-                throw new Error('userService.getUsers is not a function. Check console for object structure.');
-            }
             return userService.getUsers({
                 search: debouncedSearch,
-                role: role === "" ? undefined : role
+                role: role === "" ? undefined : role,
+                isDeleted: isDeleted ? 'true' : 'false'
             });
         },
     });
@@ -77,35 +74,50 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            <div className="rounded-xl bg-white p-1 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800">
-                <div className="p-4 space-y-4">
-                    {
-                        isError ? (
-                            <div className="flex h-64 flex-col items-center justify-center gap-2 text-red-500">
-                                <AlertCircle className="h-10 w-10" />
-                                <p className="font-medium">Failed to load users</p>
-                                <p className="text-xs text-gray-500">{(error as any)?.message || "Unknown error"}</p>
-                                <Button variant="outline" size="sm" onClick={() => refetch()}>Try Again</Button>
-                            </div>
-                        ) : (
-                            <DataTable
-                                columns={columns}
-                                data={usersList}
-                                searchValue={search}
-                                onSearchChange={setSearch}
-                                isLoading={isLoading}
-                                filterValue={role}
-                                onFilterChange={(val) => setRole(val as UserRole | "")}
-                                filterColumn="role"
-                                filterOptions={[
-                                    { label: 'Admin', value: UserRole.ADMIN },
-                                    { label: 'Owner', value: UserRole.OWNER },
-                                    { label: 'Staff', value: UserRole.STAFF },
-                                    { label: 'Customer', value: UserRole.CUSTOMER },
-                                ]}
-                            />
-                        )}
-                </div>
+            <div className="flex flex-col gap-6">
+                <Tabs defaultValue="active" onValueChange={(val) => setIsDeleted(val === 'deleted')}>
+                    <div className="flex items-center justify-between">
+                        <TabsList className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-1">
+                            <TabsTrigger value="active" className="data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800">
+                                Active Users
+                            </TabsTrigger>
+                            <TabsTrigger value="deleted" className="data-[state=active]:bg-red-50 text-red-600 dark:text-red-400 dark:data-[state=active]:bg-red-900/20">
+                                <Trash2 className="mr-2 h-4 w-4" /> Trash
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    <div className="rounded-xl bg-white p-1 shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 mt-4">
+                        <div className="p-4 space-y-4">
+                            {
+                                isError ? (
+                                    <div className="flex h-64 flex-col items-center justify-center gap-2 text-red-500">
+                                        <AlertCircle className="h-10 w-10" />
+                                        <p className="font-medium">Failed to load users</p>
+                                        <p className="text-xs text-gray-500">{(error as any)?.message || "Unknown error"}</p>
+                                        <Button variant="outline" size="sm" onClick={() => refetch()}>Try Again</Button>
+                                    </div>
+                                ) : (
+                                    <DataTable
+                                        columns={columns}
+                                        data={usersList}
+                                        searchValue={search}
+                                        onSearchChange={setSearch}
+                                        isLoading={isLoading}
+                                        filterValue={role}
+                                        onFilterChange={(val) => setRole(val as UserRole | "")}
+                                        filterColumn="role"
+                                        filterOptions={[
+                                            { label: 'Admin', value: UserRole.ADMIN },
+                                            { label: 'Owner', value: UserRole.OWNER },
+                                            { label: 'Staff', value: UserRole.STAFF },
+                                            { label: 'Customer', value: UserRole.CUSTOMER },
+                                        ]}
+                                    />
+                                )}
+                        </div>
+                    </div>
+                </Tabs>
             </div>
 
             <UserModal
