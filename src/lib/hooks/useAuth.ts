@@ -39,6 +39,7 @@ export const useAuth = () => {
                 redirect: false,
                 email: credentials.email,
                 password: credentials.password,
+                turnstileToken: credentials['cf-turnstile-response'],
             });
 
             if (result?.error) {

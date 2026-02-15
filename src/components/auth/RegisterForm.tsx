@@ -13,12 +13,14 @@ import { UserRole } from '@/types/auth.types';
 
 import { useToast } from '@/components/ui/use-toast';
 import { handleApiError } from '@/lib/utils/error-handler';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 type FormData = z.infer<typeof registerSchema>;
 
 export const RegisterForm = () => {
     const { register: registerAuth } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState<string>('');
     const { toast } = useToast();
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(registerSchema),
@@ -30,7 +32,10 @@ export const RegisterForm = () => {
     const onSubmit = async (data: FormData) => {
         setIsLoading(true);
         try {
-            await registerAuth(data);
+            await registerAuth({
+                ...data,
+                'cf-turnstile-response': turnstileToken,
+            });
             toast({
                 title: 'Thành công',
                 description: 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.',
@@ -91,6 +96,13 @@ export const RegisterForm = () => {
                     placeholder="••••••••"
                     error={errors.confirmPassword?.message}
                     {...register('confirmPassword')}
+                />
+            </div>
+
+            <div className="flex justify-center py-2">
+                <Turnstile
+                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                    onSuccess={(token) => setTurnstileToken(token)}
                 />
             </div>
 

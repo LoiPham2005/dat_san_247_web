@@ -28,6 +28,7 @@ export interface AuthState {
 export interface LoginCredentials {
     email: string;
     password: string;
+    'cf-turnstile-response'?: string;
 }
 
 export interface RegisterData extends LoginCredentials {

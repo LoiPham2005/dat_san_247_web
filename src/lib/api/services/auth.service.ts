@@ -28,8 +28,11 @@ export const authService = {
         return data.data;
     },
 
-    forgotPassword: async (email: string) => {
-        const { data } = await axiosInstance.post(API_ENDPOINTS.FORGOT_PASSWORD, { email });
+    forgotPassword: async (email: string, turnstileToken?: string) => {
+        const { data } = await axiosInstance.post(API_ENDPOINTS.FORGOT_PASSWORD, {
+            email,
+            'cf-turnstile-response': turnstileToken
+        });
         return data;
     },
 

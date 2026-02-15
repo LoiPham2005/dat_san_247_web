@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { handleApiError } from '@/lib/utils/error-handler';
 import { z } from 'zod';
 import { authService } from '@/lib/api/services/auth.service';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 const forgotPasswordSchema = z.object({
     email: z.string().email('Email không hợp lệ'),
@@ -19,6 +20,7 @@ type FormData = z.infer<typeof forgotPasswordSchema>;
 export const ForgotPasswordForm = ({ onSuccess }: { onSuccess: (email: string) => void }) => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState<string>('');
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(forgotPasswordSchema),
     });
@@ -26,7 +28,7 @@ export const ForgotPasswordForm = ({ onSuccess }: { onSuccess: (email: string) =
     const onSubmit = async (data: FormData) => {
         setIsLoading(true);
         try {
-            await authService.forgotPassword(data.email);
+            await authService.forgotPassword(data.email, turnstileToken);
             toast({
                 title: 'Thành công',
                 description: 'Mã OTP đã được gửi tới email của bạn.',
@@ -56,6 +58,14 @@ export const ForgotPasswordForm = ({ onSuccess }: { onSuccess: (email: string) =
                 error={errors.email?.message}
                 {...register('email')}
             />
+
+            <div className="flex justify-center py-2">
+                <Turnstile
+                    siteKey={process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY!}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                />
+            </div>
+
             <Button type="submit" className="w-full h-12 text-lg font-semibold" isLoading={isLoading}>
                 Gửi mã OTP
             </Button>

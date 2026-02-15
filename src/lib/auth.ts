@@ -8,7 +8,8 @@ export const authOptions: NextAuthOptions = {
             name: "Credentials",
             credentials: {
                 email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" }
+                password: { label: "Password", type: "password" },
+                turnstileToken: { label: "Turnstile Token", type: "text" }
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
@@ -19,6 +20,7 @@ export const authOptions: NextAuthOptions = {
                     const data = await authService.login({
                         email: credentials.email,
                         password: credentials.password,
+                        'cf-turnstile-response': (credentials as any).turnstileToken,
                     });
 
                     if (data && data.user) {
