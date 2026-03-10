@@ -1,41 +1,73 @@
 "use client";
 
 import React from 'react';
-import { Bell, Search, Globe, ChevronDown } from 'lucide-react';
+import { Bell, Search, Menu, User, LogOut } from 'lucide-react';
+import { signOut, useSession } from 'next-auth/react';
+import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 
 export const OwnerHeader = () => {
+    const { data: session } = useSession();
+
     return (
-        <header className="h-20 border-b bg-white flex items-center justify-between px-8 sticky top-0 z-40">
-            <div className="flex items-center gap-4 w-1/3">
-                <div className="relative w-full max-w-sm">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm">
+            <div className="flex items-center gap-4">
+                <button className="lg:hidden text-slate-500 hover:text-slate-700">
+                    <Menu className="w-6 h-6" />
+                </button>
+                <div className="relative hidden md:block w-64">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
-                        placeholder="Tìm kiếm nhanh..."
-                        className="pl-10 h-10 bg-slate-50 border-transparent focus:bg-white transition-all rounded-xl"
+                        placeholder="Tìm kiếm booking, khách hàng..."
+                        className="pl-9 h-9 border-slate-200 bg-slate-50 focus:bg-white text-sm focus:border-emerald-500 focus:ring-emerald-500/20"
                     />
                 </div>
             </div>
 
-            <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100 hover:bg-slate-100 cursor-pointer transition-colors">
-                    <Globe className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-bold text-slate-600">Trang cá nhân</span>
-                </div>
-
-                <button className="relative p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-full transition-all">
+            <div className="flex items-center gap-4">
+                <button className="relative text-slate-500 hover:text-emerald-600 transition-colors">
                     <Bell className="w-5 h-5" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
+                        5
+                    </span>
                 </button>
 
-                <div className="h-8 w-px bg-slate-200" />
+                <div className="h-8 w-px bg-slate-200 mx-2"></div>
 
-                <div className="flex items-center gap-3 cursor-pointer group">
-                    <div className="text-right">
-                        <p className="text-xs font-bold text-slate-900">Admin Venue</p>
-                        <p className="text-[10px] text-primary font-medium">Verified</p>
+                <div className="flex items-center gap-3">
+                    <div className="hidden md:block text-right">
+                        <div className="text-sm font-bold text-slate-900 leading-none">
+                            {session?.user?.name || 'Owner'}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1 uppercase tracking-wider font-semibold">
+                            Chủ sân
+                        </div>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
+                    <div className="relative group">
+                        <button className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden focus:outline-none focus:border-emerald-500 transition-colors">
+                            {session?.user?.image ? (
+                                <img src={session.user.image} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                    <User className="w-5 h-5 text-slate-500" />
+                                </div>
+                            )}
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right">
+                            <div className="p-2 space-y-1">
+                                <Button 
+                                    variant="ghost" 
+                                    className="w-full justify-start text-sm h-9 text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-medium"
+                                    onClick={() => signOut({ callbackUrl: '/login' })}
+                                >
+                                    <LogOut className="w-4 h-4 mr-2" />
+                                    Đăng xuất
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>

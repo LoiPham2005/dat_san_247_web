@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AppProvider } from '@/components/providers/AppProvider';
 
 export const metadata: Metadata = {
     title: 'DatSan247 - Đặt Sân Thể Thao Nhanh Chóng',
@@ -12,9 +13,11 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="vi">
+        <html lang="vi" suppressHydrationWarning>
             <body className="antialiased min-h-screen">
-                {children}
+                <AppProvider>
+                    {children}
+                </AppProvider>
             </body>
         </html>
     );

@@ -4,97 +4,71 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
-import {
-    LayoutDashboard,
-    MapPin,
-    CalendarCheck,
-    Users,
-    BarChart3,
-    Settings,
-    ChevronLeft,
-    MessageSquare,
-    BadgeDollarSign
+import { 
+    LayoutDashboard, Store, CalendarCheck, 
+    CreditCard, Users, Star, Settings, Tag, TrendingUp
 } from 'lucide-react';
+
+const MENU_ITEMS = [
+    { name: 'Tổng Quan', path: '/owner/dashboard', icon: LayoutDashboard },
+    { name: 'Quản Lý Sân Bãi', path: '/owner/venues', icon: Store },
+    { name: 'Lịch Đặt Sân', path: '/owner/bookings', icon: CalendarCheck },
+    { name: 'Tài Chính & Rút Tiền', path: '/owner/revenue', icon: CreditCard },
+    { name: 'Quản Lý Nhân Viên', path: '/owner/staff', icon: Users },
+    { name: 'Đánh Giá Của Khách', path: '/owner/reviews', icon: Star },
+    { name: 'Khuyến Mãi', path: '/owner/promotions', icon: Tag },
+    { name: 'Báo Cáo Thống Kê', path: '/owner/analytics', icon: TrendingUp },
+    { name: 'Cài Đặt', path: '/owner/settings', icon: Settings },
+];
 
 export const OwnerSidebar = () => {
     const pathname = usePathname();
-    const [isCollapsed, setIsCollapsed] = React.useState(false);
-
-    const menuItems = [
-        { name: 'Tổng quan', icon: LayoutDashboard, href: '/owner/dashboard' },
-        { name: 'Quản lý sân', icon: MapPin, href: '/owner/venues' },
-        { name: 'Lịch đặt sân', icon: CalendarCheck, href: '/owner/bookings' },
-        { name: 'Khách hàng', icon: Users, href: '/owner/customers' },
-        { name: 'Tài chính', icon: BadgeDollarSign, href: '/owner/finance' },
-        { name: 'Phản hồi', icon: MessageSquare, href: '/owner/reviews' },
-        { name: 'Báo cáo', icon: BarChart3, href: '/owner/analytics' },
-        { name: 'Cài đặt', icon: Settings, href: '/owner/settings' },
-    ];
 
     return (
-        <aside
-            className={cn(
-                "h-screen sticky top-0 bg-slate-900 text-slate-400 transition-all duration-300 border-r border-slate-800 flex flex-col",
-                isCollapsed ? "w-20" : "w-64"
-            )}
-        >
-            {/* Logo Area */}
-            <div className="p-6 flex items-center gap-3">
-                <div className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-xl">
-                    D
+        <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-screen sticky top-0">
+            <div className="h-16 flex items-center px-6 border-b border-slate-800">
+                <div className="flex items-center gap-2 font-black text-xl text-white tracking-tight">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+                        <Store className="w-5 h-5" />
+                    </div>
+                    Vendor<span className="text-emerald-500">247</span>
                 </div>
-                {!isCollapsed && (
-                    <span className="font-bold text-lg text-white tracking-tight animate-in fade-in duration-500">
-                        DatSan<span className="text-primary">247</span>
-                    </span>
-                )}
             </div>
 
-            {/* Toggle Button */}
-            <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -right-3 top-20 bg-primary text-white rounded-full p-1 shadow-lg hover:scale-110 transition-transform hidden lg:block"
-            >
-                <ChevronLeft className={cn("w-4 h-4 transition-transform", isCollapsed && "rotate-180")} />
-            </button>
-
-            {/* Nav Menu */}
-            <nav className="flex-1 px-3 py-6 space-y-1">
-                {menuItems.map((item) => {
-                    const isActive = pathname.startsWith(item.href);
+            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-widest px-3 mb-2 mt-2">
+                    Kinh Doanh
+                </div>
+                {MENU_ITEMS.map((item) => {
+                    const isActive = pathname.startsWith(item.path);
+                    const Icon = item.icon;
                     return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
+                        <Link 
+                            key={item.path} 
+                            href={item.path}
                             className={cn(
-                                "flex items-center gap-3 px-3 py-3 rounded-xl transition-all group",
-                                isActive
-                                    ? "bg-primary text-white shadow-lg shadow-primary/20"
-                                    : "hover:bg-slate-800 hover:text-white"
+                                "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-semibold transition-all",
+                                isActive 
+                                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" 
+                                    : "text-slate-400 hover:text-white hover:bg-slate-800"
                             )}
                         >
-                            <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-white" : "group-hover:text-primary")} />
-                            {!isCollapsed && <span className="text-sm font-semibold truncate">{item.name}</span>}
-                            {isActive && !isCollapsed && (
-                                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            )}
+                            <Icon className={cn("w-[18px] h-[18px]", isActive ? "opacity-100" : "opacity-70")} />
+                            {item.name}
                         </Link>
                     );
                 })}
-            </nav>
+            </div>
 
-            {/* Footer Info */}
             <div className="p-4 border-t border-slate-800">
-                <div className={cn("flex items-center gap-3", isCollapsed ? "justify-center" : "px-2")}>
-                    <div className="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 overflow-hidden">
-                        <img src="https://ui-avatars.com/api/?name=Owner&background=10b981&color=fff" alt="Avatar" />
+                <div className="bg-slate-800 rounded-xl p-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold">
+                        CN
                     </div>
-                    {!isCollapsed && (
-                        <div className="flex flex-col truncate">
-                            <span className="text-xs font-bold text-white leading-none">Lê Văn Chủ Sân</span>
-                            <span className="text-[10px] text-slate-500 mt-1">Quản trị viên</span>
-                        </div>
-                    )}
+                    <div className="overflow-hidden">
+                        <div className="text-sm font-bold text-white truncate">Chủ Sân</div>
+                        <div className="text-xs text-emerald-500 font-medium truncate">owner@datsan247.vn</div>
+                    </div>
                 </div>
             </div>
         </aside>
