@@ -7,7 +7,7 @@ import { VenueGallery } from '@/features/venue/components/VenueGallery';
 import { TimeSlotPicker } from '@/features/booking/components/TimeSlotPicker';
 import { Button } from '@/components/common/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/common/Card';
-import { MapPin, Star, Phone, ShieldCheck, Share2, Heart, Info, ChevronRight, Check } from 'lucide-react';
+import { MapPin, Star, Phone, ShieldCheck, Share2, Heart, Info, ChevronRight, Check, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useRouter } from 'next/navigation';
 
@@ -165,55 +165,31 @@ export default function VenueDetailPage({ params }: { params: { slug: string } }
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6 space-y-6">
-                                {/* Court Selector Dropdown Mock */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Loại sân / Mặt sân</label>
-                                    <select className="w-full border border-slate-200 rounded-xl p-4 bg-slate-50 focus:border-primary outline-none font-bold text-slate-800 cursor-pointer appearance-none">
-                                        {venue.courts?.map((c: any) => (
-                                            <option key={c.id} value={c.id}>{c.name} ({c.price_per_hour.toLocaleString()}đ/h)</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Date Picker Horizontal (Mock) */}
-                                <div className="space-y-2 uppercase">
-                                    <label className="text-xs font-bold text-slate-400 tracking-widest pl-1">Chọn ngày</label>
-                                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide py-1">
-                                        {[
-                                            { d: 'Hôm nay', n: new Date().getDate(), active: true },
-                                            { d: 'Ngày mai', n: new Date(Date.now() + 86400000).getDate() },
-                                            { d: 'T' + new Date(Date.now() + 86400000*2).getDay(), n: new Date(Date.now() + 86400000*2).getDate() },
-                                        ].map((item, i) => (
-                                            <button
-                                                key={i}
-                                                className={cn(
-                                                    "flex flex-col items-center justify-center min-w-[64px] py-3 rounded-2xl border transition-all",
-                                                    item.active
-                                                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105"
-                                                        : "bg-white border-slate-200 text-slate-700 hover:border-primary/40 hover:bg-primary/5 shadow-sm"
-                                                )}
-                                            >
-                                                <span className="text-[10px] font-bold">{item.d}</span>
-                                                <span className="text-sm font-black">{item.n}</span>
-                                            </button>
-                                        ))}
+                                <div className="space-y-4">
+                                    <div className="flex items-start gap-3 bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm">
+                                        <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                                        <div className="text-slate-600">
+                                            <p className="font-bold text-slate-800 mb-1">Cơ sở nhiều cụm sân</p>
+                                            <p className="leading-relaxed">Hệ thống sân này gồm nhiều sân nhỏ và khung giờ khác nhau. Vui lòng xem <strong>Bảng lịch trống bao quát</strong> để dễ dàng chọn chỗ.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Thanh toán đa dạng (VNPAY, MoMo...)
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Chấp nhận hoàn/hủy sân trước 12 tiếng
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Giữ chỗ ngay lập tức
                                     </div>
                                 </div>
 
-                                {/* Time Slot Matrix */}
-                                <div className="space-y-2 uppercase">
-                                    <label className="text-xs font-bold text-slate-400 tracking-widest pl-1">Chọn khung giờ trống</label>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {['06:00', '07:30', '09:00', '16:00', '17:30', '19:00'].map(t => (
-                                            <button key={t} className="py-2 border border-slate-200 rounded-xl font-bold bg-white hover:border-primary text-slate-700 hover:text-primary transition-colors text-sm">{t}</button>
-                                        ))}
-                                    </div>
-                                </div>
                                 <Button 
-                                    className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-bold text-base shadow-lg shadow-emerald-500/20 mt-4"
-                                    onClick={() => router.push('/checkout')}
+                                    className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 font-bold text-lg shadow-lg shadow-emerald-500/20 mt-6 flex items-center justify-center gap-2 group"
+                                    onClick={() => router.push(`/venues/${params.slug}/schedule`)}
                                 >
-                                    Tiến Hành Đặt Sân Tùy Chọn
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                                    Xem Lịch Trống Bao Quát
                                 </Button>
                             </CardContent>
                         </Card>
