@@ -13,7 +13,7 @@ const MENU_ITEMS = [
     { name: 'Tổng Quan', path: '/owner/dashboard', icon: LayoutDashboard },
     { name: 'Quản Lý Sân Bãi', path: '/owner/venues', icon: Store },
     { name: 'Lịch Đặt Sân', path: '/owner/bookings', icon: CalendarCheck },
-    { name: 'Tài Chính & Rút Tiền', path: '/owner/revenue', icon: CreditCard },
+    { name: 'Tài Chính & Doanh Thu', path: '/owner/finance', icon: CreditCard },
     { name: 'Quản Lý Nhân Viên', path: '/owner/staff', icon: Users },
     { name: 'Đánh Giá Của Khách', path: '/owner/reviews', icon: Star },
     { name: 'Khuyến Mãi', path: '/owner/promotions', icon: Tag },

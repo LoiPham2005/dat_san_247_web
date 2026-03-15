@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { MapPin, Star, Clock } from 'lucide-react';
+import { MapPin, Star, Clock, Heart } from 'lucide-react';
 
 interface VenueCardProps {
     venue: {
@@ -20,9 +20,17 @@ interface VenueCardProps {
         sports: string[];
         min_price: number;
     };
+    isFavorite?: boolean;
 }
 
-export const VenueCard: React.FC<VenueCardProps> = ({ venue }) => {
+export const VenueCard: React.FC<VenueCardProps> = ({ venue, isFavorite }) => {
+    // Prevent event propagation for the favorite button click
+    const handleFavoriteClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Call toggle favorite hook here in real app
+    };
+
     return (
         <Link href={`/venues/${venue.slug}`} className="block group">
             <Card className="h-full overflow-hidden border-slate-200/60 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 bg-white">
@@ -41,12 +49,19 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue }) => {
                     )}
 
                     {/* Status/Rating Badges */}
-                    <div className="absolute top-3 left-3 flex gap-2">
+                    <div className="absolute top-3 left-3 flex gap-2 z-10">
                         <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold text-slate-800 shadow-sm">
                             <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
                             {venue.rating.toFixed(1)}
                         </div>
                     </div>
+
+                    <button 
+                        onClick={handleFavoriteClick}
+                        className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 transition-transform z-10"
+                    >
+                        <Heart className={`w-4 h-4 ${isFavorite ? 'text-rose-500 fill-rose-500' : 'text-slate-400'}`} />
+                    </button>
 
                     <div className="absolute bottom-3 left-3 bg-primary/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold text-white uppercase tracking-wider shadow-sm">
                         Đang mở

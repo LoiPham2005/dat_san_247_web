@@ -5,7 +5,7 @@ import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react'
 export const PublicFooter = () => {
     return (
         <footer className="w-full border-t bg-slate-50 pt-16 pb-8">
-            <div className="container px-4 md:px-8">
+            <div className="container mx-auto max-w-7xl px-4 md:px-8">
                 <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
                     {/* Logo and About */}
                     <div className="space-y-4">

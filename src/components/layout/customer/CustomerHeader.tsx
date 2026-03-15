@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/common/Button';
-import { Store, User, LogOut, LayoutDashboard, History, Settings, Bell, Wallet } from 'lucide-react';
+import { Store, User, LogOut, LayoutDashboard, History, Settings, Bell, Wallet, Star, MessagesSquare } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePathname } from 'next/navigation';
 
@@ -46,10 +46,10 @@ export const CustomerHeader = () => {
                             <Link href="/wallet" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 font-bold border border-orange-100 hover:bg-orange-100 transition-colors text-xs">
                                 <Wallet className="w-3.5 h-3.5" /> 0 ₫
                             </Link>
-                            <button className="relative text-slate-500 hover:text-primary transition-colors">
+                            <Link href="/notifications" className="relative text-slate-500 hover:text-primary transition-colors">
                                 <Bell className="w-5 h-5" />
                                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white"></span>
-                            </button>
+                            </Link>
 
                             <div className="relative group">
                                 <button className="flex items-center gap-2 pl-2 pr-1 h-10 rounded-full border border-slate-200 bg-white hover:border-primary/50 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20">
@@ -78,6 +78,18 @@ export const CustomerHeader = () => {
                                         </Link>
                                         <Link href="/bookings" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/bookings') && "bg-slate-50 text-primary")}>
                                             <History className="w-4 h-4 mr-2 text-slate-400" /> Quản lý Booking
+                                        </Link>
+                                        <Link href="/wallet" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/wallet') && "bg-slate-50 text-primary")}>
+                                            <Wallet className="w-4 h-4 mr-2 text-slate-400" /> Tài chính & Hóa đơn
+                                        </Link>
+                                        <Link href="/vouchers" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/vouchers') && "bg-slate-50 text-primary")}>
+                                            <Store className="w-4 h-4 mr-2 text-slate-400" /> Kho Voucher
+                                        </Link>
+                                        <Link href="/reviews" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/reviews') && "bg-slate-50 text-primary")}>
+                                            <Star className="w-4 h-4 mr-2 text-slate-400" /> Đánh giá của tôi
+                                        </Link>
+                                        <Link href="/support" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/support') && "bg-slate-50 text-primary")}>
+                                            <MessagesSquare className="w-4 h-4 mr-2 text-slate-400" /> Hỗ trợ & Báo cáo
                                         </Link>
                                     </div>
                                     

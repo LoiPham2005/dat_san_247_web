@@ -2,171 +2,107 @@
 
 import React from 'react';
 import { Card } from '@/components/common/Card';
-import { 
-    CalendarCheck, Clock, Users, Activity, 
-    ChevronRight, CreditCard, MapPin, HardHat
-} from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/common/Button';
+import { Users, CalendarCheck, MapPin, Target, TrendingUp, Clock, DollarSign, Store } from 'lucide-react';
+import { useOwnerBookings, useOwnerWaitlist } from '@/features/owner/hooks/useOwnerBooking';
 
 export default function VenueStaffDashboardPage() {
+    const venueId = 'VN-1'; // Mock Data - Venue Staff is assigned to VN-1 normally
+    const { bookings, isLoading } = useOwnerBookings(venueId);
+    const { waitlist } = useOwnerWaitlist(venueId);
+
+    const pendingBookings = bookings.filter(b => b.status === 'PENDING').length;
+    const checkedInBookings = bookings.filter(b => b.status === 'CHECKED_IN').length;
+    const todayRevenue = bookings.filter(b => b.status === 'COMPLETED' || b.status === 'CONFIRMED').reduce((acc, curr) => acc + curr.total_amount, 0);
+
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <div>
-                    <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-                        <Activity className="w-8 h-8 text-primary" /> Bảng Điều Khiển Nhân Viên Sân (Dashboard)
-                    </h2>
-                    <p className="text-slate-500 mt-2 text-base font-medium max-w-3xl">
-                        Chào mừng nhân viên sân! Dưới đây là lịch trình đặt sân và hoạt động tại cơ sở của bạn trong ngày hôm nay.
-                    </p>
-                </div>
+        <div className="p-6 max-w-7xl mx-auto space-y-6">
+            <div className="mb-8">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                    <Target className="w-7 h-7 text-indigo-600" /> Bảng Điều Khiển (Manager)
+                </h1>
+                <p className="text-sm font-medium text-slate-500 mt-1">Cơ sở: <strong className="text-slate-800">Sân Bóng Vipe Cầu Giấy</strong></p>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="p-6 bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Check-in Hôm Nay</p>
-                            <h3 className="text-3xl font-black text-slate-900">18</h3>
-                        </div>
-                        <div className="p-3 bg-emerald-50 rounded-xl group-hover:scale-110 transition-transform">
-                            <CalendarCheck className="w-6 h-6 text-emerald-600" />
-                        </div>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* DOANH THU HÔM NAY TỔNG QUAN */}
+                <Card className="p-5 flex flex-col justify-between border-l-4 border-l-indigo-500 hover:shadow-md transition-shadow">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-indigo-500" /> Doanh Thu Trong Ngày</span>
+                    <div className="mt-4 flex items-end justify-between">
+                        <span className="text-2xl font-black text-slate-900">{isLoading ? '...' : (todayRevenue + 1200000).toLocaleString()} <span className="text-sm font-medium text-slate-500">đ</span></span>
                     </div>
-                    <div className="mt-4 flex items-center text-sm font-semibold text-emerald-600">
-                        <Clock className="w-4 h-4 mr-1 text-slate-400" />
-                        5 khách sắp đến
+                </Card>
+                
+                {/* LỊCH ĐẶT CHỜ DUYỆT */}
+                <Card className="p-5 flex flex-col justify-between border-l-4 border-l-amber-500 hover:shadow-md transition-shadow bg-amber-50/30">
+                    <span className="text-xs font-bold text-amber-700 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-4 h-4" /> Lịch Cần Duyệt</span>
+                    <div className="mt-4 flex items-end justify-between">
+                        <span className="text-2xl font-black text-amber-600">{isLoading ? '...' : pendingBookings} <span className="text-sm font-medium text-amber-500">lịch</span></span>
+                        {pendingBookings > 0 && <Button size="sm" onClick={() => window.location.href='/venue-staff/bookings'} className="h-7 text-[10px] px-2 bg-amber-100 text-amber-700 hover:bg-amber-200">Duyệt ngay</Button>}
                     </div>
-                    <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-50 rounded-full opacity-50 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
+                </Card>
+                
+                {/* ĐANG CHECK-IN */}
+                <Card className="p-5 flex flex-col justify-between border-l-4 border-l-emerald-500 hover:shadow-md transition-shadow bg-emerald-50/30">
+                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest flex items-center gap-1.5"><CalendarCheck className="w-4 h-4" /> Đang Check-in Đang Đá</span>
+                    <div className="mt-4 flex items-end justify-between">
+                        <span className="text-2xl font-black text-emerald-600">{isLoading ? '...' : checkedInBookings} <span className="text-sm font-medium text-emerald-500">lịch</span></span>
+                    </div>
                 </Card>
 
-                <Card className="p-6 bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Booking Chờ Duyệt</p>
-                            <h3 className="text-3xl font-black text-slate-900">04</h3>
-                        </div>
-                        <div className="p-3 bg-amber-50 rounded-xl group-hover:scale-110 transition-transform">
-                            <Clock className="w-6 h-6 text-amber-600" />
-                        </div>
+                {/* DANH SÁCH CHỜ */}
+                <Card className="p-5 flex flex-col justify-between border-l-4 border-l-rose-500 hover:shadow-md transition-shadow bg-rose-50/30">
+                    <span className="text-xs font-bold text-rose-700 uppercase tracking-widest flex items-center gap-1.5"><Users className="w-4 h-4" /> Khách Chờ Sân (Waitlist)</span>
+                    <div className="mt-4 flex items-end justify-between">
+                        <span className="text-2xl font-black text-rose-600">{waitlist.length} <span className="text-sm font-medium text-rose-500">khách</span></span>
                     </div>
-                    <div className="mt-4 flex items-center text-sm font-semibold text-amber-600">
-                        Cần xác nhận ngay
-                    </div>
-                    <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-50 rounded-full opacity-50 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
-                </Card>
-
-                <Card className="p-6 bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Tỷ Lệ Lấp Đầy</p>
-                            <h3 className="text-3xl font-black text-slate-900">85%</h3>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-xl group-hover:scale-110 transition-transform">
-                            <Activity className="w-6 h-6 text-blue-600" />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-center text-sm font-semibold text-blue-600">
-                        Ổn định so với hôm qua
-                    </div>
-                    <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-blue-50 rounded-full opacity-50 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
-                </Card>
-
-                <Card className="p-6 bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-1">Khách Mới</p>
-                            <h3 className="text-3xl font-black text-slate-900">12</h3>
-                        </div>
-                        <div className="p-3 bg-purple-50 rounded-xl group-hover:scale-110 transition-transform">
-                            <Users className="w-6 h-6 text-purple-600" />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-center text-sm font-semibold text-emerald-600">
-                        +3 khách hàng mới
-                    </div>
-                    <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-purple-50 rounded-full opacity-50 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Lịch thi đấu hôm nay */}
-                <Card className="lg:col-span-2 border-slate-200 shadow-sm flex flex-col">
-                    <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                        <h4 className="font-bold text-slate-800">Lịch Trình Đặt Sân Hôm Nay</h4>
-                        <Link href="/venue-staff/bookings" className="text-xs font-bold text-primary hover:text-primary/80 flex items-center">
-                            Xem lịch tuần <ChevronRight className="w-4 h-4" />
-                        </Link>
+            {/* Quick Actions / Shortcuts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+               <Card className="p-6">
+                    <h3 className="font-black text-slate-800 flex items-center gap-2 mb-4"><CalendarCheck className="w-5 h-5 text-indigo-600" /> Tương Tác Nhanh Lịch Đặt</h3>
+                    <div className="space-y-3">
+                         {isLoading ? (
+                             <div className="py-4 text-center text-slate-500 text-sm">Đang tải lịch chưa duyệt...</div>
+                         ) : pendingBookings === 0 ? (
+                             <div className="py-4 text-center text-slate-500 text-sm">Tuyệt vời! Đã duyệt toàn bộ lịch khách đặt.</div>
+                         ) : (
+                             bookings.filter(b => b.status === 'PENDING').slice(0, 3).map(b => (
+                                 <div key={b.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                     <div>
+                                         <div className="font-bold text-sm text-slate-800">{b.start_time} - {b.end_time} • {b.court_name}</div>
+                                         <div className="text-xs text-slate-500 mt-0.5">{b.customer_name} ({b.customer_phone})</div>
+                                     </div>
+                                     <Button size="sm" onClick={() => window.location.href='/venue-staff/bookings'} className="bg-blue-600">Xem</Button>
+                                 </div>
+                             ))
+                         )}
                     </div>
-                    <div className="p-0 overflow-x-auto">
-                        <table className="w-full text-sm text-left whitespace-nowrap">
-                            <thead className="bg-white border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
-                                <tr>
-                                    <th className="px-6 py-3">Khung Giờ</th>
-                                    <th className="px-6 py-3">Sân</th>
-                                    <th className="px-6 py-3">Khách Hàng</th>
-                                    <th className="px-6 py-3">Trạng Thái</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {[
-                                    { time: '17:00 - 18:30', court: 'Sân 1', customer: 'Nguyễn Văn A', status: 'CONFIRMED' },
-                                    { time: '18:30 - 20:00', court: 'Sân 2', customer: 'Trần Thị B', status: 'CONFIRMED' },
-                                    { time: '20:00 - 21:30', court: 'Sân 1', customer: 'Lê Văn C', status: 'PENDING' },
-                                ].map((row, i) => (
-                                    <tr key={i} className="hover:bg-slate-50 transition-colors text-sm font-medium">
-                                        <td className="px-6 py-4 text-primary font-bold">{row.time}</td>
-                                        <td className="px-6 py-4 text-slate-700">{row.court}</td>
-                                        <td className="px-6 py-4 text-slate-900 font-bold">{row.customer}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border
-                                                ${row.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                                {row.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </Card>
-
-                {/* Thông tin cơ sở */}
-                <Card className="col-span-1 border-slate-200 shadow-sm flex flex-col h-fit">
-                    <div className="p-5 border-b border-slate-100 bg-slate-50 rounded-t-xl">
-                        <h4 className="font-bold text-slate-800">Thông Tin Sân Đang Trực</h4>
-                    </div>
-                    <div className="p-6 space-y-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-xl">
-                                <HardHat className="w-6 h-6 text-primary" />
+               </Card>
+               <Card className="p-6">
+                    <h3 className="font-black text-slate-800 flex items-center gap-2 mb-4"><Store className="w-5 h-5 text-emerald-600" /> Hoạt Động Của Bạn</h3>
+                    <div className="space-y-4">
+                        <div className="text-sm text-slate-600 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-black text-xs">ON</div>
+                            <div>
+                                <div className="font-bold text-slate-800">Trạng thái Cơ Sở: Đang Nhận Khách</div>
+                                <div className="text-xs mt-1">Giờ mở cửa hôm nay: 06:00 - 23:00</div>
+                            </div>
+                        </div>
+                        <div className="text-sm text-slate-600 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                                <Users className="w-4 h-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Vai Trò</p>
-                                <p className="text-sm font-black text-slate-900">Nhân Viên Vận Hành</p>
+                                <div className="font-bold text-slate-800">Cơ cấu Nhân Sự Ca</div>
+                                <div className="text-xs mt-1">Ca của bạn: 14:00 - 22:00 (Cổn Nhân viên: 3)</div>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-amber-50 rounded-xl">
-                                <MapPin className="w-6 h-6 text-amber-600" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cơ Sở</p>
-                                <p className="text-sm font-black text-slate-900">Sân Bóng Đá Cầu Giấy</p>
-                            </div>
-                        </div>
-                        <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
-                             <Button variant="outline" className="w-full justify-start gap-2 h-10 font-bold">
-                                <CreditCard className="w-4 h-4" /> Thanh Toán Tại Chỗ
-                             </Button>
-                             <Button variant="outline" className="w-full justify-start gap-2 h-10 font-bold">
-                                <Activity className="w-4 h-4" /> Cập Nhật Trạng Thái Sân
-                             </Button>
                         </div>
                     </div>
-                </Card>
+               </Card>
             </div>
         </div>
     );
