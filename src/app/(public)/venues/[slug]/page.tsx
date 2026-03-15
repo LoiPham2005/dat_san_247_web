@@ -9,8 +9,10 @@ import { Button } from '@/components/common/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/common/Card';
 import { MapPin, Star, Phone, ShieldCheck, Share2, Heart, Info, ChevronRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { useRouter } from 'next/navigation';
 
 export default function VenueDetailPage({ params }: { params: { slug: string } }) {
+    const router = useRouter();
     const { data: venue, isLoading } = useVenueDetail(params.slug);
     const { favorites, toggleFavorite } = useUserFavorites();
 
@@ -207,7 +209,10 @@ export default function VenueDetailPage({ params }: { params: { slug: string } }
                                         ))}
                                     </div>
                                 </div>
-                                <Button className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-bold text-base shadow-lg shadow-emerald-500/20 mt-4">
+                                <Button 
+                                    className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-bold text-base shadow-lg shadow-emerald-500/20 mt-4"
+                                    onClick={() => router.push('/checkout')}
+                                >
                                     Tiến Hành Đặt Sân Tùy Chọn
                                 </Button>
                             </CardContent>

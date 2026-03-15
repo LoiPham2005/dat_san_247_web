@@ -62,7 +62,7 @@ export default function HomePage() {
     return (
         <main className="min-h-screen bg-white selection:bg-primary/20">
             {/* HERO SECTION - Giao diện WOW thay thế Banner truyền thống */}
-            <section className="relative px-4 pt-16 pb-24 md:pt-28 md:pb-40 overflow-hidden">
+            <section className="relative px-4 pt-8 pb-8 md:pt-12 md:pb-12 overflow-hidden">
                 {/* Background Styling */}
                 <div className="absolute inset-0 bg-slate-50 -z-20"></div>
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 -z-10"></div>
@@ -89,24 +89,24 @@ export default function HomePage() {
                     <form onSubmit={handleSearch} className="w-full max-w-4xl bg-white border border-slate-200/60 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] rounded-[2rem] p-3 flex flex-col md:flex-row gap-3 items-center mx-auto animate-in slide-in-from-bottom-10 fade-in duration-700 delay-300">
                         <div className="flex w-full flex-1 items-center gap-3 px-4 md:border-r border-slate-100 h-14">
                             <MapPin className="text-slate-400 w-5 h-5 flex-shrink-0" />
-                            <div className="flex-1">
+                            <div className="flex-1 text-left">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Địa điểm / Tên sân</label>
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Bạn muốn chơi ở đâu?"
-                                    className="w-full border-0 p-0 text-slate-800 font-bold placeholder:font-medium placeholder:text-slate-300 focus:ring-0 sm:text-lg bg-transparent outline-none"
+                                    className="w-full border-0 p-0 text-slate-800 font-bold placeholder:font-medium placeholder:text-slate-300 focus:ring-0 sm:text-lg bg-transparent outline-none text-left"
                                 />
                             </div>
                         </div>
                         <div className="flex w-full md:w-56 items-center gap-3 px-4 h-14">
                             <CalendarDays className="text-slate-400 w-5 h-5 flex-shrink-0" />
-                            <div className="flex-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Ngày đá</label>
+                            <div className="flex-1 text-left">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1 text-left">Ngày đá</label>
                                 <input
                                     type="date"
-                                    className="w-full border-0 p-0 text-slate-800 font-bold focus:ring-0 bg-transparent outline-none cursor-pointer"
+                                    className="w-full border-0 p-0 text-slate-800 font-bold focus:ring-0 bg-transparent outline-none cursor-pointer text-left"
                                 />
                             </div>
                         </div>
@@ -130,7 +130,7 @@ export default function HomePage() {
             </section>
 
             {/* MÔN THỂ THAO PHỔ BIẾN */}
-            <section className="py-24 px-4 bg-white relative">
+            <section className="pt-4 pb-12 md:pt-8 md:pb-16 px-4 bg-white relative">
                 <div className="container mx-auto max-w-7xl">
                     <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
                         <div>
@@ -233,7 +233,7 @@ export default function HomePage() {
                             <Button size="lg" className="h-16 px-10 rounded-2xl font-bold text-lg bg-white text-slate-900 hover:bg-slate-100 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]">
                                 Đăng Ký Trở Thành Đối Tác
                             </Button>
-                            <Button size="lg" variant="outline" className="h-16 px-10 rounded-2xl font-bold text-lg border-white/20 text-white hover:bg-white/10">
+                            <Button size="lg" variant="ghost" className="h-16 px-10 rounded-2xl font-bold text-lg border-2 border-white/20 text-white bg-transparent hover:bg-white/10">
                                 Tìm Hiểu Thêm
                             </Button>
                         </div>
