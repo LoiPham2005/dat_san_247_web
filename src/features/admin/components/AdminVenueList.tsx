@@ -15,6 +15,12 @@ export const AdminVenueList = () => {
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
     const [editingCommissionId, setEditingCommissionId] = useState<string | null>(null);
     const [tempCommissionRate, setTempCommissionRate] = useState<string>("");
+    
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [tempNote, setTempNote] = useState<string>("");
+    
+    // Simulate current logged in user role for demo purposes
+    const [simulatedRole, setSimulatedRole] = useState<'admin' | 'super_admin'>('admin');
 
     const filteredVenues = venues.filter((venue) => {
         const matchesSearch = venue.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -32,6 +38,15 @@ export const AdminVenueList = () => {
         setEditingCommissionId(null);
     };
 
+    const handleNoteSave = (id: string) => {
+        // @ts-ignore
+        if (useAdminVenues().updateAdminNotes) {
+            // @ts-ignore
+            useAdminVenues().updateAdminNotes({ id, notes: tempNote });
+        }
+        setEditingNoteId(null);
+    };
+
     if (isLoading) {
         return (
             <div className="flex h-[400px] w-full items-center justify-center">
@@ -45,6 +60,20 @@ export const AdminVenueList = () => {
 
     return (
         <div className="space-y-6">
+            {/* Demo Header for role simulation */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center">
+                <div className="text-sm text-indigo-800 font-medium">
+                    Đang xem với tư cách: <strong className="uppercase">{simulatedRole === 'admin' ? 'Admin Vận Hành' : 'Super Admin'}</strong>
+                </div>
+                <Button 
+                    variant="outline" size="sm" 
+                    className="h-8 border-indigo-200 text-indigo-700 bg-white"
+                    onClick={() => setSimulatedRole(r => r === 'admin' ? 'super_admin' : 'admin')}
+                >
+                    Đổi quyền (Demo)
+                </Button>
+            </div>
+
             {/* Control Bar */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div className="relative w-full md:w-96">
@@ -98,7 +127,12 @@ export const AdminVenueList = () => {
                                 <span className="font-mono text-[10px] text-slate-400 uppercase tracking-widest bg-slate-200 px-1.5 py-0.5 rounded">
                                     ID: {venue.id}
                                 </span>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {(venue.status === 'PENDING' || venue.status === 'SUSPENDED') && (
+                                    <span className="ml-2 text-[10px] font-bold px-2 py-0.5 bg-rose-100 text-rose-600 rounded">
+                                        Cần Duyệt Hồ Sơ
+                                    </span>
+                                )}
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
@@ -144,6 +178,43 @@ export const AdminVenueList = () => {
                                             <div className="text-[10px] text-slate-500 truncate">{venue.owner_email}</div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* ADMIN NOTES */}
+                                <div className="mb-4">
+                                    {editingNoteId === venue.id ? (
+                                        <div className="border border-primary rounded-lg p-2 bg-blue-50/50">
+                                            <textarea 
+                                                className="w-full text-xs font-medium text-slate-700 bg-transparent focus:outline-none resize-none"
+                                                rows={2}
+                                                value={tempNote}
+                                                onChange={(e) => setTempNote(e.target.value)}
+                                                autoFocus
+                                                placeholder="Ghi chú nội bộ cho vận hành viên..."
+                                            />
+                                            <div className="flex justify-end gap-2 mt-2">
+                                                <button onClick={() => setEditingNoteId(null)} className="text-[10px] font-bold text-slate-500">Hủy</button>
+                                                <button onClick={() => {
+                                                    // @ts-ignore
+                                                    useAdminVenues().updateAdminNotes?.({ id: venue.id, notes: tempNote });
+                                                    setEditingNoteId(null);
+                                                }} className="text-[10px] font-bold text-primary">Lưu ghi chú</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div 
+                                            className="text-[11px] font-medium text-slate-600 bg-slate-100 p-2 rounded-lg cursor-pointer hover:bg-slate-200 hover:text-slate-800 transition-colors line-clamp-2 italic"
+                                            onClick={() => {
+                                                setEditingNoteId(venue.id);
+                                                // @ts-ignore
+                                                setTempNote(venue.admin_notes || "");
+                                            }}
+                                            title="Bấm để sửa ghi chú nội bộ"
+                                        >
+                                            {/* @ts-ignore */}
+                                            {venue.admin_notes ? `📝 ${venue.admin_notes}` : "📝 Thêm ghi chú nội bộ..."}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* KPIs */}

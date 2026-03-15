@@ -18,6 +18,7 @@ export const AdminSupportList = () => {
 
     const [activeTab, setActiveTab] = useState<'TICKETS' | 'REPORTS' | 'REVIEWS'>('TICKETS');
     const [searchTerm, setSearchTerm] = useState('');
+    const [simulatedRole, setSimulatedRole] = useState<'admin' | 'super_admin'>('admin');
 
     const isLoading = isLoadingTickets || isLoadingReports || isLoadingReviews;
 
@@ -38,6 +39,20 @@ export const AdminSupportList = () => {
 
     return (
         <div className="space-y-6">
+            {/* Demo Header for role simulation */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center">
+                <div className="text-sm text-indigo-800 font-medium">
+                    Đang xem với tư cách: <strong className="uppercase">{simulatedRole === 'admin' ? 'Admin Vận Hành' : 'Super Admin'}</strong>
+                </div>
+                <Button 
+                    variant="outline" size="sm" 
+                    className="h-8 border-indigo-200 text-indigo-700 bg-white"
+                    onClick={() => setSimulatedRole(r => r === 'admin' ? 'super_admin' : 'admin')}
+                >
+                    Đổi quyền (Demo)
+                </Button>
+            </div>
+
             {/* Tabs & Controls */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="flex border-b border-slate-200">
@@ -178,8 +193,18 @@ export const AdminSupportList = () => {
                                         <Button size="sm" variant="ghost" className="h-8 text-slate-500" disabled={isUpdatingReport} onClick={() => updateReport({ id: report.id, status: 'DISMISSED', action: 'DISMISS' })}>
                                             <XCircle className="w-4 h-4 mr-1.5" /> Bỏ Qua (Báo Cáo Lá Láo)
                                         </Button>
-                                        <Button size="sm" variant="outline" className="h-8 border-rose-200 text-rose-600 hover:bg-rose-50" disabled={isUpdatingReport} onClick={() => updateReport({ id: report.id, status: 'RESOLVED', action: 'BAN' })}>
-                                            Khóa Đối Tượng Này Ngay
+                                        <Button 
+                                            size="sm" variant="outline" 
+                                            className={`h-8 border-rose-200 ${simulatedRole === 'super_admin' ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-300 cursor-not-allowed'}`}
+                                            disabled={isUpdatingReport || simulatedRole !== 'super_admin'} 
+                                            title={simulatedRole !== 'super_admin' ? "Chỉ Super Admin mới được Cấm tài khoản" : "Cấm tài khoản"}
+                                            onClick={() => {
+                                                if (simulatedRole === 'super_admin') {
+                                                    updateReport({ id: report.id, status: 'RESOLVED', action: 'BAN' });
+                                                }
+                                            }}
+                                        >
+                                            Khóa (Ban)
                                         </Button>
                                         <Button size="sm" className="h-8 bg-amber-500 hover:bg-amber-600 text-white" disabled={isUpdatingReport} onClick={() => updateReport({ id: report.id, status: 'RESOLVED', action: 'WARN' })}>
                                             <ShieldCheck className="w-4 h-4 mr-1.5" /> Cảnh Cáo (Warning)

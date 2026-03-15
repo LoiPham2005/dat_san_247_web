@@ -37,6 +37,15 @@ export const useAdminVenues = () => {
         onError: () => toast.error("Có lỗi xảy ra khi cập nhật Hoa hồng")
     });
 
+    const updateAdminNotesMutation = useMutation({
+        mutationFn: ({ id, notes }: { id: string, notes: string }) => adminVenueApi.updateAdminNotes(id, notes),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin_venues'] });
+            toast.success("Đã lưu Ghi chú Nội bộ cho Venue");
+        },
+        onError: () => toast.error("Có lỗi xảy ra khi lưu ghi chú")
+    });
+
     return {
         venues: venuesQuery.data || [],
         isLoading: venuesQuery.isLoading,
@@ -46,5 +55,6 @@ export const useAdminVenues = () => {
         isUpdatingFeatured: updateFeaturedMutation.isPending,
         updateCommission: updateCommissionMutation.mutate,
         isUpdatingCommission: updateCommissionMutation.isPending,
+        updateAdminNotes: updateAdminNotesMutation.mutate,
     };
 };

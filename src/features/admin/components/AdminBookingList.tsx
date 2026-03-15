@@ -15,6 +15,7 @@ export const AdminBookingList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
     const [cancelingId, setCancelingId] = useState<string | null>(null);
+    const [simulatedRole, setSimulatedRole] = useState<'admin' | 'super_admin'>('admin');
 
     const filteredBookings = bookings.filter((booking) => {
         const matchesSearch = booking.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -26,6 +27,10 @@ export const AdminBookingList = () => {
     });
 
     const handleForceCancel = (id: string) => {
+        if (simulatedRole !== 'super_admin') {
+            alert('LỖI PHÂN QUYỀN: Chỉ Super Admin mới có quyền can thiệp hủy booking cưỡng chế.');
+            return;
+        }
         if (window.confirm('CẢNH BÁO SUPER ADMIN\nBạn đang can thiệp hủy lịch và hoàn tiền cưỡng chế. Thao tác này sẽ ghi log hệ thống. Tiếp tục?')) {
             adminCancelBooking({ id, reason: "Super Admin Force Cancellation" });
             setCancelingId(null);
@@ -45,6 +50,20 @@ export const AdminBookingList = () => {
 
     return (
         <div className="space-y-6">
+            {/* Demo Header for role simulation */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center">
+                <div className="text-sm text-indigo-800 font-medium">
+                    Đang xem với tư cách: <strong className="uppercase">{simulatedRole === 'admin' ? 'Admin Vận Hành' : 'Super Admin'}</strong>
+                </div>
+                <Button 
+                    variant="outline" size="sm" 
+                    className="h-8 border-indigo-200 text-indigo-700 bg-white"
+                    onClick={() => setSimulatedRole(r => r === 'admin' ? 'super_admin' : 'admin')}
+                >
+                    Đổi quyền (Demo)
+                </Button>
+            </div>
+
             {/* Control Bar */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div className="relative w-full md:w-96">
@@ -178,18 +197,22 @@ export const AdminBookingList = () => {
                                                 <Info className="w-4 h-4" />
                                             </Button>
 
-                                            {/* Nút Cancel Quyền Admin: Chỉ hiện cho Pending hoặc Confirmed */}
+                                            {/* Nút Cancel Quyền Admin: Hiện đỏ cho SA, xám cho Admin */}
                                             {(booking.status === 'CONFIRMED' || booking.status === 'PENDING') && (
                                                 <Button 
                                                     variant="ghost" 
                                                     size="icon" 
-                                                    className="h-8 w-8 text-rose-400 hover:text-rose-600 hover:bg-rose-50"
-                                                    title={cancelingId === booking.id ? "Xác nhận Hủy Cưỡng Chế!" : "Hủy / Hoàn tiền Cưỡng Chế (Admin Override)"}
+                                                    className={`h-8 w-8 ${simulatedRole === 'super_admin' ? 'text-rose-400 hover:text-rose-600 hover:bg-rose-50' : 'text-slate-300 cursor-not-allowed'} `}
+                                                    title={simulatedRole === 'super_admin' ? (cancelingId === booking.id ? "Xác nhận Hủy Cưỡng Chế!" : "Hủy / Hoàn tiền Cưỡng Chế (Super Admin)") : 'Chỉ Super Admin mới được can thiệp hủy'}
                                                     onClick={() => {
-                                                        cancelingId === booking.id ? handleForceCancel(booking.id) : setCancelingId(booking.id);
+                                                        if (simulatedRole === 'super_admin') {
+                                                            cancelingId === booking.id ? handleForceCancel(booking.id) : setCancelingId(booking.id);
+                                                        } else {
+                                                            alert('Chỉ Super Admin mới có quyền can thiệp hủy booking hệ thống!');
+                                                        }
                                                     }}
                                                 >
-                                                    {cancelingId === booking.id ? <ShieldAlert className="w-4 h-4 animate-pulse fill-rose-100" /> : <XCircle className="w-4 h-4" />}
+                                                    {cancelingId === booking.id && simulatedRole === 'super_admin' ? <ShieldAlert className="w-4 h-4 animate-pulse fill-rose-100" /> : <XCircle className="w-4 h-4" />}
                                                 </Button>
                                             )}
                                         </div>

@@ -15,6 +15,7 @@ export const AdminUserList = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('ALL');
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
+    const [simulatedRole, setSimulatedRole] = useState<'admin' | 'super_admin'>('admin');
 
     const filteredUsers = users.filter((user) => {
         const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -38,6 +39,22 @@ export const AdminUserList = () => {
 
     return (
         <div className="space-y-6">
+            {/* Demo Header for role simulation */}
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center">
+                <div className="text-sm text-indigo-800 font-medium">
+                    Đang xem với tư cách: <strong className="uppercase">{simulatedRole === 'admin' ? 'Admin Vận Hành' : 'Super Admin'}</strong>
+                </div>
+                <div className="flex gap-2">
+                    <Button 
+                        variant="outline" size="sm" 
+                        className="h-8 border-indigo-200 text-indigo-700 bg-white"
+                        onClick={() => setSimulatedRole(r => r === 'admin' ? 'super_admin' : 'admin')}
+                    >
+                        Đổi quyền (Demo)
+                    </Button>
+                </div>
+            </div>
+
             {/* Header & Filters */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                 <div className="relative w-full md:w-96">
@@ -118,8 +135,18 @@ export const AdminUserList = () => {
                                                 )}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-slate-900 group-hover:text-primary transition-colors">{user.full_name}</div>
-                                                <div className="text-xs text-slate-500 mt-0.5">ID: {user.id}</div>
+                                                <div className="font-bold text-slate-900 group-hover:text-primary transition-colors flex items-center gap-2">
+                                                    {user.full_name}
+                                                    <button onClick={() => alert('Demo Mode: Sẽ hiển thị Dialog để sửa thông tin cơ bản: Tên, SĐT, Địa chỉ')} className="text-slate-400 hover:text-primary transition-colors" title="Sửa thông tin cơ bản">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                                    </button>
+                                                </div>
+                                                <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
+                                                    <span>ID: {user.id}</span>
+                                                    <button onClick={() => alert('Demo Mode: Sẽ hiển thị danh sách thiết bị đăng nhập')} className="text-blue-500 hover:underline flex items-center gap-0.5">
+                                                        <Smartphone className="w-3 h-3" /> Xem TB
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -163,7 +190,9 @@ export const AdminUserList = () => {
                                                 <option value="ACTIVE">Hoạt động</option>
                                                 <option value="INACTIVE">Chưa kích hoạt</option>
                                                 <option value="SUSPENDED">Tạm khóa</option>
-                                                <option value="BANNED">Cấm (Ban)</option>
+                                                {(simulatedRole === 'super_admin' || user.status === 'BANNED') && (
+                                                    <option value="BANNED">Cấm (Ban)</option>
+                                                )}
                                             </select>
                                             <div className="group-hover:opacity-80 transition-opacity">
                                                 <StatusBadge status={user.status} type="user" />

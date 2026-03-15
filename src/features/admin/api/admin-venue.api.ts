@@ -14,6 +14,7 @@ export interface AdminVenue {
     rating: number;
     total_reviews: number;
     created_at: string;
+    admin_notes: string | null;
 }
 
 const mockVenues: AdminVenue[] = [
@@ -30,7 +31,8 @@ const mockVenues: AdminVenue[] = [
         commission_rate: 10,
         rating: 4.8,
         total_reviews: 120,
-        created_at: '2026-02-01T10:00:00Z'
+        created_at: '2026-02-01T10:00:00Z',
+        admin_notes: 'Chủ sân thân thiện, giữ giá ổn định.'
     },
     {
         id: 'v2',
@@ -45,7 +47,8 @@ const mockVenues: AdminVenue[] = [
         commission_rate: 8.5,
         rating: 4.9,
         total_reviews: 84,
-        created_at: '2026-02-05T09:00:00Z'
+        created_at: '2026-02-05T09:00:00Z',
+        admin_notes: null
     },
     {
         id: 'v3',
@@ -60,7 +63,8 @@ const mockVenues: AdminVenue[] = [
         commission_rate: 10,
         rating: 0,
         total_reviews: 0,
-        created_at: '2026-03-08T15:30:00Z'
+        created_at: '2026-03-08T15:30:00Z',
+        admin_notes: 'Chờ xác thực GPKD'
     },
     {
         id: 'v4',
@@ -75,7 +79,8 @@ const mockVenues: AdminVenue[] = [
         commission_rate: 15,
         rating: 4.0,
         total_reviews: 12,
-        created_at: '2026-01-15T08:00:00Z'
+        created_at: '2026-01-15T08:00:00Z',
+        admin_notes: 'Thiếu an toàn cháy nổ'
     },
     {
         id: 'v5',
@@ -90,7 +95,8 @@ const mockVenues: AdminVenue[] = [
         commission_rate: 12,
         rating: 2.1,
         total_reviews: 45,
-        created_at: '2025-11-20T14:00:00Z'
+        created_at: '2025-11-20T14:00:00Z',
+        admin_notes: 'Nhiều report phụ phí gửi xe.'
     }
 ];
 
@@ -122,6 +128,13 @@ export const adminVenueApi = {
         const venue = mockVenues.find(v => v.id === id);
         if (!venue) throw new Error("Venue not found");
         venue.commission_rate = rate;
+        return { ...venue };
+    },
+    updateAdminNotes: async (id: string, notes: string): Promise<AdminVenue> => {
+        await delay(300);
+        const venue = mockVenues.find(v => v.id === id);
+        if (!venue) throw new Error("Venue not found");
+        venue.admin_notes = notes;
         return { ...venue };
     }
 };
