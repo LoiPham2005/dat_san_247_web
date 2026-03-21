@@ -11,7 +11,10 @@ export const AdminSystemTabs = () => {
     const { 
         settings, holidays, appVersions, auditLogs,
         isLoadingSettings, isLoadingHolidays, isLoadingApp, isLoadingLogs,
-        updateSetting, isUpdatingSetting
+        updateSetting, isUpdatingSetting,
+        createHoliday, updateHoliday, deleteHoliday,
+        createAppVersion, updateAppVersion, deleteAppVersion,
+        logsQuery
     } = useAdminSystem();
 
     const [activeTab, setActiveTab] = useState<'SETTINGS' | 'HOLIDAYS' | 'APP_VERSIONS' | 'AUDIT'>('SETTINGS');
@@ -20,7 +23,61 @@ export const AdminSystemTabs = () => {
     const [editingSetting, setEditingSetting] = useState<string | null>(null);
     const [settingValue, setSettingValue] = useState<string>('');
 
+    // Modal State for Holidays & App Versions
+    const [showHolidayModal, setShowHolidayModal] = useState(false);
+    const [editingHoliday, setEditingHoliday] = useState<any>(null);
+    const [holidayForm, setHolidayForm] = useState({
+        holiday_name: '',
+        holiday_date: '',
+        price_multiplier: 1.5,
+        is_recurring: true,
+        is_active: true
+    });
+
+    const [showAppModal, setShowAppModal] = useState(false);
+    const [editingApp, setEditingApp] = useState<any>(null);
+    const [appForm, setAppForm] = useState({
+        platform: 'IOS',
+        version_number: '',
+        build_number: 0,
+        release_notes: '',
+        is_force_update: false,
+        is_active: true,
+        download_url: ''
+    });
+
     const isLoading = isLoadingSettings || isLoadingHolidays || isLoadingApp || isLoadingLogs;
+
+    // Handlers
+    const handleHolidaySubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (editingHoliday) {
+            updateHoliday({ id: editingHoliday.id, data: holidayForm });
+        } else {
+            createHoliday(holidayForm);
+        }
+        setShowHolidayModal(false);
+        setEditingHoliday(null);
+    };
+
+    const handleAppSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (editingApp) {
+            updateAppVersion({ id: editingApp.id, data: appForm });
+        } else {
+            createAppVersion(appForm);
+        }
+        setShowAppModal(false);
+        setEditingApp(null);
+    };
+
+    const toggleHolidayActive = (holiday: any) => {
+        updateHoliday({ id: holiday.id, data: { is_active: !holiday.is_active } });
+    };
+
+    const toggleAppActive = (app: any) => {
+        updateAppVersion({ id: app.id, data: { is_active: !app.is_active } });
+    };
 
     if (isLoading) {
         return (
@@ -113,7 +170,14 @@ export const AdminSystemTabs = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     <div className="col-span-full flex justify-between items-center mb-2">
                         <p className="text-sm font-medium text-slate-500">Các ngày này sẽ bị áp dụng hệ số nhân giá tiền theo cấu hình của sàn (Price Multiplier).</p>
-                        <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm"><PlusCircle className="w-4 h-4 mr-2"/> Thêm Ngày Khác</Button>
+                        <Button 
+                            size="sm" className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                            onClick={() => {
+                                setEditingHoliday(null);
+                                setHolidayForm({ holiday_name: '', holiday_date: '', price_multiplier: 1.5, is_recurring: true, is_active: true });
+                                setShowHolidayModal(true);
+                            }}
+                        ><PlusCircle className="w-4 h-4 mr-2"/> Thêm Ngày Khác</Button>
                     </div>
                     {holidays.map(holiday => (
                         <div key={holiday.id} className="bg-white border border-slate-200 rounded-xl shadow-sm hover:border-rose-200 hover:shadow-md transition-all p-5 flex flex-col justify-between group relative overflow-hidden">
@@ -128,7 +192,7 @@ export const AdminSystemTabs = () => {
                                 <div className="space-y-2 mt-4">
                                     <div className="flex justify-between text-sm items-center">
                                         <span className="text-slate-500 font-medium">Lặp Hàng Năm?</span>
-                                        <span className={`font-bold ${holiday.is_recurring ? 'text-emerald-600' : 'text-slate-400'}`}>{holiday.is_recurring ? 'CÓ (True)' : 'CỤ THỂ NĂM'}</span>
+                                        <span className={`font-bold ${holiday.is_recurring ? 'text-emerald-600' : 'text-slate-400'}`}>{holiday.is_recurring ? 'CÓ (Hằng năm)' : 'CỤ THỂ NĂM'}</span>
                                     </div>
                                     <div className="flex justify-between text-sm items-center">
                                         <span className="text-slate-500 font-medium">Hệ số Giá (Multiplier)</span>
@@ -138,14 +202,36 @@ export const AdminSystemTabs = () => {
                             </div>
 
                             <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 relative z-10 w-full">
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" className="sr-only peer" checked={holiday.is_active} readOnly />
-                                    <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
-                                    <span className="ml-2 text-xs font-bold text-slate-500 uppercase">ACTIVE</span>
-                                </label>
+                                <button 
+                                    onClick={() => toggleHolidayActive(holiday)}
+                                    className="relative inline-flex items-center cursor-pointer"
+                                >
+                                    <div className={`w-9 h-5 rounded-full transition-colors relative ${holiday.is_active ? 'bg-rose-500' : 'bg-slate-300'}`}>
+                                        <div className={`absolute top-[2px] left-[2px] bg-white w-4 h-4 rounded-full transition-transform ${holiday.is_active ? 'translate-x-4' : ''}`}></div>
+                                    </div>
+                                    <span className="ml-2 text-xs font-bold text-slate-500 uppercase">{holiday.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
+                                </button>
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary"><PenSquare className="w-4 h-4" /></Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></Button>
+                                    <Button 
+                                        variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary"
+                                        onClick={() => {
+                                            setEditingHoliday(holiday);
+                                            setHolidayForm({
+                                                holiday_name: holiday.holiday_name,
+                                                holiday_date: new Date(holiday.holiday_date).toISOString().split('T')[0],
+                                                price_multiplier: Number(holiday.price_multiplier),
+                                                is_recurring: holiday.is_recurring,
+                                                is_active: holiday.is_active
+                                            });
+                                            setShowHolidayModal(true);
+                                        }}
+                                    ><PenSquare className="w-4 h-4" /></Button>
+                                    <Button 
+                                        variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600"
+                                        onClick={() => {
+                                            if (confirm('Xóa ngày lễ này?')) deleteHoliday(holiday.id);
+                                        }}
+                                    ><Trash2 className="w-4 h-4" /></Button>
                                 </div>
                             </div>
                         </div>
@@ -158,7 +244,14 @@ export const AdminSystemTabs = () => {
                 <div className="space-y-4">
                     <div className="flex justify-between items-center mb-2">
                         <p className="text-sm font-medium text-slate-500">Quản lý version ứng dụng trên Store (iOS/Android). Bật Force Update để ép khách tải lại ngay.</p>
-                        <Button size="sm" className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm"><PlusCircle className="w-4 h-4 mr-2"/> Phát hành Bản Mới</Button>
+                        <Button 
+                            size="sm" className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm"
+                            onClick={() => {
+                                setEditingApp(null);
+                                setAppForm({ platform: 'IOS', version_number: '', build_number: 0, release_notes: '', is_force_update: false, is_active: true, download_url: '' });
+                                setShowAppModal(true);
+                            }}
+                        ><PlusCircle className="w-4 h-4 mr-2"/> Phát hành Bản Mới</Button>
                     </div>
 
                     <div className="grid gap-4">
@@ -177,10 +270,12 @@ export const AdminSystemTabs = () => {
 
                                 <div className="flex-1 flex flex-col justify-center space-y-3">
                                     <div className="flex items-center gap-3">
-                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded
-                                            ${app.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                                            {app.is_active ? 'ĐANG LIVE TẠI STORE' : 'LƯU KHẾ'}
-                                        </span>
+                                        <button 
+                                            onClick={() => toggleAppActive(app)}
+                                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded transition-colors
+                                            ${app.is_active ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                                            {app.is_active ? 'ĐANG LIVE TẠI STORE' : 'LƯU NHÁP'}
+                                        </button>
                                         {app.is_force_update && (
                                             <span className="flex items-center gap-1 text-[10px] bg-rose-50 text-rose-600 border border-rose-200 uppercase font-black px-2 py-0.5 rounded shadow-sm">
                                                 <ShieldHalf className="w-3 h-3" /> ÉP CẬP NHẬT (FORCE)
@@ -188,16 +283,36 @@ export const AdminSystemTabs = () => {
                                         )}
                                     </div>
                                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm text-slate-700 leading-relaxed font-medium">
-                                        <strong>Change logs (Ghi chú):</strong> {app.release_notes}
+                                        <strong>Change logs (Ghi chú):</strong> {app.release_notes || 'Không có ghi chú'}
                                     </div>
                                     <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 pt-1">
-                                        <Clock className="w-3.5 h-3.5" /> Phát hành lúc: {app.released_at ? format(new Date(app.released_at), 'HH:mm dd/MM/yyyy') : 'Chưa định khoảng'}
+                                        <Clock className="w-3.5 h-3.5" /> Phát hành lúc: {app.released_at ? format(new Date(app.released_at), 'HH:mm dd/MM/yyyy') : 'Chưa định ngày'}
                                     </div>
                                 </div>
 
                                 <div className="shrink-0 flex md:flex-col gap-2 justify-center border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 w-full md:w-auto">
-                                    <Button variant="outline" size="sm" className="flex-1 md:w-32 h-9 text-xs border-sky-200 text-sky-700 hover:bg-sky-50"><PenSquare className="w-4 h-4 mr-2" /> Cập nhật Form</Button>
-                                    <Button variant="outline" size="sm" className="flex-1 md:w-32 h-9 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"><Trash2 className="w-4 h-4 mr-2" /> Xóa Khỏi Thẻ</Button>
+                                    <Button 
+                                        variant="outline" size="sm" className="flex-1 md:w-32 h-9 text-xs border-sky-200 text-sky-700 hover:bg-sky-50"
+                                        onClick={() => {
+                                            setEditingApp(app);
+                                            setAppForm({
+                                                platform: app.platform,
+                                                version_number: app.version_number,
+                                                build_number: app.build_number,
+                                                release_notes: app.release_notes || '',
+                                                is_force_update: app.is_force_update,
+                                                is_active: app.is_active,
+                                                download_url: app.download_url || ''
+                                            });
+                                            setShowAppModal(true);
+                                        }}
+                                    ><PenSquare className="w-4 h-4 mr-2" /> Cập nhật Form</Button>
+                                    <Button 
+                                        variant="outline" size="sm" className="flex-1 md:w-32 h-9 text-xs text-rose-600 border-rose-200 hover:bg-rose-50"
+                                        onClick={() => {
+                                            if (confirm('Xóa phiên bản này?')) deleteAppVersion(app.id);
+                                        }}
+                                    ><Trash2 className="w-4 h-4 mr-2" /> Xóa Khỏi Thẻ</Button>
                                 </div>
                             </div>
                         ))}
@@ -209,7 +324,10 @@ export const AdminSystemTabs = () => {
             {activeTab === 'AUDIT' && (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="p-4 bg-amber-50/50 flex justify-between items-center text-sm font-medium text-amber-800 border-b border-amber-100">
-                        <LayoutDashboard className="w-5 h-5 mr-2" /> Dữ liệu Lịch sử Hành động toàn Server. Bảng này không thể bị xóa do Ràng buộc Compliance (Chỉ Đọc).
+                        <div className="flex items-center">
+                            <LayoutDashboard className="w-5 h-5 mr-2" /> Dữ liệu Lịch sử Hành động toàn Server. Bảng này không thể bị xóa do Ràng buộc Compliance (Chỉ Đọc).
+                        </div>
+                        <Button variant="outline" size="sm" className="h-8 border-amber-200 text-amber-700" onClick={() => (logsQuery as any).refetch()}>Làm mới</Button>
                     </div>
                     
                     <div className="overflow-x-auto">
@@ -225,10 +343,10 @@ export const AdminSystemTabs = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {auditLogs.map(log => (
+                                {auditLogs.length > 0 ? auditLogs.map(log => (
                                     <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-5 py-3">
-                                            <div className="font-mono text-xs font-bold text-slate-900">{log.id}</div>
+                                            <div className="font-mono text-[10px] font-bold text-slate-900 truncate w-32">{log.id}</div>
                                             <div className="text-[10px] text-slate-500 mt-0.5" title="User ID thực hiện (nếu có)">User: {log.user_id || 'System Cron'}</div>
                                         </td>
                                         <td className="px-5 py-3">
@@ -236,7 +354,7 @@ export const AdminSystemTabs = () => {
                                                 ${log.actor_role === 'SUPER_ADMIN' ? 'bg-rose-100 text-rose-700 border-rose-200' :
                                                   log.actor_role === 'ADMIN' ? 'bg-blue-100 text-blue-700 border-blue-200' :
                                                   'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                                                {log.actor_role.replace('_', ' ')}
+                                                {log.actor_role?.replace('_', ' ') || 'SYSTEM'}
                                             </span>
                                         </td>
                                         <td className="px-5 py-3 text-center">
@@ -259,9 +377,124 @@ export const AdminSystemTabs = () => {
                                             <div className="text-xs text-slate-500 font-medium mt-0.5">{format(new Date(log.created_at), 'HH:mm:ss')}</div>
                                         </td>
                                     </tr>
-                                ))}
+                                )) : (
+                                    <tr>
+                                        <td colSpan={6} className="px-5 py-10 text-center text-slate-400 font-medium">Chưa có dữ liệu audit log.</td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            )}
+
+            {/* HOLIDAY MODAL */}
+            {showHolidayModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-900">{editingHoliday ? 'Sửa Ngày Lễ' : 'Thêm Ngày Lễ Mới'}</h3>
+                            <button onClick={() => setShowHolidayModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <PlusCircle className="w-6 h-6 rotate-45" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleHolidaySubmit} className="p-6 space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-bold text-slate-700">Tên Ngày Lễ</label>
+                                <Input required value={holidayForm.holiday_name} onChange={e => setHolidayForm({...holidayForm, holiday_name: e.target.value})} placeholder="VD: Tết Nguyên Đán" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700">Ngày</label>
+                                    <Input required type="date" value={holidayForm.holiday_date} onChange={e => setHolidayForm({...holidayForm, holiday_date: e.target.value})} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700">Hệ số Giá (xN)</label>
+                                    <Input required type="number" step="0.1" value={holidayForm.price_multiplier} onChange={e => setHolidayForm({...holidayForm, price_multiplier: parseFloat(e.target.value)})} />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6 pt-2">
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" checked={holidayForm.is_recurring} onChange={e => setHolidayForm({...holidayForm, is_recurring: e.target.checked})} />
+                                    <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">Lặp hàng năm</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" checked={holidayForm.is_active} onChange={e => setHolidayForm({...holidayForm, is_active: e.target.checked})} />
+                                    <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">Kích hoạt ngay</span>
+                                </label>
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <Button type="submit" className="flex-1">Lưu Thiết Lập</Button>
+                                <Button type="button" variant="outline" onClick={() => setShowHolidayModal(false)}>Hủy</Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* APP MODAL */}
+            {showAppModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-900">{editingApp ? 'Cập Nhật Bản Phát Hành' : 'Phát Hành Bản App Mới'}</h3>
+                            <button onClick={() => setShowAppModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <PlusCircle className="w-6 h-6 rotate-45" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleAppSubmit} className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700">Nền Tảng</label>
+                                    <select 
+                                        className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                        value={appForm.platform} 
+                                        onChange={e => setAppForm({...appForm, platform: e.target.value as any})}
+                                    >
+                                        <option value="IOS">Apple iOS</option>
+                                        <option value="ANDROID">Google Android</option>
+                                        <option value="WEB">Web Platform</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700">Phiên Bản (VD: 1.0.0)</label>
+                                    <Input required value={appForm.version_number} onChange={e => setAppForm({...appForm, version_number: e.target.value})} placeholder="1.2.0" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700">Build Number</label>
+                                    <Input required type="number" value={appForm.build_number} onChange={e => setAppForm({...appForm, build_number: parseInt(e.target.value)})} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-bold text-slate-700">Link Store/Download</label>
+                                    <Input value={appForm.download_url} onChange={e => setAppForm({...appForm, download_url: e.target.value})} placeholder="https://..." />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-bold text-slate-700">Ghi Chú Phát Hành (Release Notes)</label>
+                                <textarea 
+                                    className="w-full min-h-[100px] p-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+                                    value={appForm.release_notes} 
+                                    onChange={e => setAppForm({...appForm, release_notes: e.target.value})}
+                                    placeholder="Có gì mới trong bản này..."
+                                />
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500" checked={appForm.is_force_update} onChange={e => setAppForm({...appForm, is_force_update: e.target.checked})} />
+                                    <span className="text-sm font-black text-rose-600 group-hover:text-rose-700">Bắt buộc cập nhật (Force)</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" checked={appForm.is_active} onChange={e => setAppForm({...appForm, is_active: e.target.checked})} />
+                                    <span className="text-sm font-medium text-slate-600 group-hover:text-slate-900">Kích hoạt/Hiện Store</span>
+                                </label>
+                            </div>
+                            <div className="pt-4 flex gap-3">
+                                <Button type="submit" className="flex-1 bg-sky-600 hover:bg-sky-700">Lưu & Xuất Bản</Button>
+                                <Button type="button" variant="outline" onClick={() => setShowAppModal(false)}>Hủy</Button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
