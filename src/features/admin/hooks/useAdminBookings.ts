@@ -1,28 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminBookingApi } from '../api/admin-booking.api';
+import { adminBookingApi, BookingStatus, AdminBooking } from '../api/admin-booking.api';
 import { toast } from 'sonner';
 
-export const useAdminBookings = () => {
+export const useAdminBookings = (params?: any) => {
     const queryClient = useQueryClient();
 
     const bookingsQuery = useQuery({
-        queryKey: ['admin_bookings'],
-        queryFn: adminBookingApi.getBookings,
+        queryKey: ['admin_bookings', params],
+        queryFn: () => adminBookingApi.getBookings(params),
     });
 
-    const cancelMutation = useMutation({
-        mutationFn: ({ id, reason }: { id: string, reason: string }) => adminBookingApi.adminCancelBooking(id, reason),
-        onSuccess: (data) => {
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ id, status }: { id: string, status: BookingStatus }) => 
+            adminBookingApi.updateStatus(id, status),
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin_bookings'] });
-            toast.success(`Hủy thành công Booking ${data.id}. Đã hoàn tiền ${data.refund_amount}đ.`);
+            toast.success("Cập nhật trạng thái đơn hàng thành công");
         },
-        onError: () => toast.error("Có lỗi xảy ra khi gọi Hủy Booking")
+        onError: () => {
+            toast.error("Cập nhật trạng thái đơn hàng thất bại");
+        }
     });
 
     return {
-        bookings: bookingsQuery.data || [],
+        bookings: bookingsQuery.data?.items || [],
+        meta: bookingsQuery.data?.meta,
         isLoading: bookingsQuery.isLoading,
-        adminCancelBooking: cancelMutation.mutate,
-        isCancelling: cancelMutation.isPending,
+        updateStatus: updateStatusMutation.mutate,
+        isUpdating: updateStatusMutation.isPending
     };
 };

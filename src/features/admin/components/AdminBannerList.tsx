@@ -7,10 +7,20 @@ import { Input } from '@/components/common/Input';
 import { Search, Image as ImageIcon, Video, CalendarClock, MousePointerClick, Eye, Trash2, PlusCircle, PenSquare, Share, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { AdminBannerForm } from './AdminBannerForm';
 
-export const AdminBannerList = () => {
-    const { banners, isLoading, toggleActive, deleteBanner, isToggling, isDeleting } = useAdminBanners();
+interface AdminBannerListProps {}
+
+export const AdminBannerList = ({}: AdminBannerListProps) => {
+    const { 
+        banners, isLoading, toggleActive, deleteBanner, 
+        isToggling, isDeleting, createBanner, updateBanner,
+        isCreating, isUpdating 
+    } = useAdminBanners();
+    
     const [searchTerm, setSearchTerm] = useState('');
+    const [showForm, setShowForm] = useState(false);
+    const [editingBanner, setEditingBanner] = useState<any>(null);
 
     const filteredBanners = banners.filter((banner) => {
         return banner.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -20,6 +30,24 @@ export const AdminBannerList = () => {
         if (window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn Banner: "${title}"?`)) {
             deleteBanner(id);
         }
+    };
+
+    const handleCreateBanner = (data: any) => {
+        createBanner(data, {
+            onSuccess: () => {
+                setShowForm(false);
+                setEditingBanner(null);
+            }
+        });
+    };
+
+    const handleUpdateBanner = (data: any) => {
+        updateBanner({ id: editingBanner.id, data }, {
+            onSuccess: () => {
+                setShowForm(false);
+                setEditingBanner(null);
+            }
+        });
     };
 
     if (isLoading) {
@@ -48,12 +76,35 @@ export const AdminBannerList = () => {
                 </div>
                 
                 <div className="flex gap-3 w-full md:w-auto">
-                    <Button className="w-full md:w-auto h-10 shadow-sm shadow-primary/20">
+                    <Button 
+                        onClick={() => {
+                            setEditingBanner(null);
+                            setShowForm(true);
+                        }}
+                        className="w-full md:w-auto h-10 shadow-sm shadow-primary/20"
+                    >
                         <PlusCircle className="w-4 h-4 mr-2" />
                         Tạo Banner Mới
                     </Button>
                 </div>
             </div>
+
+            {/* Form Modal (Simple Overlay) */}
+            {showForm && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
+                        <AdminBannerForm 
+                            banner={editingBanner}
+                            onSubmit={editingBanner ? handleUpdateBanner : handleCreateBanner}
+                            onCancel={() => {
+                                setShowForm(false);
+                                setEditingBanner(null);
+                            }}
+                            isLoading={isCreating || isUpdating}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Banner Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -114,7 +165,7 @@ export const AdminBannerList = () => {
                                     </div>
                                     
                                     <div className="mt-2 flex flex-wrap gap-1">
-                                        {banner.pages.map(page => (
+                                        {(banner.pages || []).map(page => (
                                             <span key={page} className="text-[9px] font-bold bg-slate-100 text-slate-500 uppercase px-1.5 py-0.5 rounded border border-slate-200">
                                                 {page}
                                             </span>
@@ -128,7 +179,7 @@ export const AdminBannerList = () => {
                                             </div>
                                             <div>
                                                 <div className="text-[10px] uppercase font-bold text-slate-400">Lượt Xem</div>
-                                                <div className="text-sm font-black text-slate-700">{banner.impressions.toLocaleString()}</div>
+                                                <div className="text-sm font-black text-slate-700">{(banner.impressions || 0).toLocaleString()}</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">
@@ -137,7 +188,7 @@ export const AdminBannerList = () => {
                                             </div>
                                             <div>
                                                 <div className="text-[10px] uppercase font-bold text-slate-400">Lượt Click</div>
-                                                <div className="text-sm font-black text-slate-700">{banner.clicks.toLocaleString()}</div>
+                                                <div className="text-sm font-black text-slate-700">{(banner.clicks || 0).toLocaleString()}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -165,7 +216,15 @@ export const AdminBannerList = () => {
                                         )}
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10"
+                                            onClick={() => {
+                                                setEditingBanner(banner);
+                                                setShowForm(true);
+                                            }}
+                                        >
                                             <PenSquare className="w-4 h-4" />
                                         </Button>
                                         <Button 

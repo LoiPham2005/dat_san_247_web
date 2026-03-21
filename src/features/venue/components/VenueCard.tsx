@@ -6,6 +6,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/common/Button';
 import { MapPin, Star, Clock, Heart } from 'lucide-react';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { customerFavoritesApi } from '../../customer/api/customer-favorites.api';
+import { toast } from 'sonner';
+
 interface VenueCardProps {
     venue: {
         id: string;
@@ -23,12 +27,30 @@ interface VenueCardProps {
     isFavorite?: boolean;
 }
 
-export const VenueCard: React.FC<VenueCardProps> = ({ venue, isFavorite }) => {
-    // Prevent event propagation for the favorite button click
+export const VenueCard: React.FC<VenueCardProps> = ({ venue, isFavorite: initialIsFavorite }) => {
+    const [isFavorite, setIsFavorite] = React.useState(initialIsFavorite);
+    const queryClient = useQueryClient();
+
+    React.useEffect(() => {
+        setIsFavorite(initialIsFavorite);
+    }, [initialIsFavorite]);
+
+    const mutation = useMutation({
+        mutationFn: () => customerFavoritesApi.toggleFavorite(venue.id),
+        onSuccess: (newStatus) => {
+            setIsFavorite(newStatus);
+            queryClient.invalidateQueries({ queryKey: ['customer_favorites'] });
+            toast.success(newStatus ? 'Đã thêm vào yêu thích' : 'Đã xóa khỏi yêu thích');
+        },
+        onError: () => {
+            toast.error('Có lỗi xảy ra, vui lòng thử lại sau');
+        }
+    });
+
     const handleFavoriteClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // Call toggle favorite hook here in real app
+        mutation.mutate();
     };
 
     return (

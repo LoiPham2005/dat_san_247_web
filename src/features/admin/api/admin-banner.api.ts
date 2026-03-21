@@ -71,25 +71,27 @@ const mockBanners: AdminBanner[] = [
     }
 ];
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import apiClient from "@/lib/api/axios";
 
 export const adminBannerApi = {
     getBanners: async (): Promise<AdminBanner[]> => {
-        await delay(500);
-        return [...mockBanners].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const response = await apiClient.get('/admin/content/banners');
+        return response.data?.data || [];
     },
     toggleActive: async (id: string, is_active: boolean): Promise<AdminBanner> => {
-        await delay(400);
-        const banner = mockBanners.find(b => b.id === id);
-        if (!banner) throw new Error("Banner not found");
-        banner.is_active = is_active;
-        return { ...banner };
+        const response = await apiClient.patch(`/admin/content/banners/${id}/active`, { is_active });
+        return response.data?.data;
+    },
+    createBanner: async (data: any): Promise<AdminBanner> => {
+        const response = await apiClient.post('/admin/content/banners', data);
+        return response.data?.data;
+    },
+    updateBanner: async (id: string, data: any): Promise<AdminBanner> => {
+        const response = await apiClient.patch(`/admin/content/banners/${id}`, data);
+        return response.data?.data;
     },
     deleteBanner: async (id: string): Promise<string> => {
-        await delay(600);
-        const index = mockBanners.findIndex(b => b.id === id);
-        if (index === -1) throw new Error("Banner not found");
-        mockBanners.splice(index, 1);
-        return id;
+        const response = await apiClient.delete(`/admin/content/banners/${id}`);
+        return response.data?.data || id;
     }
 };

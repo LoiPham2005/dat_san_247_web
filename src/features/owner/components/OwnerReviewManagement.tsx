@@ -87,16 +87,23 @@ export const OwnerReviewManagement = ({ venueId }: { venueId: string }) => {
             {/* DANH SÁCH ĐÁNH GIÁ */}
             <div className="space-y-4">
                 {reviews.map((review) => (
-                    <Card key={review.id} className="p-0 overflow-hidden">
+                    <Card key={review.id} className="p-0 overflow-hidden border-slate-200 hover:border-emerald-200 transition-colors">
                         <div className="p-5 flex flex-col md:flex-row gap-6">
                             {/* USER INFO */}
                             <div className="md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-6">
                                 <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
-                                        <User className="w-5 h-5" />
-                                    </div>
+                                    {review.user_avatar ? (
+                                        <img src={review.user_avatar} alt={review.user_name} className="w-10 h-10 rounded-full object-cover" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold">
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                    )}
                                     <div>
-                                        <div className="font-bold text-slate-800">{review.user_name}</div>
+                                        <div className="font-bold text-slate-800 line-clamp-1">{review.user_name}</div>
+                                        <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">
+                                            {review.court_name || 'Đặt tại Sân chung'}
+                                        </div>
                                         <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                                             <Calendar className="w-3 h-3" /> {new Date(review.created_at).toLocaleDateString()}
                                         </div>
@@ -105,27 +112,58 @@ export const OwnerReviewManagement = ({ venueId }: { venueId: string }) => {
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="text-slate-500">Chất lượng sân</span>
-                                        <span className="font-semibold">{review.rating_facilities || '-'}★</span>
+                                        <span className="font-semibold text-amber-600">{review.rating_facilities || '-'}★</span>
                                     </div>
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="text-slate-500">Thái độ N.Viên</span>
-                                        <span className="font-semibold">{review.rating_staff || '-'}★</span>
+                                        <span className="font-semibold text-amber-600">{review.rating_staff || '-'}★</span>
                                     </div>
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="text-slate-500">Độ sạch sẽ</span>
-                                        <span className="font-semibold">{review.rating_cleanliness || '-'}★</span>
+                                        <span className="font-semibold text-amber-600">{review.rating_cleanliness || '-'}★</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* REVIEW CONTENT */}
                             <div className="flex-1 min-w-0 flex flex-col">
-                                <div className="mb-3">
+                                <div className="mb-3 flex items-center justify-between">
                                     {renderStars(review.rating)}
+                                    {review.rating >= 4 && (
+                                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full uppercase">Tích cực</span>
+                                    )}
                                 </div>
-                                <p className="text-slate-700 text-sm leading-relaxed mb-4 flex-1">
+                                
+                                <p className="text-slate-700 text-sm leading-relaxed mb-4">
                                     {review.comment || <span className="text-slate-400 italic">Khách hàng không để lại bình luận.</span>}
                                 </p>
+
+                                {/* MEDIA ATTACHMENTS */}
+                                {review.media && review.media.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        {review.media.map((item, idx) => (
+                                            <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 group">
+                                                {item.type.startsWith('video/') ? (
+                                                    <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+                                                        <video src={item.url} className="w-full h-full object-cover opacity-60" />
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                                                                <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <img 
+                                                        src={item.url} 
+                                                        alt={`Review media ${idx}`} 
+                                                        className="w-full h-full object-cover cursor-zoom-in hover:scale-110 transition-transform" 
+                                                        onClick={() => window.open(item.url, '_blank')}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {/* PHẢN HỒI SECTION */}
                                 {review.response ? (
@@ -136,7 +174,7 @@ export const OwnerReviewManagement = ({ venueId }: { venueId: string }) => {
                                                 {new Date(review.responded_at!).toLocaleDateString()}
                                             </span>
                                         </div>
-                                        <p className="text-emerald-800 text-sm">{review.response}</p>
+                                        <p className="text-emerald-800 text-sm italic">"{review.response}"</p>
                                     </div>
                                 ) : (
                                     <div className="mt-auto">
@@ -161,7 +199,7 @@ export const OwnerReviewManagement = ({ venueId }: { venueId: string }) => {
                                             <Button 
                                                 variant="outline" 
                                                 size="sm" 
-                                                className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 w-full sm:w-auto mt-2"
+                                                className="text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 w-full sm:w-auto mt-2 font-bold"
                                                 onClick={() => { setReplyingTo(review.id); setReplyText(''); }}
                                             >
                                                 <Reply className="w-4 h-4 mr-2" /> Phản hồi khách hàng

@@ -128,86 +128,45 @@ const mockCommissions: OwnerCommissionRecord[] = [
     }
 ];
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import apiClient from '@/lib/api/axios';
 
 export const ownerFinanceApi = {
     getWallet: async (): Promise<OwnerWallet> => {
-        await delay(300);
-        return mockWallet;
+        const response = await apiClient.get('/owner/finance/wallet');
+        return response.data.data;
     },
 
     getBankAccounts: async (): Promise<OwnerPayoutBankAccount[]> => {
-        await delay(300);
-        return mockBankAccounts;
+        const response = await apiClient.get('/owner/finance/bank-accounts');
+        return response.data.data;
     },
 
     addBankAccount: async (data: Omit<OwnerPayoutBankAccount, 'id' | 'wallet_id' | 'created_at'>): Promise<OwnerPayoutBankAccount> => {
-        await delay(500);
-        const newAccount = {
-            ...data,
-            id: `BA-${Date.now()}`,
-            wallet_id: mockWallet.id,
-            created_at: new Date().toISOString()
-        };
-        if (newAccount.is_default) {
-            mockBankAccounts.forEach(ba => ba.is_default = false);
-        }
-        mockBankAccounts.push(newAccount);
-        return newAccount;
+        const response = await apiClient.post('/owner/finance/bank-accounts', data);
+        return response.data.data;
     },
 
     deleteBankAccount: async (id: string): Promise<void> => {
-        await delay(400);
-        const idx = mockBankAccounts.findIndex(ba => ba.id === id);
-        if (idx > -1) mockBankAccounts.splice(idx, 1);
+        await apiClient.delete(`/owner/finance/bank-accounts/${id}`);
     },
 
     getPayoutRequests: async (): Promise<OwnerPayoutRequest[]> => {
-        await delay(400);
-        return mockPayouts;
+        const response = await apiClient.get('/owner/finance/payouts');
+        return response.data.data;
     },
 
     createPayoutRequest: async (amount: number, bank_account_id: string): Promise<OwnerPayoutRequest> => {
-        await delay(600);
-        if (amount > mockWallet.balance) throw new Error("Số dư không đủ");
-        
-        mockWallet.balance -= amount;
-        mockWallet.locked_balance += amount;
-
-        const request: OwnerPayoutRequest = {
-            id: `PR-${Date.now()}`,
-            user_id: mockWallet.user_id,
-            amount,
-            bank_account_id,
-            status: 'PENDING',
-            admin_note: null,
-            rejection_reason: null,
-            proof_image_url: null,
-            processed_at: null,
-            created_at: new Date().toISOString()
-        };
-        mockPayouts.unshift(request);
-        return request;
+        const response = await apiClient.post('/owner/finance/payouts', { amount, bank_account_id });
+        return response.data.data;
     },
 
     getVenueCommissions: async (venueId: string): Promise<OwnerCommissionRecord[]> => {
-        await delay(400);
-        return mockCommissions.filter(c => c.venue_id === venueId);
+        const response = await apiClient.get('/owner/finance/commissions', { params: { venue_id: venueId } });
+        return response.data.data;
     },
 
     getFinancialStats: async (venueId: string): Promise<OwnerFinancialStats> => {
-        await delay(300);
-        const venueComms = mockCommissions.filter(c => c.venue_id === venueId);
-        const totalRevenue = venueComms.reduce((sum, c) => sum + c.booking_amount, 0);
-        const totalCommission = venueComms.reduce((sum, c) => sum + c.commission_amount, 0);
-        const netIncome = venueComms.reduce((sum, c) => sum + c.owner_receives, 0);
-
-        return {
-            totalRevenue,
-            totalCommission,
-            netIncome,
-            pendingPayout: mockWallet.locked_balance,
-            availableBalance: mockWallet.balance
-        };
+        const response = await apiClient.get('/owner/finance/stats', { params: { venue_id: venueId } });
+        return response.data.data;
     }
 };

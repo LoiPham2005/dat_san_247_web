@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/common/Button';
-import { Menu, X, User, LogIn, LogOut, History, Settings, Wallet, Store, Star, MessagesSquare } from 'lucide-react';
+import { Menu, X, User, LogIn, LogOut, History, Settings, Wallet, Store, Star, MessagesSquare, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from 'next/navigation';
@@ -100,6 +100,9 @@ export const PublicHeader = () => {
                                     <Link href="/reviews" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/reviews') && "bg-primary/10 text-primary")}>
                                         <Star className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Đánh giá của tôi
                                     </Link>
+                                    <Link href="/favorites" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/favorites') && "bg-primary/10 text-primary")}>
+                                        <Heart className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Sân yêu thích
+                                    </Link>
                                     <Link href="/support" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/support') && "bg-primary/10 text-primary")}>
                                         <MessagesSquare className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Hỗ trợ & Báo cáo
                                     </Link>
@@ -166,6 +169,9 @@ export const PublicHeader = () => {
                                     </Link>
                                     <Link href="/bookings" onClick={() => setIsMenuOpen(false)} className="flex items-center px-3 py-2 text-sm font-bold text-slate-600">
                                         <History className="w-4 h-4 mr-3" /> Quản lý Booking
+                                    </Link>
+                                    <Link href="/favorites" onClick={() => setIsMenuOpen(false)} className="flex items-center px-3 py-2 text-sm font-bold text-slate-600">
+                                        <Heart className="w-4 h-4 mr-3" /> Sân yêu thích
                                     </Link>
                                     <button 
                                         onClick={() => signOut()}

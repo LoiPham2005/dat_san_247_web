@@ -17,6 +17,7 @@ export const AdminFinanceOverview = () => {
 
     const [activeTab, setActiveTab] = useState<'COMMISSIONS' | 'TRANSACTIONS'>('COMMISSIONS');
     const [searchTerm, setSearchTerm] = useState('');
+    const [txnTypeFilter, setTxnTypeFilter] = useState<string>('ALL');
 
     const isLoading = isLoadingTransactions || isLoadingCommissions;
 
@@ -36,11 +37,13 @@ export const AdminFinanceOverview = () => {
         c.venue_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredTransactions = transactions.filter(t => 
-        t.reference_id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredTransactions = transactions.filter(t => {
+        const matchesSearch = t.reference_id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             t.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = txnTypeFilter === 'ALL' || t.type === txnTypeFilter;
+        return matchesSearch && matchesType;
+    });
 
     return (
         <div className="space-y-6">
@@ -86,18 +89,37 @@ export const AdminFinanceOverview = () => {
                     </button>
                 </div>
 
-                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex">
-                    <div className="relative w-full max-w-md">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                        <Input
-                            placeholder="Tìm mã giao dịch, mã booking, tên sân..."
-                            className="pl-9 h-10 border-slate-200 bg-white"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap gap-4 items-center justify-between">
+                    <div className="flex flex-1 gap-4 items-center">
+                        <div className="relative w-full max-w-sm">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                            <Input
+                                placeholder="Tìm mã giao dịch, mã booking, tên sân..."
+                                className="pl-9 h-10 border-slate-200 bg-white"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        {activeTab === 'TRANSACTIONS' && (
+                            <div className="relative w-48">
+                                <select
+                                    className="w-full appearance-none h-10 bg-white border border-slate-200 rounded-md px-3 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold text-slate-700 cursor-pointer shadow-sm"
+                                    value={txnTypeFilter}
+                                    onChange={(e) => setTxnTypeFilter(e.target.value)}
+                                >
+                                    <option value="ALL">Tất cả Loại</option>
+                                    <option value="PAYMENT">Thanh toán</option>
+                                    <option value="REFUND">Hoàn tiền</option>
+                                    <option value="PAYOUT">Rút tiền</option>
+                                    <option value="TOP_UP">Nạp tiền</option>
+                                    <option value="COMMISSION_FEE">Phí hoa hồng</option>
+                                </select>
+                                <ArrowRightLeft className="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
+                            </div>
+                        )}
                     </div>
-                    <Button variant="outline" className="ml-4 h-10 bg-white shadow-sm font-semibold">
-                        Xuất Thống Kê (Excel)
+                    <Button variant="outline" className="h-10 bg-white shadow-sm font-semibold flex items-center gap-2">
+                        <ArrowDownToLine className="w-4 h-4" /> Xuất Thống Kê
                     </Button>
                 </div>
 
@@ -167,11 +189,20 @@ export const AdminFinanceOverview = () => {
                                     <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-5 py-4">
                                             <div className="font-mono text-xs font-bold text-slate-900">{t.id}</div>
-                                            <div className="text-[10px] text-slate-500 mt-1">Ref: {t.reference_id}</div>
+                                            <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                                                <Receipt className="w-2.5 h-2.5" />
+                                                Ref: {t.reference_id}
+                                            </div>
                                         </td>
                                         <td className="px-5 py-4">
                                             <div className="font-semibold text-slate-800 truncate max-w-sm">{t.description}</div>
-                                            <div className="text-[10px] text-slate-500 mt-1">{format(new Date(t.created_at), 'dd/MM/yyyy HH:mm:ss')}</div>
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                                <div className="text-[10px] text-slate-500">{format(new Date(t.created_at), 'dd/MM/yyyy HH:mm:ss')}</div>
+                                                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase">
+                                                    <MapPin className="w-2.5 h-2.5" />
+                                                    {(t as any).venue_name || 'Hệ thống'}
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-5 py-4 text-center">
                                             <span className="font-semibold text-[10px] text-slate-500 border border-slate-200 bg-slate-50 px-2 py-0.5 rounded">{t.type}</span>

@@ -44,3 +44,55 @@ export const useOwnerPromotionUsage = (promotionId: string | null) => {
         enabled: !!promotionId
     });
 };
+
+export const useCreatePromotion = (venueId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: any) => ownerMarketingApi.createPromotion(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_promotions', venueId] });
+            toast.success("Đã tạo chương trình khuyến mãi thành công!");
+        },
+        onError: () => toast.error("Tạo khuyến mãi thất bại")
+    });
+};
+
+export const useUpdatePromotion = (venueId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string, data: any }) => ownerMarketingApi.updatePromotion(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_promotions', venueId] });
+            toast.success("Đã cập nhật khuyến mãi!");
+        },
+        onError: () => toast.error("Cập nhật thất bại")
+    });
+};
+
+export const useTogglePromotionStatus = (venueId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => ownerMarketingApi.togglePromotionStatus(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_promotions', venueId] });
+            toast.success("Đã thay đổi trạng thái!");
+        },
+        onError: () => toast.error("Thay đổi trạng thái thất bại")
+    });
+};
+
+export const useDeletePromotion = (venueId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => ownerMarketingApi.deletePromotion(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_promotions', venueId] });
+            toast.success("Đã xóa khuyến mãi.");
+        },
+        onError: () => toast.error("Xóa thất bại")
+    });
+};

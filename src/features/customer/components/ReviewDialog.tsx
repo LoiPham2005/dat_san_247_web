@@ -101,9 +101,9 @@ export const ReviewDialog = ({
     };
 
     const RatingSection = ({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) => (
-        <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">{label}</label>
-            <div className="flex gap-2">
+        <div className="flex items-center justify-between gap-4 py-1">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</label>
+            <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                     <button
                         key={star}
@@ -112,7 +112,7 @@ export const ReviewDialog = ({
                     >
                         <Star 
                             className={cn(
-                                "w-6 h-6 transition-colors",
+                                "w-5 h-5 transition-colors",
                                 star <= value ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-50"
                             )} 
                         />
@@ -124,10 +124,10 @@ export const ReviewDialog = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md rounded-3xl p-0 overflow-hidden border-0 shadow-2xl">
-                <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 text-white relative overflow-hidden">
+            <DialogContent className="max-w-4xl rounded-3xl p-0 overflow-hidden border-0 shadow-2xl w-[95vw]">
+                <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 px-8 py-6 text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
-                    <Star className="w-12 h-12 text-amber-400 fill-amber-400 mb-4 animate-bounce" />
+                    <Star className="w-10 h-10 text-amber-400 fill-amber-400 mb-3 animate-bounce" />
                     <DialogTitle className="text-2xl font-black mb-2 leading-tight">
                         {isEdit ? "Cập Nhật Đánh Giá" : "Đánh Giá Dịch Vụ"}
                     </DialogTitle>
@@ -137,67 +137,76 @@ export const ReviewDialog = ({
                     </DialogDescription>
                 </div>
 
-                <div className="p-8 space-y-8 bg-white">
-                    {/* STAR RATING */}
-                    <div className="text-center space-y-3">
-                        <label className="text-sm font-bold text-slate-500 uppercase tracking-widest block">Bạn hài lòng mức nào?</label>
-                        <div className="flex justify-center gap-2">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    onClick={() => setRating(star)}
-                                    className="p-1 transition-transform active:scale-90 hover:scale-110"
-                                >
-                                    <Star 
-                                        className={cn(
-                                            "w-10 h-10 transition-colors",
-                                            star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-50"
-                                        )} 
-                                    />
-                                </button>
-                            ))}
-                        </div>
-                        <div className="text-lg font-black text-slate-800">
-                            {rating === 5 && "Cực kỳ hài lòng! 😍"}
-                            {rating === 4 && "Rất tốt! 😊"}
-                            {rating === 3 && "Bình thường 😐"}
-                            {rating === 2 && "Tệ ☹️"}
-                            {rating === 1 && "Rất tệ 😡"}
+                <div className="p-6 md:p-8 bg-white">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        {/* LEFT COLUMN: RATINGS */}
+                        <div className="space-y-6">
+                            <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-6">
+                                <div className="text-center md:text-left space-y-3">
+                                    <label className="text-sm font-bold text-slate-500 uppercase tracking-widest block">Bạn hài lòng mức nào?</label>
+                                    <div className="flex justify-center md:justify-start gap-2">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                onClick={() => setRating(star)}
+                                                className="p-1 transition-transform active:scale-90 hover:scale-110"
+                                            >
+                                                <Star 
+                                                    className={cn(
+                                                        "w-10 h-10 transition-colors",
+                                                        star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200 fill-slate-50"
+                                                    )} 
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="text-lg font-black text-slate-800">
+                                        {rating === 5 && "Cực kỳ hài lòng! 😍"}
+                                        {rating === 4 && "Rất tốt! 😊"}
+                                        {rating === 3 && "Bình thường 😐"}
+                                        {rating === 2 && "Tệ ☹️"}
+                                        {rating === 1 && "Rất tệ 😡"}
+                                    </div>
+                                </div>
+
+                                {/* DETAILED RATINGS */}
+                                <div className="space-y-3 pt-6 border-t border-slate-200">
+                                    <RatingSection label="Cơ sở vật chất" value={ratingFacilities} onChange={setRatingFacilities} />
+                                    <RatingSection label="Thái độ phục vụ" value={ratingStaff} onChange={setRatingStaff} />
+                                    <RatingSection label="Vệ sinh" value={ratingCleanliness} onChange={setRatingCleanliness} />
+                                </div>
+                            </div>
                         </div>
 
-                        {/* DETAILED RATINGS */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-slate-100">
-                            <RatingSection label="Chất lượng sân" value={ratingFacilities} onChange={setRatingFacilities} />
-                            <RatingSection label="Thái độ phục vụ" value={ratingStaff} onChange={setRatingStaff} />
-                            <RatingSection label="Vệ sinh" value={ratingCleanliness} onChange={setRatingCleanliness} />
+                        {/* RIGHT COLUMN: MEDIA & COMMENT */}
+                        <div className="space-y-6">
+                            {/* MEDIA UPLOAD */}
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Ảnh & Video (Tối đa 5 ảnh, 1 video)</label>
+                                <MultiMediaUploader 
+                                    images={images}
+                                    videos={videos}
+                                    onImagesChange={setImages}
+                                    onVideosChange={setVideos}
+                                />
+                            </div>
+
+                            {/* COMMENT AREA */}
+                            <div className="space-y-3">
+                                <label className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                    <MessageSquare className="w-4 h-4" /> Viết nhận xét (Tùy chọn)
+                                </label>
+                                <textarea
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                    placeholder="Sân cỏ tốt, đèn sáng, chủ sân nhiệt tình..."
+                                    className="w-full h-32 md:h-40 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 transition-colors resize-none text-slate-800 font-medium placeholder:text-slate-400"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    {/* MEDIA UPLOAD */}
-                    <div className="px-8 py-6 border-b border-slate-100 space-y-4">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Ảnh & Video (Tối đa 5 ảnh, 1 video)</label>
-                        <MultiMediaUploader 
-                            images={images}
-                            videos={videos}
-                            onImagesChange={setImages}
-                            onVideosChange={setVideos}
-                        />
-                    </div>
-
-                    {/* COMMENT AREA */}
-                    <div className="space-y-3">
-                        <label className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <MessageSquare className="w-4 h-4" /> Viết nhận xét (Tùy chọn)
-                        </label>
-                        <textarea
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            placeholder="Sân cỏ tốt, đèn sáng, chủ sân nhiệt tình..."
-                            className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-500 transition-colors resize-none text-slate-800 font-medium placeholder:text-slate-400"
-                        />
-                    </div>
-
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 pt-6 border-t border-slate-100">
                         <Button
                             variant="outline"
                             onClick={onClose}

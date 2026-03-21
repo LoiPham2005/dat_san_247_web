@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils/cn';
 interface StatusBadgeProps {
   status: string;
   className?: string;
-  type?: 'user' | 'kyc' | 'role' | 'venue' | 'booking';
+  type?: 'user' | 'kyc' | 'role' | 'venue' | 'booking' | 'promotion';
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className, type = 'user' }) => {
@@ -29,6 +29,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className, typ
     switch (status) {
       case 'PENDING': bgColor = 'bg-amber-100 text-amber-700 border-amber-200'; label = 'Chờ thanh toán'; break;
       case 'CONFIRMED': bgColor = 'bg-blue-100 text-blue-700 border-blue-200'; label = 'Đã xác nhận'; break;
+      case 'CHECKED_IN': bgColor = 'bg-indigo-100 text-indigo-700 border-indigo-200'; label = 'Đã nhận sân'; break;
       case 'CANCELLED': bgColor = 'bg-rose-100 text-rose-700 border-rose-200'; label = 'Đã hủy'; break;
       case 'COMPLETED': bgColor = 'bg-emerald-100 text-emerald-700 border-emerald-200'; label = 'Hoàn thành'; break;
       case 'NO_SHOW': bgColor = 'bg-slate-200 text-slate-600 border-slate-300'; label = 'Khách không đến'; break;
@@ -49,6 +50,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className, typ
       case 'venue_staff': bgColor = 'bg-cyan-100 text-cyan-700 border-cyan-200'; label = 'Nhân viên sân'; break;
       case 'customer': bgColor = 'bg-slate-100 text-slate-600 border-slate-200'; label = 'Khách hàng'; break;
       default: label = status; break;
+    }
+  } else if (type === 'promotion') {
+    switch (status) {
+      case 'ACTIVE': bgColor = 'bg-emerald-100 text-emerald-700 border-emerald-200'; label = 'Đang hoạt động'; break;
+      case 'INACTIVE': bgColor = 'bg-slate-100 text-slate-600 border-slate-200'; label = 'Tạm ngưng'; break;
+      case 'EXPIRED': bgColor = 'bg-rose-100 text-rose-700 border-rose-200'; label = 'Đã hết hạn'; break;
     }
   }
 

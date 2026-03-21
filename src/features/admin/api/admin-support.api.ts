@@ -131,46 +131,31 @@ const mockReviews: AdminReview[] = [
     }
 ];
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import apiClient from "@/lib/api/axios";
 
 export const adminSupportApi = {
     getTickets: async (): Promise<AdminTicket[]> => {
-        await delay(500);
-        return [...mockTickets].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const response = await apiClient.get('/admin/support/tickets');
+        return response.data?.data || [];
     },
     updateTicket: async (id: string, status?: SupportTicketStatus, assigned_to_name?: string): Promise<AdminTicket> => {
-        await delay(400);
-        const ticket = mockTickets.find(t => t.id === id);
-        if (!ticket) throw new Error("Ticket not found");
-        if (status) ticket.status = status;
-        if (assigned_to_name !== undefined) {
-            ticket.assigned_to_name = assigned_to_name;
-            ticket.assigned_to_id = assigned_to_name ? 'STAFF-NEW' : null;
-        }
-        ticket.updated_at = new Date().toISOString();
-        return { ...ticket };
+        const response = await apiClient.patch(`/admin/support/tickets/${id}`, { status, assigned_to_name });
+        return response.data?.data;
     },
     getReports: async (): Promise<AdminReport[]> => {
-        await delay(400);
-        return [...mockReports].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const response = await apiClient.get('/admin/support/reports');
+        return response.data?.data || [];
     },
     updateReport: async (id: string, status: ReportStatus, action: ReportAction | null): Promise<AdminReport> => {
-        await delay(500);
-        const report = mockReports.find(r => r.id === id);
-        if (!report) throw new Error("Report not found");
-        report.status = status;
-        report.action_taken = action;
-        return { ...report };
+        const response = await apiClient.patch(`/admin/support/reports/${id}`, { status, action });
+        return response.data?.data;
     },
     getReviews: async (): Promise<AdminReview[]> => {
-        await delay(300);
-        return [...mockReviews].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const response = await apiClient.get('/admin/reviews');
+        return response.data?.data || [];
     },
     toggleReviewVisibility: async (id: string, is_visible: boolean): Promise<AdminReview> => {
-        await delay(300);
-        const review = mockReviews.find(r => r.id === id);
-        if (!review) throw new Error("Review not found");
-        review.is_visible = is_visible;
-        return { ...review };
+        const response = await apiClient.patch(`/admin/reviews/${id}/visibility`, { is_visible });
+        return response.data?.data;
     }
 };

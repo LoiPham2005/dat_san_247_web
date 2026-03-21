@@ -1,108 +1,72 @@
-export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT' | 'HOURS_FREE';
+import apiClient from '@/lib/api/axios';
+
+export type PromotionDiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT';
+export type PromotionStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
 
 export interface AdminPromotion {
     id: string;
+    created_at: string;
+    updated_at: string;
     code: string;
+    name: string;
     description: string | null;
-    discount_type: DiscountType;
+    discount_type: PromotionDiscountType;
     discount_value: number;
     max_discount_amount: number | null;
-    min_booking_amount: number | null;
-    start_date: string;
-    end_date: string;
+    min_booking_amount: number;
     usage_limit: number | null;
-    used_count: number;
-    is_active: boolean;
-    is_system: boolean;
-    created_at: string;
+    usage_count: number;
+    max_usage_per_user: number;
+    is_public: boolean;
+    valid_from: string;
+    valid_to: string;
+    status: PromotionStatus;
+    creator?: {
+        id: string;
+        full_name: string;
+    };
 }
 
-const mockPromotions: AdminPromotion[] = [
-    {
-        id: 'PRM-001',
-        code: 'WELCOME2026',
-        description: 'Giảm 10% tối đa 50k cho thành viên mới',
-        discount_type: 'PERCENTAGE',
-        discount_value: 10,
-        max_discount_amount: 50000,
-        min_booking_amount: 150000,
-        start_date: '2026-01-01T00:00:00Z',
-        end_date: '2026-12-31T23:59:59Z',
-        usage_limit: 1000,
-        used_count: 450,
-        is_active: true,
-        is_system: true,
-        created_at: '2025-12-25T10:00:00Z'
-    },
-    {
-        id: 'PRM-002',
-        code: 'SUMMER_SALE',
-        description: 'Giảm trực tiếp 100k cho booking từ 500k',
-        discount_type: 'FIXED_AMOUNT',
-        discount_value: 100000,
-        max_discount_amount: null, // fixed
-        min_booking_amount: 500000,
-        start_date: '2026-05-01T00:00:00Z',
-        end_date: '2026-08-31T23:59:59Z',
-        usage_limit: 500,
-        used_count: 0,
-        is_active: true,
-        is_system: true,
-        created_at: '2026-04-15T09:00:00Z'
-    },
-    {
-        id: 'PRM-003',
-        code: 'VIP_TENNIS',
-        description: 'Chỉ áp dụng Sân Tennis VIP - Giảm 20%',
-        discount_type: 'PERCENTAGE',
-        discount_value: 20,
-        max_discount_amount: 200000,
-        min_booking_amount: 0,
-        start_date: '2026-03-01T00:00:00Z',
-        end_date: '2026-03-31T23:59:59Z',
-        usage_limit: 50,
-        used_count: 50,
-        is_active: false,
-        is_system: false, // Do Platform tạo cho 1 sân cụ thể
-        created_at: '2026-02-28T14:30:00Z'
-    },
-    {
-        id: 'PRM-004',
-        code: 'FREE_1HOUR',
-        description: 'Tặng 1 giờ đá miễn phí (Dành riêng đền bù KH)',
-        discount_type: 'HOURS_FREE',
-        discount_value: 1,
-        max_discount_amount: null,
-        min_booking_amount: null,
-        start_date: '2026-01-01T00:00:00Z',
-        end_date: '2027-01-01T00:00:00Z',
-        usage_limit: null, // Unlimited
-        used_count: 12,
-        is_active: true,
-        is_system: true,
-        created_at: '2026-01-05T08:00:00Z'
-    }
-];
+export interface PromotionQueryParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: PromotionStatus;
+}
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export interface PromotionResponse {
+    data: AdminPromotion[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
 
 export const adminPromotionApi = {
-    getPromotions: async (): Promise<AdminPromotion[]> => {
-        await delay(500);
-        return [...mockPromotions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    getPromotions: async (params: PromotionQueryParams): Promise<PromotionResponse> => {
+        const response = await apiClient.get('/admin/promotions', { params });
+        console.log('>>> [API DEBUG] Raw response body:', response.data);
+        return response.data?.data;
     },
-    toggleActive: async (id: string, is_active: boolean): Promise<AdminPromotion> => {
-        await delay(400);
-        const promo = mockPromotions.find(p => p.id === id);
-        if (!promo) throw new Error("Promotion not found");
-        promo.is_active = is_active;
-        return { ...promo };
+
+    createPromotion: async (data: Partial<AdminPromotion>): Promise<AdminPromotion> => {
+        const response = await apiClient.post('/admin/promotions', data);
+        return response.data?.data;
     },
-    deletePromotion: async (id: string): Promise<string> => {
-        await delay(600);
-        const index = mockPromotions.findIndex(p => p.id === id);
-        if (index === -1) throw new Error("Promotion not found");
-        mockPromotions.splice(index, 1);
-        return id;
+
+    updatePromotion: async (id: string, data: Partial<AdminPromotion>): Promise<AdminPromotion> => {
+        const response = await apiClient.patch(`/admin/promotions/${id}`, data);
+        return response.data?.data;
+    },
+
+    deletePromotion: async (id: string): Promise<void> => {
+        await apiClient.delete(`/admin/promotions/${id}`);
+    },
+
+    updateStatus: async (id: string, status: string): Promise<AdminPromotion> => {
+        const response = await apiClient.patch(`/admin/promotions/${id}/status`, { status });
+        return response.data?.data;
     }
 };

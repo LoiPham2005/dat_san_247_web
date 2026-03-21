@@ -1,48 +1,77 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAdminBookings } from '../hooks/useAdminBookings';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Card } from '@/components/common/Card';
-import { Search, MapPin, Calendar, Clock, Banknote, ShieldAlert, XCircle, Info, Phone, CalendarRange } from 'lucide-react';
+import { Search, MapPin, Calendar, Clock, Banknote, ShieldAlert, XCircle, Info, Phone, CalendarRange, ChevronDown, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { BookingStatus } from '../api/admin-booking.api';
+import { Pagination } from '@/components/common/Pagination';
+import { cn } from '@/lib/utils/cn';
 
 export const AdminBookingList = () => {
-    const { bookings, isLoading, adminCancelBooking } = useAdminBookings();
-    const [searchTerm, setSearchTerm] = useState('');
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
-    const [cancelingId, setCancelingId] = useState<string | null>(null);
-    const [simulatedRole, setSimulatedRole] = useState<'admin' | 'super_admin'>('admin');
+    const [searchTerm, setSearchTerm] = useState('');
+    
+    // State for click-to-show dropdown
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-    const filteredBookings = bookings.filter((booking) => {
-        const matchesSearch = booking.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              booking.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              booking.customer_phone.includes(searchTerm) ||
-                              booking.venue_name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'ALL' || booking.status === statusFilter;
-        return matchesSearch && matchesStatus;
+    const { bookings, meta, isLoading, updateStatus, isUpdating } = useAdminBookings({
+        page,
+        limit,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+        search: searchTerm || undefined
     });
 
-    const handleForceCancel = (id: string) => {
-        if (simulatedRole !== 'super_admin') {
-            alert('LỖI PHÂN QUYỀN: Chỉ Super Admin mới có quyền can thiệp hủy booking cưỡng chế.');
-            return;
-        }
-        if (window.confirm('CẢNH BÁO SUPER ADMIN\nBạn đang can thiệp hủy lịch và hoàn tiền cưỡng chế. Thao tác này sẽ ghi log hệ thống. Tiếp tục?')) {
-            adminCancelBooking({ id, reason: "Super Admin Force Cancellation" });
-            setCancelingId(null);
-        }
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            // If click is not on the trigger badge and not inside the dropdown menu
+            if (!target.closest('.status-trigger') && !target.closest('.status-dropdown')) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearch = (val: string) => {
+        setSearchTerm(val);
+        setPage(1);
     };
+
+    const handleStatusFilter = (val: string) => {
+        setStatusFilter(val);
+        setPage(1);
+    };
+
+    const handleLimitChange = (newLimit: number) => {
+        setLimit(newLimit);
+        setPage(1);
+    };
+
+    const handleStatusUpdate = async (id: string, newStatus: BookingStatus) => {
+        await updateStatus({ id, status: newStatus });
+        setOpenDropdownId(null);
+    };
+
+    const bookingStatuses: BookingStatus[] = [
+        'PENDING', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED', 'CANCELLED', 'NO_SHOW'
+    ];
 
     if (isLoading) {
         return (
             <div className="flex h-[400px] w-full items-center justify-center">
                 <div className="flex flex-col items-center gap-2">
                     <div className="h-8 w-8 animate-spin rounded-full border-r-2 border-primary border-t-2"></div>
-                    <p className="text-sm text-slate-500 font-medium">Đang tải dữ liệu Booking toàn hệ thống...</p>
+                    <p className="text-sm text-slate-500 font-medium">Đang tải dữ liệu Booking...</p>
                 </div>
             </div>
         );
@@ -50,171 +79,155 @@ export const AdminBookingList = () => {
 
     return (
         <div className="space-y-6">
-            {/* Demo Header for role simulation */}
-            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center">
-                <div className="text-sm text-indigo-800 font-medium">
-                    Đang xem với tư cách: <strong className="uppercase">{simulatedRole === 'admin' ? 'Admin Vận Hành' : 'Super Admin'}</strong>
-                </div>
-                <Button 
-                    variant="outline" size="sm" 
-                    className="h-8 border-indigo-200 text-indigo-700 bg-white"
-                    onClick={() => setSimulatedRole(r => r === 'admin' ? 'super_admin' : 'admin')}
-                >
-                    Đổi quyền (Demo)
-                </Button>
-            </div>
-
             {/* Control Bar */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
                 <div className="relative w-full md:w-96">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
                         placeholder="Mã Booking, Tên khách, SĐT, Tên Sân..."
-                        className="pl-9 h-10 border-slate-200 bg-slate-50 focus:bg-white transition-colors"
+                        className="pl-9 h-10 border-slate-200 bg-slate-50"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleSearch(e.target.value)}
                     />
                 </div>
                 
                 <div className="flex gap-3 w-full md:w-auto">
                     <div className="relative w-full md:w-48">
                         <select 
-                            className="w-full appearance-none h-10 bg-slate-50 hover:bg-white border border-slate-200 hover:border-slate-300 rounded-md px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary font-semibold text-slate-700 transition-all cursor-pointer"
+                            className="w-full appearance-none h-10 bg-slate-50 hover:bg-white border border-slate-200 rounded-md px-3 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => handleStatusFilter(e.target.value)}
                         >
                             <option value="ALL">Tất cả Trạng thái</option>
-                            <option value="PENDING">Chờ Thanh toán (Pending)</option>
-                            <option value="CONFIRMED">Đã chốt (Confirmed)</option>
-                            <option value="COMPLETED">Hoàn thành (Completed)</option>
-                            <option value="NO_SHOW">Khách boom (No show)</option>
-                            <option value="CANCELLED">Đã hủy (Cancelled)</option>
+                            <option value="PENDING">Chờ thanh toán</option>
+                            <option value="CONFIRMED">Đã xác nhận</option>
+                            <option value="CHECKED_IN">Đã nhận sân</option>
+                            <option value="COMPLETED">Hoàn thành</option>
+                            <option value="CANCELLED">Đã hủy</option>
+                            <option value="NO_SHOW">Khách vắng mặt</option>
                         </select>
+                        <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
                     </div>
                 </div>
             </div>
 
-            {/* Bookings List (Vertical Table/Cards approach for better dense info) */}
+            {/* Bookings Table */}
             <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
-                <div className="overflow-x-auto min-h-[400px]">
+                <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left whitespace-nowrap">
-                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
                             <tr>
-                                <th className="px-5 py-4 w-60">Mã / Thông tin Sân</th>
-                                <th className="px-5 py-4 w-52">Khách hàng</th>
-                                <th className="px-5 py-4 w-48">Thời gian đá</th>
-                                <th className="px-5 py-4 w-44 text-right">Tài chính</th>
-                                <th className="px-5 py-4 w-36 text-center">Trạng thái</th>
-                                <th className="px-5 py-4 w-24 text-right">Tác vụ Admin</th>
+                                <th className="px-5 py-4">Mã / Cơ sở</th>
+                                <th className="px-5 py-4">Khách hàng</th>
+                                <th className="px-5 py-4">Thời gian đặt</th>
+                                <th className="px-5 py-4 text-right">Tổng tiền</th>
+                                <th className="px-5 py-4 text-center">Trạng thái</th>
+                                <th className="px-5 py-4 text-right">Thanh toán</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredBookings.length === 0 ? (
+                            {bookings.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-slate-500 italic">
-                                        Không tìm thấy Booking nào phù hợp tiêu chí tìm kiếm.
+                                        Không tìm thấy Booking nào phù hợp.
                                     </td>
                                 </tr>
-                            ) : filteredBookings.map((booking) => (
-                                <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors">
-                                    {/* Sân & Mã */}
+                            ) : bookings.map((booking) => (
+                                <tr key={booking.id} className="hover:bg-slate-50/50 transition-colors group">
                                     <td className="px-5 py-4">
                                         <div className="flex flex-col gap-1.5">
-                                            <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 inline-block px-1.5 py-0.5 rounded border border-slate-200 w-fit">
-                                                ID: {booking.id}
+                                            <span className="font-mono text-[10px] font-semibold text-slate-600 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 w-fit">
+                                                {booking.booking_code}
                                             </span>
-                                            <div className="flex items-center gap-1.5 mt-1 text-slate-700 font-semibold group-hover:text-primary transition-colors cursor-pointer w-fit">
-                                                <MapPin className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                                                <span className="truncate max-w-[180px]" title={booking.venue_name}>{booking.venue_name}</span>
+                                            <div className="flex items-center gap-1.5 mt-1 text-slate-800 font-semibold group-hover:text-primary transition-colors">
+                                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                                <span className="truncate max-w-[200px]">{booking.venue_name}</span>
                                             </div>
-                                            <div className="text-xs text-slate-500 pl-5">
-                                                • {booking.court_name}
+                                            <div className="text-[11px] text-slate-500 font-medium pl-5">
+                                                {booking.court_name}
                                             </div>
                                         </div>
                                     </td>
-
-                                    {/* Khách hàng */}
                                     <td className="px-5 py-4">
                                         <div className="font-semibold text-slate-800">{booking.customer_name}</div>
-                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
-                                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                        <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1 font-medium">
+                                            <Phone className="w-3 h-3 text-slate-300" />
                                             {booking.customer_phone}
                                         </div>
                                     </td>
-
-                                    {/* Thời gian */}
                                     <td className="px-5 py-4">
                                         <div className="flex flex-col gap-1.5">
-                                            <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
-                                                <Calendar className="w-4 h-4" />
+                                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                                                <Calendar className="w-3.5 h-3.5 text-primary/60" />
                                                 {format(new Date(booking.booking_date), 'dd/MM/yyyy')}
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 w-fit px-2 py-0.5 rounded-md font-medium font-mono">
-                                                <Clock className="w-3.5 h-3.5 text-sky-600" />
+                                            <div className="flex items-center gap-1.5 text-[11px] text-sky-700 bg-sky-50 w-fit px-2 py-0.5 rounded border border-sky-100 font-semibold">
+                                                <Clock className="w-3 h-3" />
                                                 {booking.start_time} - {booking.end_time}
                                             </div>
                                         </div>
                                     </td>
-
-                                    {/* Tài chính */}
                                     <td className="px-5 py-4 text-right">
-                                        <div className="flex flex-col items-end gap-1">
-                                            <div className="font-bold text-slate-900 flex items-center gap-1">
-                                                {booking.total_price.toLocaleString('vi-VN')} đ
+                                        <div className="font-bold text-slate-900 text-base">
+                                            {(booking.total_amount || 0).toLocaleString('vi-VN')}đ
+                                        </div>
+                                        {booking.addons.length > 0 && (
+                                            <div className="text-[10px] text-slate-400 font-medium flex justify-end gap-1 mt-0.5">
+                                                +{booking.addons.length} dịch vụ kèm
                                             </div>
-                                            <div className="flex justify-end gap-1">
-                                                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm line-clamp-1
-                                                    ${booking.payment_status === 'PAID' ? 'text-emerald-700 bg-emerald-100' : 
-                                                    booking.payment_status === 'REFUNDED' ? 'text-purple-700 bg-purple-100' :
-                                                    'text-amber-700 bg-amber-100'}`}>
-                                                    {booking.payment_method}
-                                                </span>
-                                                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm line-clamp-1
-                                                    ${booking.payment_status === 'PAID' ? 'text-emerald-700 bg-emerald-100' : 
-                                                    booking.payment_status === 'REFUNDED' ? 'text-purple-700 bg-purple-100' :
-                                                    'text-amber-700 bg-amber-100'}`}>
-                                                    {booking.payment_status}
-                                                </span>
+                                        )}
+                                    </td>
+                                    <td className="px-5 py-4 text-center">
+                                        <div className="relative inline-block">
+                                            <div 
+                                                className="status-trigger"
+                                                onClick={() => setOpenDropdownId(openDropdownId === booking.id ? null : booking.id)}
+                                            >
+                                                <StatusBadge status={booking.status} type="booking" className="cursor-pointer select-none border-2 hover:border-primary/50 transition-all shadow-sm" />
                                             </div>
                                             
-                                            {booking.refund_amount > 0 && (
-                                                <div className="text-[10px] font-medium text-rose-500 flex items-center gap-1 mt-0.5">
-                                                    Đã hoàn: <span className="line-through decoration-rose-300">{booking.refund_amount.toLocaleString('vi-VN')} đ</span>
+                                            {openDropdownId === booking.id && (
+                                                <div className="status-dropdown absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2 min-w-[190px] animate-in fade-in zoom-in duration-200">
+                                                    <div className="py-2 px-3 mb-2 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Thay đổi Trạng thái</div>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        {bookingStatuses.map(st => (
+                                                            <button
+                                                                key={st}
+                                                                disabled={isUpdating}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleStatusUpdate(booking.id, st);
+                                                                }}
+                                                                className={cn(
+                                                                    "flex items-center justify-between gap-3 p-1.5 rounded-xl transition-all",
+                                                                    booking.status === st ? "bg-slate-50 ring-1 ring-primary/20 shadow-sm" : "hover:bg-slate-50/50"
+                                                                )}
+                                                            >
+                                                                <StatusBadge status={st} type="booking" className="flex-1 text-center py-2" />
+                                                                <div className="flex-shrink-0 w-6 flex justify-center">
+                                                                    {booking.status === st && <Check className="w-3.5 h-3.5 text-primary" />}
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
                                     </td>
-
-                                    {/* Status */}
-                                    <td className="px-5 py-4 text-center">
-                                        <StatusBadge status={booking.status} type="booking" />
-                                    </td>
-
-                                    {/* Actions */}
                                     <td className="px-5 py-4 text-right">
-                                        <div className="flex justify-end items-center gap-0.5 relative">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10" title="Chi tiết Lịch sử">
-                                                <Info className="w-4 h-4" />
-                                            </Button>
-
-                                            {/* Nút Cancel Quyền Admin: Hiện đỏ cho SA, xám cho Admin */}
-                                            {(booking.status === 'CONFIRMED' || booking.status === 'PENDING') && (
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className={`h-8 w-8 ${simulatedRole === 'super_admin' ? 'text-rose-400 hover:text-rose-600 hover:bg-rose-50' : 'text-slate-300 cursor-not-allowed'} `}
-                                                    title={simulatedRole === 'super_admin' ? (cancelingId === booking.id ? "Xác nhận Hủy Cưỡng Chế!" : "Hủy / Hoàn tiền Cưỡng Chế (Super Admin)") : 'Chỉ Super Admin mới được can thiệp hủy'}
-                                                    onClick={() => {
-                                                        if (simulatedRole === 'super_admin') {
-                                                            cancelingId === booking.id ? handleForceCancel(booking.id) : setCancelingId(booking.id);
-                                                        } else {
-                                                            alert('Chỉ Super Admin mới có quyền can thiệp hủy booking hệ thống!');
-                                                        }
-                                                    }}
-                                                >
-                                                    {cancelingId === booking.id && simulatedRole === 'super_admin' ? <ShieldAlert className="w-4 h-4 animate-pulse fill-rose-100" /> : <XCircle className="w-4 h-4" />}
-                                                </Button>
-                                            )}
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className={`text-[10px] font-semibold uppercase tracking-widest px-1.5 py-0.5 rounded border ${
+                                                booking.payment_status === 'PAID' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                booking.payment_status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                                                'bg-rose-50 text-rose-700 border-rose-100'
+                                            }`}>
+                                                {booking.payment_status === 'PAID' ? 'Đã thanh toán' : 
+                                                 booking.payment_status === 'PENDING' ? 'Chờ thanh toán' :
+                                                 booking.payment_status}
+                                            </div>
+                                            <div className="text-[9px] text-slate-400 font-semibold uppercase tracking-tighter">
+                                                {booking.payment_method}
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -222,22 +235,19 @@ export const AdminBookingList = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {/* Quick Links cho Super Admin */}
-                <Card className="bg-white border-slate-200">
-                    <div className="p-4 flex flex-col gap-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                            <CalendarRange className="w-4 h-4 text-primary" /> Tiện ích Mở Rộng
-                        </div>
-                        <p className="text-xs text-slate-500 mb-2">Xem các cấu trúc Booking phức tạp của hệ thống.</p>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" className="flex-1 text-xs bg-slate-50 hover:bg-slate-100">Lịch Định Kỳ (Recurring)</Button>
-                            <Button variant="outline" size="sm" className="flex-1 text-xs bg-slate-50 hover:bg-slate-100">Hàng Đợi (Waitlist)</Button>
-                        </div>
+
+                {meta && (
+                    <div className="px-5 border-t border-slate-100 bg-slate-50/30">
+                        <Pagination 
+                            currentPage={page} 
+                            totalPages={meta.totalPages} 
+                            onPageChange={(p) => setPage(p)}
+                            limit={limit}
+                            onLimitChange={handleLimitChange}
+                            totalItems={meta.total}
+                        />
                     </div>
-                </Card>
+                )}
             </div>
         </div>
     );

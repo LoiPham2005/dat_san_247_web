@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/common/Button';
-import { Store, User, LogOut, LayoutDashboard, History, Settings, Bell, Wallet, Star, MessagesSquare } from 'lucide-react';
+import { Store, User, LogOut, LayoutDashboard, History, Settings, Bell, Wallet, Star, MessagesSquare, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePathname } from 'next/navigation';
 
@@ -87,6 +87,9 @@ export const CustomerHeader = () => {
                                         </Link>
                                         <Link href="/reviews" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/reviews') && "bg-slate-50 text-primary")}>
                                             <Star className="w-4 h-4 mr-2 text-slate-400" /> Đánh giá của tôi
+                                        </Link>
+                                        <Link href="/favorites" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/favorites') && "bg-slate-50 text-primary")}>
+                                            <Heart className="w-4 h-4 mr-2 text-slate-400" /> Sân yêu thích
                                         </Link>
                                         <Link href="/support" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/support') && "bg-slate-50 text-primary")}>
                                             <MessagesSquare className="w-4 h-4 mr-2 text-slate-400" /> Hỗ trợ & Báo cáo

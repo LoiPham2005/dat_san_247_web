@@ -6,13 +6,58 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Search, Scale, HelpCircle, CheckCircle2, FileText, CalendarClock, PlusCircle, PenSquare, Trash2, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
+import { AdminPolicyForm } from './AdminPolicyForm';
+import { AdminFaqForm } from './AdminFaqForm';
 
 export const AdminContentList = () => {
-    const { policies, faqs, isLoadingPolicies, isLoadingFaqs } = useAdminContent();
+    const { 
+        policies, faqs, isLoadingPolicies, isLoadingFaqs,
+        upsertPolicy, isUpsertingPolicy,
+        createFaq, isCreatingFaq, updateFaq, isUpdatingFaq, deleteFaq, isDeletingFaq
+    } = useAdminContent();
+    
     const [activeTab, setActiveTab] = useState<'POLICIES' | 'FAQS'>('POLICIES');
     const [searchTerm, setSearchTerm] = useState('');
+    const [showForm, setShowForm] = useState(false);
+    const [editingItem, setEditingItem] = useState<any>(null);
 
     const isLoading = isLoadingPolicies || isLoadingFaqs;
+
+    const filteredPolicies = policies.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredFaqs = faqs.filter(f => f.question.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const handlePolicySubmit = (data: any) => {
+        upsertPolicy(data, {
+            onSuccess: () => {
+                setShowForm(false);
+                setEditingItem(null);
+            }
+        });
+    };
+
+    const handleFaqSubmit = (data: any) => {
+        if (editingItem) {
+            updateFaq({ id: editingItem.id, data }, {
+                onSuccess: () => {
+                    setShowForm(false);
+                    setEditingItem(null);
+                }
+            });
+        } else {
+            createFaq(data, {
+                onSuccess: () => {
+                    setShowForm(false);
+                    setEditingItem(null);
+                }
+            });
+        }
+    };
+
+    const handleDeleteFaq = (id: string, question: string) => {
+        if (window.confirm(`Xóa câu hỏi: "${question}"?`)) {
+            deleteFaq(id);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -24,9 +69,6 @@ export const AdminContentList = () => {
             </div>
         );
     }
-
-    const filteredPolicies = policies.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()));
-    const filteredFaqs = faqs.filter(f => f.question.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return (
         <div className="space-y-6">
@@ -57,12 +99,47 @@ export const AdminContentList = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <Button className="h-10 shadow-sm shadow-primary/20">
+                    <Button 
+                        onClick={() => {
+                            setEditingItem(null);
+                            setShowForm(true);
+                        }}
+                        className="h-10 shadow-sm shadow-primary/20"
+                    >
                         <PlusCircle className="w-4 h-4 mr-2" />
                         Soạn thảo {activeTab === 'POLICIES' ? 'Tài liệu' : 'FAQ'} mới
                     </Button>
                 </div>
             </div>
+
+            {/* Form Modal (Simple Overlay) */}
+            {showForm && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
+                        {activeTab === 'POLICIES' ? (
+                            <AdminPolicyForm 
+                                policy={editingItem}
+                                onSubmit={handlePolicySubmit}
+                                onCancel={() => {
+                                    setShowForm(false);
+                                    setEditingItem(null);
+                                }}
+                                isLoading={isUpsertingPolicy}
+                            />
+                        ) : (
+                            <AdminFaqForm 
+                                faq={editingItem}
+                                onSubmit={handleFaqSubmit}
+                                onCancel={() => {
+                                    setShowForm(false);
+                                    setEditingItem(null);
+                                }}
+                                isLoading={isCreatingFaq || isUpdatingFaq}
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Content: Policies */}
             {activeTab === 'POLICIES' && (
@@ -110,8 +187,17 @@ export const AdminContentList = () => {
                                     )}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10"><PenSquare className="w-4 h-4" /></Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50"><Trash2 className="w-4 h-4" /></Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10"
+                                        onClick={() => {
+                                            setEditingItem(policy);
+                                            setShowForm(true);
+                                        }}
+                                    >
+                                        <PenSquare className="w-4 h-4" />
+                                    </Button>
                                 </div>
                             </div>
                         </div>
@@ -129,7 +215,7 @@ export const AdminContentList = () => {
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
                     {filteredFaqs.map(faq => (
                         <div key={faq.id} className="p-5 flex flex-col md:flex-row md:items-start justify-between gap-6 hover:bg-slate-50/50 transition-colors group">
-                            <div className="flex gap-4">
+                            <div className="flex gap-4 items-start">
                                 <div className="hidden md:flex flex-col items-center mt-1">
                                     <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center text-sm border border-slate-200 shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">{faq.display_order}</div>
                                 </div>
@@ -139,16 +225,41 @@ export const AdminContentList = () => {
                                         <span className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20 shrink-0">{faq.category}</span>
                                     </h4>
                                     <p className="text-sm text-slate-600 mt-2 leading-relaxed">{faq.answer}</p>
+                                    {faq.author && (
+                                        <p className="text-[10px] text-slate-400 mt-2 font-medium">Bởi: {faq.author.full_name}</p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 shrink-0 self-end md:self-auto">
                                 <label className="relative inline-flex items-center cursor-pointer" title={faq.is_active ? "Đang hiển thị trên Web" : "Đã Ẩn"}>
-                                    <input type="checkbox" className="sr-only peer" checked={faq.is_active} readOnly />
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={faq.is_active} 
+                                        onChange={() => updateFaq({ id: faq.id, data: { is_active: !faq.is_active }})}
+                                    />
                                     <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
                                 </label>
                                 <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10"><PenSquare className="w-4 h-4" /></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50"><Trash2 className="w-4 h-4" /></Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10"
+                                    onClick={() => {
+                                        setEditingItem(faq);
+                                        setShowForm(true);
+                                    }}
+                                >
+                                    <PenSquare className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-rose-300 hover:text-rose-600 hover:bg-rose-50"
+                                    onClick={() => handleDeleteFaq(faq.id, faq.question)}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
                             </div>
                         </div>
                     ))}

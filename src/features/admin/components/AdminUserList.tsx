@@ -1,30 +1,85 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAdminUsers } from '../hooks/useAdminUsers';
 import { UserStatus, KycStatus, RoleSlug } from '../api/admin-user.api';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Card, CardContent } from '@/components/common/Card';
-import { Search, Filter, Shield, UserX, CheckCircle, Smartphone, Mail, Clock, ChevronDown } from 'lucide-react';
+import { Search, Filter, Shield, UserX, CheckCircle, Smartphone, Mail, Clock, ChevronDown, Plus, UserPlus, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { UserModal } from './UserModal';
+import { Pagination } from '@/components/common/Pagination';
+import { cn } from '@/lib/utils/cn';
 
 export const AdminUserList = () => {
-    const { users, isLoading, updateStatus, updateRole, updateKyc } = useAdminUsers();
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('ALL');
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
-    const [simulatedRole, setSimulatedRole] = useState<'admin' | 'super_admin'>('admin');
+    
+    // State for click-to-show dropdowns
+    const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
+    const [openKycDropdownId, setOpenKycDropdownId] = useState<string | null>(null);
 
-    const filteredUsers = users.filter((user) => {
-        const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              (user.phone && user.phone.includes(searchTerm));
-        const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
-        const matchesStatus = statusFilter === 'ALL' || user.status === statusFilter;
-        return matchesSearch && matchesRole && matchesStatus;
+    const { 
+        users, roles, meta, isLoading, 
+        updateStatus, updateRole, updateKyc, 
+        createUser, isCreating 
+    } = useAdminUsers({
+        page,
+        limit,
+        search: searchTerm || undefined,
+        role: roleFilter === 'ALL' ? undefined : roleFilter,
+        status: statusFilter === 'ALL' ? undefined : statusFilter
     });
+
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    // Smart Click Outside: Close IF clicking anywhere that isn't a badge or menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            // If the click is not on a status badge and not inside a dropdown menu
+            if (!target.closest('.status-trigger') && !target.closest('.status-dropdown')) {
+                setOpenStatusDropdownId(null);
+                setOpenKycDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearch = (val: string) => {
+        setSearchTerm(val);
+        setPage(1);
+    };
+
+    const handleRoleFilter = (val: string) => {
+        setRoleFilter(val);
+        setPage(1);
+    };
+
+    const handleStatusFilter = (val: string) => {
+        setStatusFilter(val);
+        setPage(1);
+    };
+
+    const handleLimitChange = (newLimit: number) => {
+        setLimit(newLimit);
+        setPage(1);
+    };
+
+    const handleCreateUser = async (data: any) => {
+        try {
+            await createUser(data);
+            setIsCreateModalOpen(false);
+        } catch (error) {
+            // Error is handled in the hook's toast
+        }
+    };
 
     if (isLoading) {
         return (
@@ -39,57 +94,38 @@ export const AdminUserList = () => {
 
     return (
         <div className="space-y-6">
-            {/* Demo Header for role simulation */}
-            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex justify-between items-center">
-                <div className="text-sm text-indigo-800 font-medium">
-                    Đang xem với tư cách: <strong className="uppercase">{simulatedRole === 'admin' ? 'Admin Vận Hành' : 'Super Admin'}</strong>
-                </div>
-                <div className="flex gap-2">
-                    <Button 
-                        variant="outline" size="sm" 
-                        className="h-8 border-indigo-200 text-indigo-700 bg-white"
-                        onClick={() => setSimulatedRole(r => r === 'admin' ? 'super_admin' : 'admin')}
-                    >
-                        Đổi quyền (Demo)
-                    </Button>
-                </div>
-            </div>
-
-            {/* Header & Filters */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+            {/* Control Bar - Updated to Match AdminBookingList style */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
                 <div className="relative w-full md:w-96">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <Input
-                        placeholder="Tìm theo email, tên, số điện thoại..."
-                        className="pl-9 h-10 border-slate-200 bg-white shadow-sm"
+                        placeholder="Tìm email, tên, số điện thoại..."
+                        className="pl-9 h-10 border-slate-200 bg-slate-50"
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleSearch(e.target.value)}
                     />
                 </div>
                 
-                <div className="flex gap-3 w-full md:w-auto">
-                    <div className="relative w-full md:w-48">
+                <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
+                    <div className="relative w-full md:min-w-[140px] md:w-auto">
                         <select 
-                            className="w-full appearance-none h-10 bg-white border border-slate-200 rounded-md px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-medium text-slate-700 shadow-sm transition-all"
+                            className="w-full appearance-none h-10 bg-slate-50 hover:bg-white border border-slate-200 rounded-md px-3 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
                             value={roleFilter}
-                            onChange={(e) => setRoleFilter(e.target.value)}
+                            onChange={(e) => handleRoleFilter(e.target.value)}
                         >
                             <option value="ALL">Tất cả Vai trò</option>
-                            <option value="super_admin">Super Admin</option>
-                            <option value="admin">Admin</option>
-                            <option value="staff">Staff</option>
-                            <option value="owner">Venue Owner</option>
-                            <option value="venue_staff">Venue Staff</option>
-                            <option value="customer">Customer</option>
+                            {roles.map(r => (
+                                <option key={r.id} value={r.slug}>{r.name}</option>
+                            ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
                     </div>
                     
-                    <div className="relative w-full md:w-48">
+                    <div className="relative w-full md:min-w-[160px] md:w-auto">
                         <select 
-                            className="w-full appearance-none h-10 bg-white border border-slate-200 rounded-md px-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-medium text-slate-700 shadow-sm transition-all"
+                            className="w-full appearance-none h-10 bg-slate-50 hover:bg-white border border-slate-200 rounded-md px-3 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => handleStatusFilter(e.target.value)}
                         >
                             <option value="ALL">Tất cả Trạng thái</option>
                             <option value="ACTIVE">Hoạt động</option>
@@ -99,131 +135,174 @@ export const AdminUserList = () => {
                         </select>
                         <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-slate-400 pointer-events-none" />
                     </div>
+
+                    <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>
+
+                    <Button 
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="h-10 px-4 font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 flex items-center gap-2 rounded-lg transition-all active:scale-95"
+                    >
+                        <UserPlus className="w-4 h-4" /> 
+                        <span>Tạo người dùng</span>
+                    </Button>
                 </div>
             </div>
 
-            {/* Table */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+            {/* Table Card */}
+            <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
                 <div className="overflow-x-auto min-h-[400px]">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-50/80 text-slate-500 font-semibold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                    <table className="w-full text-sm text-left whitespace-nowrap">
+                        <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
                             <tr>
                                 <th className="px-6 py-4">Người dùng</th>
                                 <th className="px-6 py-4">Liên hệ</th>
                                 <th className="px-6 py-4 text-center">Vai trò</th>
                                 <th className="px-6 py-4 text-center">Trạng thái</th>
-                                <th className="px-6 py-4 text-center">KYC / Định danh</th>
+                                <th className="px-6 py-4 text-center">KYC</th>
                                 <th className="px-6 py-4 text-right">Hoạt động cuối</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100/80 bg-white">
-                            {filteredUsers.length === 0 ? (
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                            {users.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                                         Không tìm thấy người dùng nào phù hợp.
                                     </td>
                                 </tr>
-                            ) : filteredUsers.map((user) => (
-                                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                            ) : users.map((user) => (
+                                <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-200">
+                                            <div className="h-9 w-9 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-200 font-semibold text-slate-500">
                                                 {user.avatar_url ? (
                                                     <img src={user.avatar_url} alt={user.full_name} className="h-full w-full object-cover" />
                                                 ) : (
-                                                    <span className="text-slate-500 font-bold">{user.full_name.charAt(0)}</span>
+                                                    <span>{user.full_name.charAt(0)}</span>
                                                 )}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-slate-900 group-hover:text-primary transition-colors flex items-center gap-2">
+                                                <div className="font-semibold text-slate-900 group-hover:text-primary transition-colors">
                                                     {user.full_name}
-                                                    <button onClick={() => alert('Demo Mode: Sẽ hiển thị Dialog để sửa thông tin cơ bản: Tên, SĐT, Địa chỉ')} className="text-slate-400 hover:text-primary transition-colors" title="Sửa thông tin cơ bản">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                                                    </button>
                                                 </div>
-                                                <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
-                                                    <span>ID: {user.id}</span>
-                                                    <button onClick={() => alert('Demo Mode: Sẽ hiển thị danh sách thiết bị đăng nhập')} className="text-blue-500 hover:underline flex items-center gap-0.5">
-                                                        <Smartphone className="w-3 h-3" /> Xem TB
-                                                    </button>
+                                                <div className="text-[10px] text-slate-400 mt-0.5 font-medium uppercase tracking-tight">
+                                                    ID: {user.id.substring(0, 8)}...
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex flex-col gap-1.5">
-                                            <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
-                                                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-1.5 text-slate-700 text-xs font-semibold">
+                                                <Mail className="w-3.5 h-3.5 text-slate-300" />
                                                 {user.email}
                                             </div>
                                             {user.phone && (
-                                                <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium">
-                                                    <Smartphone className="w-3.5 h-3.5 text-slate-400" />
+                                                <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-medium tracking-tight">
+                                                    <Smartphone className="w-3.5 h-3.5 text-slate-300" />
                                                     {user.phone}
                                                 </div>
                                             )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <div className="relative inline-block w-36">
+                                        <div className="relative inline-block w-full max-w-[140px]">
                                             <select 
-                                                className="w-full appearance-none bg-slate-50/50 border border-slate-200 hover:border-slate-300 rounded-md px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary shadow-sm text-center cursor-pointer transition-colors"
-                                                value={user.role}
-                                                onChange={(e) => updateRole({ id: user.id, role: e.target.value as RoleSlug })}
+                                                className="w-full appearance-none bg-slate-50/50 border border-slate-200 hover:border-slate-300 rounded px-2.5 py-1.5 text-[11px] font-semibold focus:outline-none focus:ring-1 focus:ring-primary/20 shadow-sm text-center cursor-pointer transition-colors uppercase tracking-tight"
+                                                value={user.role.id}
+                                                onChange={(e) => updateRole({ id: user.id, roleId: e.target.value })}
                                             >
-                                                <option value="super_admin">Super Admin</option>
-                                                <option value="admin">Admin</option>
-                                                <option value="staff">Staff</option>
-                                                <option value="owner">Venue Owner</option>
-                                                <option value="venue_staff">Venue Staff</option>
-                                                <option value="customer">Customer</option>
+                                                {roles.map(r => (
+                                                    <option key={r.id} value={r.id}>{r.name}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <div className="relative inline-block w-32">
-                                            <select 
-                                                className="w-full appearance-none bg-transparent rounded-md px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary text-center cursor-pointer opacity-0 absolute inset-0 z-10"
-                                                value={user.status}
-                                                onChange={(e) => updateStatus({ id: user.id, status: e.target.value as UserStatus })}
+                                        <div className="relative inline-block">
+                                            <div 
+                                                className="status-trigger"
+                                                onClick={() => {
+                                                    setOpenKycDropdownId(null);
+                                                    setOpenStatusDropdownId(openStatusDropdownId === user.id ? null : user.id);
+                                                }}
                                             >
-                                                <option value="ACTIVE">Hoạt động</option>
-                                                <option value="INACTIVE">Chưa kích hoạt</option>
-                                                <option value="SUSPENDED">Tạm khóa</option>
-                                                {(simulatedRole === 'super_admin' || user.status === 'BANNED') && (
-                                                    <option value="BANNED">Cấm (Ban)</option>
-                                                )}
-                                            </select>
-                                            <div className="group-hover:opacity-80 transition-opacity">
-                                                <StatusBadge status={user.status} type="user" />
+                                                <StatusBadge status={user.status} type="user" className="cursor-pointer whitespace-nowrap select-none border-2 hover:border-primary/50 transition-all shadow-sm" />
                                             </div>
+                                            
+                                            {openStatusDropdownId === user.id && (
+                                                <div className="status-dropdown absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2 min-w-[180px] animate-in fade-in zoom-in duration-200">
+                                                    <div className="py-2 px-3 mb-2 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Thay đổi Trạng thái</div>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        {['ACTIVE', 'INACTIVE', 'SUSPENDED', 'BANNED'].map(st => (
+                                                            <button
+                                                                key={st}
+                                                                onClick={() => {
+                                                                    updateStatus({ id: user.id, status: st as UserStatus });
+                                                                    setOpenStatusDropdownId(null);
+                                                                }}
+                                                                className={cn(
+                                                                    "flex items-center justify-between gap-3 p-1.5 rounded-xl transition-all",
+                                                                    user.status === st ? "bg-slate-50 ring-1 ring-primary/20 shadow-sm" : "hover:bg-slate-50/50"
+                                                                )}
+                                                            >
+                                                                <StatusBadge status={st} type="user" className="flex-1 text-center py-2" />
+                                                                <div className="flex-shrink-0 w-6 flex justify-center">
+                                                                    {user.status === st && <Check className="w-3.5 h-3.5 text-primary" />}
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <div className="relative inline-block w-32">
-                                            <select 
-                                                className="w-full appearance-none bg-transparent rounded-md px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary text-center cursor-pointer opacity-0 absolute inset-0 z-10"
-                                                value={user.kyc_status}
-                                                onChange={(e) => updateKyc({ id: user.id, kyc_status: e.target.value as KycStatus })}
+                                        <div className="relative inline-block">
+                                            <div 
+                                                className="status-trigger"
+                                                onClick={() => {
+                                                    setOpenStatusDropdownId(null);
+                                                    setOpenKycDropdownId(openKycDropdownId === user.id ? null : user.id);
+                                                }}
                                             >
-                                                <option value="UNVERIFIED">Chưa xác minh</option>
-                                                <option value="PENDING">Đang chờ</option>
-                                                <option value="VERIFIED">Đã xác minh</option>
-                                                <option value="REJECTED">Từ chối</option>
-                                            </select>
-                                            <div className="group-hover:opacity-80 transition-opacity">
-                                                <StatusBadge status={user.kyc_status} type="kyc" />
+                                                <StatusBadge status={user.kyc_status} type="kyc" className="cursor-pointer whitespace-nowrap select-none border-2 hover:border-primary/50 transition-all shadow-sm" />
                                             </div>
+                                            
+                                            {openKycDropdownId === user.id && (
+                                                <div className="status-dropdown absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white border border-slate-200 shadow-2xl rounded-2xl p-2 min-w-[180px] animate-in fade-in zoom-in duration-200">
+                                                    <div className="py-2 px-3 mb-2 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Trạng thái KYC</div>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        {['UNVERIFIED', 'PENDING', 'VERIFIED', 'REJECTED'].map(st => (
+                                                            <button
+                                                                key={st}
+                                                                onClick={() => {
+                                                                    updateKyc({ id: user.id, kyc_status: st as KycStatus });
+                                                                    setOpenKycDropdownId(null);
+                                                                }}
+                                                                className={cn(
+                                                                    "flex items-center justify-between gap-3 p-1.5 rounded-xl transition-all",
+                                                                    user.kyc_status === st ? "bg-slate-50 ring-1 ring-primary/20 shadow-sm" : "hover:bg-slate-50/50"
+                                                                )}
+                                                            >
+                                                                <StatusBadge status={st} type="kyc" className="flex-1 text-center py-2" />
+                                                                <div className="flex-shrink-0 w-6 flex justify-center">
+                                                                    {user.kyc_status === st && <Check className="w-3.5 h-3.5 text-primary" />}
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex flex-col items-end gap-1">
-                                            <div className="text-xs font-medium text-slate-800">
-                                                {user.last_login_at ? format(new Date(user.last_login_at), 'dd/MM/yyyy HH:mm') : 'Chưa đăng nhập'}
+                                            <div className="text-[11px] font-semibold text-slate-800 flex items-center gap-1">
+                                                <Clock className="w-3 h-3 text-slate-400" />
+                                                {user.last_login_at ? format(new Date(user.last_login_at), 'dd/MM/yy HH:mm') : 'N/A'}
                                             </div>
-                                            <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                                                <Clock className="w-3 h-3" />
-                                                Tạo: {format(new Date(user.created_at), 'dd/MM/yy')}
+                                            <div className="text-[10px] text-slate-400 font-medium">
+                                                Tạo: {format(new Date(user.created_at), 'dd/MM/yyyy')}
                                             </div>
                                         </div>
                                     </td>
@@ -232,11 +311,28 @@ export const AdminUserList = () => {
                         </tbody>
                     </table>
                 </div>
-                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-sm text-slate-500 font-medium">
-                    <span>Tổng cộng: <strong className="text-slate-900">{filteredUsers.length}</strong> người dùng</span>
-                    <div className="text-xs text-slate-400 italic">Gợi ý: Nhấn vào các badge "Trạng thái" hoặc "KYC" để đổi nhanh.</div>
-                </div>
-            </Card>
+                
+                {meta && (
+                    <div className="px-6 border-t border-slate-100 bg-slate-50/50">
+                        <Pagination 
+                            currentPage={page} 
+                            totalPages={meta.totalPages} 
+                            onPageChange={(p) => setPage(p)}
+                            limit={limit}
+                            onLimitChange={handleLimitChange}
+                            totalItems={meta.total}
+                        />
+                    </div>
+                )}
+            </div>
+
+            <UserModal 
+                isOpen={isCreateModalOpen} 
+                onClose={() => setIsCreateModalOpen(false)} 
+                onSubmit={handleCreateUser}
+                roles={roles}
+                isSubmitting={isCreating}
+            />
         </div>
     );
 };

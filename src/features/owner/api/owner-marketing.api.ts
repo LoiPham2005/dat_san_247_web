@@ -3,6 +3,7 @@ export interface OwnerReview {
     booking_id: string;
     venue_id: string;
     court_id: string | null;
+    court_name: string | null;
     user_id: string;
     user_name: string;
     user_avatar: string | null;
@@ -16,6 +17,7 @@ export interface OwnerReview {
     responded_at: string | null;
     created_at: string;
     is_visible: boolean;
+    media: { url: string; type: string }[];
 }
 
 export type PromotionDiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT';
@@ -56,6 +58,7 @@ const mockReviews: OwnerReview[] = [
         booking_id: 'BK-1',
         venue_id: 'VN-1',
         court_id: 'C-1',
+        court_name: 'Sân 1',
         user_id: 'U-1',
         user_name: 'Khách Hàng A',
         user_avatar: null,
@@ -68,13 +71,15 @@ const mockReviews: OwnerReview[] = [
         responded_by: 'U-OWNER',
         responded_at: new Date(Date.now() - 86400000).toISOString(),
         created_at: new Date(Date.now() - 172800000).toISOString(),
-        is_visible: true
+        is_visible: true,
+        media: []
     },
     {
         id: 'REV-2',
         booking_id: 'BK-2',
         venue_id: 'VN-1',
         court_id: 'C-2',
+        court_name: 'Sân 2',
         user_id: 'U-2',
         user_name: 'Bạn Tân',
         user_avatar: null,
@@ -87,7 +92,8 @@ const mockReviews: OwnerReview[] = [
         responded_by: null,
         responded_at: null,
         created_at: new Date(Date.now() - 3600000).toISOString(),
-        is_visible: true
+        is_visible: true,
+        media: []
     }
 ];
 
@@ -157,13 +163,14 @@ import apiClient from '@/lib/api/axios';
 
 export const ownerMarketingApi = {
     getVenueReviews: async (venueId: string): Promise<OwnerReview[]> => {
-        const response = await apiClient.get('/v1/owner/reviews', { params: { venue_id: venueId } });
+        const response = await apiClient.get('/owner/reviews', { params: { venue_id: venueId } });
         // Map backend Review to OwnerReview
         return (response.data?.data || []).map((r: any) => ({
             id: r.id,
             booking_id: r.booking_id,
             venue_id: r.venue_id,
             court_id: r.court_id,
+            court_name: r.courts?.name || 'Sân chung',
             user_id: r.user_id,
             user_name: r.users?.full_name || 'Khách hàng',
             user_avatar: r.users?.avatar_url,
@@ -176,22 +183,45 @@ export const ownerMarketingApi = {
             responded_by: r.responded_by,
             responded_at: r.responded_at,
             created_at: r.created_at,
-            is_visible: r.is_visible
+            is_visible: r.is_visible,
+            media: (r.media_attachments || []).map((m: any) => ({
+                url: m.files?.public_url,
+                type: m.files?.mime_type
+            }))
         }));
     },
 
     replyReview: async (reviewId: string, reply: string): Promise<OwnerReview> => {
-        const response = await apiClient.patch(`/v1/owner/reviews/${reviewId}/reply`, { reply_comment: reply });
+        const response = await apiClient.patch(`/owner/reviews/${reviewId}/reply`, { reply_comment: reply });
         return response.data?.data;
     },
 
     getVenuePromotions: async (venueId: string): Promise<OwnerPromotion[]> => {
-        await delay(400);
-        return mockPromotions;
+        const response = await apiClient.get(`/owner/promotions/venue/${venueId}`);
+        return response.data?.data || [];
     },
 
     getPromotionUsage: async (promotionId: string): Promise<OwnerPromotionUsage[]> => {
-        await delay(300);
-        return mockPromotionUsage.filter(p => p.promotion_id === promotionId);
+        const response = await apiClient.get(`/owner/promotions/${promotionId}/usage`);
+        return response.data?.data || [];
+    },
+
+    createPromotion: async (data: any): Promise<OwnerPromotion> => {
+        const response = await apiClient.post('/owner/promotions', data);
+        return response.data?.data;
+    },
+
+    updatePromotion: async (id: string, data: any): Promise<OwnerPromotion> => {
+        const response = await apiClient.patch(`/owner/promotions/${id}`, data);
+        return response.data?.data;
+    },
+
+    togglePromotionStatus: async (id: string): Promise<OwnerPromotion> => {
+        const response = await apiClient.patch(`/owner/promotions/${id}/toggle`);
+        return response.data?.data;
+    },
+
+    deletePromotion: async (id: string): Promise<void> => {
+        await apiClient.delete(`/owner/promotions/${id}`);
     }
 };

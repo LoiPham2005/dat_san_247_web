@@ -28,6 +28,24 @@ export const useAdminBanners = () => {
         onError: () => toast.error("Có lỗi xảy ra khi Xóa Banner")
     });
 
+    const createBanner = useMutation({
+        mutationFn: adminBannerApi.createBanner,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin_banners'] });
+            toast.success("Tạo Banner mới thành công");
+        },
+        onError: () => toast.error("Có lỗi xảy ra khi Tạo Banner")
+    });
+
+    const updateBanner = useMutation({
+        mutationFn: ({ id, data }: { id: string, data: any }) => adminBannerApi.updateBanner(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin_banners'] });
+            toast.success("Cập nhật Banner thành công");
+        },
+        onError: () => toast.error("Có lỗi xảy ra khi Cập nhật Banner")
+    });
+
     return {
         banners: bannersQuery.data || [],
         isLoading: bannersQuery.isLoading,
@@ -35,5 +53,9 @@ export const useAdminBanners = () => {
         isToggling: toggleMutation.isPending,
         deleteBanner: deleteMutation.mutate,
         isDeleting: deleteMutation.isPending,
+        createBanner: createBanner.mutate,
+        isCreating: createBanner.isPending,
+        updateBanner: updateBanner.mutate,
+        isUpdating: updateBanner.isPending,
     };
 };

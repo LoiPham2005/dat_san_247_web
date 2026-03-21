@@ -1,13 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminUserApi, UserStatus, RoleSlug, KycStatus } from '../api/admin-user.api';
+import { adminUserApi, UserStatus, RoleSlug, KycStatus, AdminUser, AdminRole } from '../api/admin-user.api';
 import { toast } from 'sonner';
 
-export const useAdminUsers = () => {
+export const useAdminUsers = (params?: any) => {
     const queryClient = useQueryClient();
 
     const usersQuery = useQuery({
-        queryKey: ['admin_users'],
-        queryFn: adminUserApi.getUsers,
+        queryKey: ['admin_users', params],
+        queryFn: () => adminUserApi.getUsers(params),
+    });
+
+    const rolesQuery = useQuery({
+        queryKey: ['admin_roles'],
+        queryFn: adminUserApi.getRoles,
+        staleTime: 1000 * 60 * 60, // Roles don't change often
+    });
+
+    const createUserMutation = useMutation({
+        mutationFn: (data: any) => adminUserApi.createUser(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin_users'] });
+            toast.success("Tạo tài khoản thành công");
+        },
+        onError: (error: any) => {
+            const message = error.response?.data?.message || "Tạo tài khoản thất bại";
+            toast.error(message);
+        }
     });
 
     const updateStatusMutation = useMutation({
@@ -20,7 +38,7 @@ export const useAdminUsers = () => {
     });
 
     const updateRoleMutation = useMutation({
-        mutationFn: ({ id, role }: { id: string, role: RoleSlug }) => adminUserApi.updateRole(id, role),
+        mutationFn: ({ id, roleId }: { id: string, roleId: string }) => adminUserApi.updateRole(id, roleId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin_users'] });
             toast.success("Cập nhật phân quyền thành công");
@@ -38,8 +56,12 @@ export const useAdminUsers = () => {
     });
 
     return {
-        users: usersQuery.data || [],
-        isLoading: usersQuery.isLoading,
+        users: usersQuery.data?.items || [],
+        meta: usersQuery.data?.meta,
+        roles: rolesQuery.data || [],
+        isLoading: usersQuery.isLoading || rolesQuery.isLoading,
+        createUser: createUserMutation.mutateAsync,
+        isCreating: createUserMutation.isPending,
         updateStatus: updateStatusMutation.mutate,
         isUpdatingStatus: updateStatusMutation.isPending,
         updateRole: updateRoleMutation.mutate,
