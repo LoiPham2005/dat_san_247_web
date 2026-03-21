@@ -66,6 +66,24 @@ export const useOwnerVenueDetail = (venueId: string | null) => {
         onError: () => toast.error("Cập nhật Khung giờ thất bại")
     });
 
+    const updateOperatingHours = useMutation({
+        mutationFn: (hours: Partial<VenueOperatingHour>[]) => ownerVenueApi.updateOperatingHours(venueId!, hours),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_venue_hours', venueId] });
+            toast.success("Cập nhật lịch hoạt động thành công");
+        },
+        onError: () => toast.error("Cập nhật lịch hoạt động thất bại")
+    });
+
+    const deleteVenue = useMutation({
+        mutationFn: () => ownerVenueApi.deleteVenue(venueId!),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_venues'] });
+            toast.success("Đã xóa cơ sở bãi thành công");
+        },
+        onError: () => toast.error("Xóa cơ sở thất bại")
+    });
+
     return {
         updateVenue: updateVenue.mutate,
         isUpdating: updateVenue.isPending,
@@ -78,6 +96,10 @@ export const useOwnerVenueDetail = (venueId: string | null) => {
         operatingHours: hoursQuery.data || [],
         isLoadingHours: hoursQuery.isLoading,
         updateHour: updateHour.mutate,
-        isUpdatingHour: updateHour.isPending
+        isUpdatingHour: updateHour.isPending,
+        updateOperatingHours: updateOperatingHours.mutate,
+        isUpdatingHoursPending: updateOperatingHours.isPending,
+        deleteVenue: deleteVenue.mutate,
+        isDeleting: deleteVenue.isPending
     };
 };

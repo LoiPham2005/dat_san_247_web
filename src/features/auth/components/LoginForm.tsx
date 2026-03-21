@@ -11,61 +11,23 @@ import { Mail, Lock, Eye, EyeOff, LogIn, ShieldCheck, User as UserIcon, Store, H
 import { MOCK_USERS } from '@/constants/mock-users';
 import { toast } from 'sonner';
 
+import { useAuth } from '../hooks/useAuth';
+
 export const LoginForm = () => {
+    const { login, loading } = useAuth();
     const router = useRouter();
     const [showPassword, setShowPassword] = React.useState(false);
-    const [loading, setLoading] = React.useState<string | null>(null);
 
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading('regular');
-
-        try {
-            const result = await signIn('credentials', {
-                email,
-                password,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                toast.error('Email hoặc mật khẩu không chính xác');
-            } else {
-                toast.success('Đăng nhập thành công');
-                router.push('/');
-                router.refresh();
-            }
-        } catch (error) {
-            toast.error('Đã có lỗi xảy ra');
-        } finally {
-            setLoading(null);
-        }
+        await login({ email, password });
     };
 
     const handleMockLogin = async (mockUser: typeof MOCK_USERS[0]) => {
-        setLoading(mockUser.role);
-
-        try {
-            const result = await signIn('credentials', {
-                email: mockUser.email,
-                password: mockUser.password,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                toast.error('Mock login failed');
-            } else {
-                toast.success(`Đã đăng nhập với vai trò ${mockUser.fullName}`);
-                router.push(mockUser.redirect);
-                router.refresh();
-            }
-        } catch (error) {
-            toast.error('Đã có lỗi xảy ra');
-        } finally {
-            setLoading(null);
-        }
+        await login({ email: mockUser.email, password: mockUser.password });
     };
 
     return (
@@ -128,9 +90,9 @@ export const LoginForm = () => {
                         <Button
                             type="submit"
                             className="w-full h-11 mt-4 text-base font-bold shadow-md shadow-primary/20 rounded-xl"
-                            disabled={!!loading}
+                            disabled={loading}
                         >
-                            {loading === 'regular' ? "Đang xử lý..." : (
+                            {loading ? "Đang xử lý..." : (
                                 <><LogIn className="w-4 h-4 mr-2" /> Đăng Nhập</>
                             )}
                         </Button>
@@ -163,9 +125,9 @@ export const LoginForm = () => {
                             size="sm"
                             className="bg-white border-slate-200 hover:border-primary hover:text-primary transition-all text-xs justify-start h-10 px-3"
                             onClick={() => handleMockLogin(user)}
-                            disabled={!!loading}
+                            disabled={loading}
                         >
-                            {loading === user.role ? "..." : (
+                            {loading ? "..." : (
                                 <div className="flex items-center gap-2 overflow-hidden overflow-ellipsis whitespace-nowrap">
                                     {user.role === 'admin' || user.role === 'super_admin' ? <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> :
                                         user.role === 'staff' ? <Headset className="w-3.5 h-3.5 shrink-0" /> :

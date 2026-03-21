@@ -107,51 +107,76 @@ export default function VenueDetailPage({ params }: { params: { slug: string } }
                             {/* Amenities */}
                             <div className="space-y-4">
                                 <h3 className="text-lg font-bold text-slate-900">Tiện ích đi kèm</h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {venue.amenities?.map((am: any) => (
-                                        <div key={am.id} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
-                                            <Check className="w-4 h-4 text-emerald-500" /> {am.name}
-                                        </div>
-                                    ))}
-                                </div>
+                                {venue.amenities && venue.amenities.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {venue.amenities.map((am: any) => (
+                                            <div key={am.id} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
+                                                <Check className="w-4 h-4 text-emerald-500" /> {am.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-slate-500 text-sm italic">Sân chưa cập nhật tiện ích đi kèm.</div>
+                                )}
                             </div>
                         </div>
 
                         {/* Bang Giá Theo Khung Giờ */}
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             <h3 className="text-xl font-bold text-slate-900">Bảng Giá Theo Khung Giờ (Pricing rules)</h3>
-                            <div className="overflow-x-auto border border-slate-200 rounded-xl relative">
-                                <table className="w-full text-left text-sm whitespace-nowrap">
-                                    <thead className="bg-slate-50 font-bold text-slate-600">
-                                        <tr>
-                                            <th className="p-4 border-b border-slate-200">Khung Giờ</th>
-                                            <th className="p-4 border-b border-slate-200">Thứ 2 - Thứ 6</th>
-                                            <th className="p-4 border-b border-slate-200">T7 - Chủ Nhật</th>
-                                            <th className="p-4 border-b border-slate-200">Ngày Lễ</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        <tr className="bg-white hover:bg-slate-50/50 transition-colors">
-                                            <td className="p-4 font-bold text-slate-800">Sáng (06:00 - 16:00)</td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-emerald-50 text-emerald-700 font-bold rounded">150.000đ</span></td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-orange-50 text-orange-700 font-bold rounded">200.000đ</span></td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-rose-50 text-rose-700 font-bold rounded">250.000đ</span></td>
-                                        </tr>
-                                        <tr className="bg-white hover:bg-slate-50/50 transition-colors">
-                                            <td className="p-4 font-bold text-primary">Giờ Vàng (17:00 - 20:00)</td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded">300.000đ</span></td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded">350.000đ</span></td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-rose-50 text-rose-700 font-bold rounded">400.000đ</span></td>
-                                        </tr>
-                                        <tr className="bg-white hover:bg-slate-50/50 transition-colors">
-                                            <td className="p-4 font-bold text-slate-800">Tối muộn (21:00 - 23:00)</td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-slate-100 text-slate-700 font-bold rounded">200.000đ</span></td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-slate-100 text-slate-700 font-bold rounded">250.000đ</span></td>
-                                            <td className="p-4"><span className="px-2 py-1 bg-rose-50 text-rose-700 font-bold rounded">300.000đ</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                            {venue.courts?.map((court: any) => (
+                                <div key={court.id} className="overflow-x-auto border border-slate-200 rounded-xl relative">
+                                    <div className="bg-slate-50 font-bold text-slate-800 p-4 border-b border-slate-200">
+                                        👉 Giá thuê: {court.name} <span className="text-sm font-medium text-slate-500 ml-2">(Mặc định: {Number(court.price_per_hour).toLocaleString()}đ/h)</span>
+                                    </div>
+                                    <table className="w-full text-left text-sm whitespace-nowrap">
+                                        <thead className="bg-white text-slate-500 text-xs font-bold uppercase tracking-wider">
+                                            <tr>
+                                                <th className="p-4 border-b border-slate-200">Tên Khung Giờ (Rule)</th>
+                                                <th className="p-4 border-b border-slate-200">Thời gian áp dụng</th>
+                                                <th className="p-4 border-b border-slate-200">Ngày trong tuần</th>
+                                                <th className="p-4 border-b border-slate-200">Giá Khuyến Mãi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {court.pricing_rules && court.pricing_rules.length > 0 ? (
+                                                court.pricing_rules.map((rule: any) => (
+                                                    <tr key={rule.id} className="bg-white hover:bg-slate-50/50 transition-colors">
+                                                        <td className="p-4 font-bold text-slate-800">
+                                                            {rule.name || 'Khung giờ đặc biệt'}
+                                                        </td>
+                                                        <td className="p-4 text-slate-600">
+                                                            <span className="font-semibold text-primary">{new Date(rule.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                            <span className="mx-2">-</span>
+                                                            <span className="font-semibold text-primary">{new Date(rule.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        </td>
+                                                        <td className="p-4 text-slate-600 font-medium">
+                                                            {rule.day_of_week === 'MONDAY' ? 'Thứ 2' :
+                                                             rule.day_of_week === 'TUESDAY' ? 'Thứ 3' :
+                                                             rule.day_of_week === 'WEDNESDAY' ? 'Thứ 4' :
+                                                             rule.day_of_week === 'THURSDAY' ? 'Thứ 5' :
+                                                             rule.day_of_week === 'FRIDAY' ? 'Thứ 6' :
+                                                             rule.day_of_week === 'SATURDAY' ? 'Thứ 7' :
+                                                             rule.day_of_week === 'SUNDAY' ? 'Chủ Nhật' : 'Tất cả các ngày'}
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <span className="px-2 py-1 bg-emerald-50 text-emerald-700 font-bold rounded">
+                                                                {Number(rule.price).toLocaleString()}đ
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr className="bg-white">
+                                                    <td colSpan={4} className="p-4 text-slate-500 italic text-center">
+                                                        Chưa có cấu hình giá theo giờ (Áp dụng giá gốc).
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ))}
                         </div>
 
                     </div>

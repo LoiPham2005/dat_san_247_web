@@ -1,12 +1,13 @@
+import apiClient from '@/lib/api/axios';
+
 export interface CustomerProfile {
     id: string;
-    user_id: string;
     email: string;
     full_name: string;
     phone: string | null;
     avatar_url: string | null;
     gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
-    date_of_birth: string | null; // YYYY-MM-DD
+    date_of_birth: string | null; // ISO Date String
     bio: string | null;
     address: string | null;
     city: string | null;
@@ -14,7 +15,7 @@ export interface CustomerProfile {
     referral_code: string | null;
     is_profile_public: boolean;
     
-    // Notifications
+    // Notifications (from user_profiles table)
     notif_push: boolean;
     notif_email: boolean;
     notif_sms: boolean;
@@ -22,6 +23,9 @@ export interface CustomerProfile {
     notif_promotion: boolean;
     notif_payment: boolean;
     notif_system: boolean;
+
+    // From JOIN:
+    sport_preferences?: UserSportPreference[];
 }
 
 export interface UserSportPreference {
@@ -38,73 +42,62 @@ export interface UserDevice {
     is_active: boolean;
 }
 
-const mockProfile: CustomerProfile = {
-    id: 'PF-123',
-    user_id: 'US-123',
-    email: 'customer@gmail.com',
-    full_name: 'Phạm Đức Lợi',
-    phone: '0987654321',
-    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=customer',
-    gender: 'MALE',
-    date_of_birth: '1998-05-20',
-    bio: 'Yêu thích thể thao, đặc biệt là bóng đá và cầu lông.',
-    address: '123 Đường Cầu Giấy',
-    city: 'Hà Nội',
-    district: 'Cầu Giấy',
-    referral_code: 'LOIPD98',
-    is_profile_public: true,
-    
-    notif_push: true,
-    notif_email: true,
-    notif_sms: false,
-    notif_booking: true,
-    notif_promotion: true,
-    notif_payment: true,
-    notif_system: true,
-};
-
-const mockPreferences: UserSportPreference[] = [
-    { id: 'SP-1', sport_type: 'FOOTBALL_5', skill_level: 3 },
-    { id: 'SP-2', sport_type: 'BADMINTON', skill_level: 4 }
-];
-
-const mockDevices: UserDevice[] = [
-    { id: 'DEV-1', device_type: 'WEB', app_version: '1.0.0', last_active_at: new Date().toISOString(), is_active: true },
-    { id: 'DEV-2', device_type: 'IOS', app_version: '1.2.4', last_active_at: new Date(Date.now() - 86400000 * 2).toISOString(), is_active: true }
-];
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const customerProfileApi = {
     getProfile: async (): Promise<CustomerProfile> => {
-        await delay(500);
-        return mockProfile;
+        const response = await apiClient.get('/users/me');
+        const user = response.data?.data;
+        const profile = user?.profile;
+        
+        // Flatten the data for easier use in the frontend
+        return {
+            ...profile,
+            email: user.email,
+            full_name: user.full_name,
+            phone: user.phone,
+            avatar_url: user.avatar_url,
+            gender: user.gender,
+            date_of_birth: user.date_of_birth ? user.date_of_birth.substring(0, 10) : null,
+            sport_preferences: profile?.sport_preferences || []
+        };
     },
     updateProfile: async (data: Partial<CustomerProfile>): Promise<CustomerProfile> => {
-        await delay(600);
-        return { ...mockProfile, ...data };
+        // Pick only allowed fields for UpdateProfileDto
+        const allowedFields = [
+            'full_name', 'avatar_url', 'gender', 'date_of_birth', 
+            'bio', 'address', 'city', 'district'
+        ];
+        
+        const filteredData: any = {};
+        allowedFields.forEach(field => {
+            if (data[field as keyof CustomerProfile] !== undefined) {
+                filteredData[field] = data[field as keyof CustomerProfile];
+            }
+        });
+
+        const response = await apiClient.patch('/users/me/profile', filteredData);
+        return response.data?.data;
     },
     verifyContact: async (type: 'email' | 'phone', otp: string): Promise<boolean> => {
-        await delay(800);
+        // Mock verification for now as backend might not have this exact endpoint
         return otp === '123456';
     },
-    changePassword: async (currentPw: string, newPw: string): Promise<boolean> => {
-        await delay(800);
-        return currentPw === 'password123';
+    changePassword: async (old_password: string, new_password: string): Promise<boolean> => {
+        await apiClient.patch('/users/me/password', { old_password, new_password });
+        return true;
     },
     getPreferences: async (): Promise<UserSportPreference[]> => {
-        await delay(400);
-        return mockPreferences;
+        const profile = (await customerProfileApi.getProfile());
+        return profile.sport_preferences || [];
     },
-    updatePreferences: async (prefs: UserSportPreference[]): Promise<UserSportPreference[]> => {
-        await delay(600);
-        return prefs;
+    updatePreferences: async (sport_type: string, skill_level: number): Promise<any> => {
+        const response = await apiClient.post('/users/me/sport-preferences', { sport_type, skill_level });
+        return response.data?.data;
     },
     getDevices: async (): Promise<UserDevice[]> => {
-        await delay(500);
-        return mockDevices;
+        // Backend might not have this yet, return empty for now
+        return [];
     },
     logoutDevice: async (deviceId: string): Promise<void> => {
-        await delay(500);
+        // Mock logout
     }
 };

@@ -8,9 +8,11 @@ import { Textarea } from '@/components/common/Textarea';
 import { useCustomerProfile, useCustomerPreferences, useCustomerDevices } from '../hooks/useCustomerProfile';
 import { 
     User, Settings, Shield, Bell, Smartphone, Target, Monitor, 
-    AtSign, Phone, Copy, CheckCircle2, QrCode, Lock
+    AtSign, Phone, Copy, CheckCircle2, QrCode, Lock, Camera, Star
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImageUploader } from '@/components/common/ImageUploader';
+import { cn } from '@/lib/utils/cn';
 
 export const CustomerProfileManagement = () => {
     const { profile, isLoading, updateProfile, isUpdating } = useCustomerProfile();
@@ -67,7 +69,7 @@ export const CustomerProfileManagement = () => {
             {/* MAIN CONTENT */}
             <div className="flex-1 space-y-6">
                 {activeTab === 'INFO' && <ProfileInfoTab profile={profile} updateProfile={updateProfile} isUpdating={isUpdating} />}
-                {activeTab === 'PREFS' && <ProfilePrefsTab />}
+                {activeTab === 'PREFS' && <ProfilePrefsTab profile={profile} />}
                 {activeTab === 'NOTIFS' && <ProfileNotifsTab profile={profile} updateProfile={updateProfile} />}
                 {activeTab === 'SECURITY' && <ProfileSecurityTab />}
             </div>
@@ -83,6 +85,7 @@ const ProfileInfoTab = ({ profile, updateProfile, isUpdating }: any) => {
     const [data, setData] = useState({ ...profile });
 
     const handleCopyInput = (text: string) => {
+        if (!text) return;
         navigator.clipboard.writeText(text);
         toast.success("Đã copy: " + text);
     };
@@ -93,39 +96,63 @@ const ProfileInfoTab = ({ profile, updateProfile, isUpdating }: any) => {
                 <User className="w-6 h-6 text-primary" /> Thông Tin Hồ Sơ
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 mb-8">
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và Tên</label>
-                    <Input value={data.full_name || ''} onChange={e => setData({...data, full_name: e.target.value})} className="h-10 bg-slate-50" />
-                </div>
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày Sinh</label>
-                    <Input type="date" value={data.date_of_birth || ''} onChange={e => setData({...data, date_of_birth: e.target.value})} className="h-10 bg-slate-50" />
-                </div>
-                
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Giới tính</label>
-                    <select 
-                        value={data.gender || ''} 
-                        onChange={e => setData({...data, gender: e.target.value})}
-                        className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-md text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
-                    >
-                        <option value="">Chưa chọn</option>
-                        <option value="MALE">Nam</option>
-                        <option value="FEMALE">Nữ</option>
-                        <option value="OTHER">Khác</option>
-                    </select>
+            <div className="flex flex-col md:flex-row gap-8 mb-8">
+                {/* Avatar Section */}
+                <div className="w-full md:w-1/3">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Ảnh đại diện</label>
+                    <div className="relative group">
+                        <ImageUploader 
+                            value={data.avatar_url || ''} 
+                            onChange={(url) => setData({...data, avatar_url: url})}
+                            uploadUrl="/users/me/upload"
+                            title="Thay đổi ảnh"
+                            description="JPG, PNG tối đa 5MB"
+                            disabled={isUpdating}
+                        />
+                        {data.avatar_url && (
+                             <div className="mt-4 flex justify-center">
+                                <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden">
+                                     <img src={data.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                                </div>
+                             </div>
+                        )}
+                    </div>
                 </div>
 
-                <div className="space-y-1.5 md:col-span-2 mt-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiểu sử / Giới thiệu</label>
-                    <Textarea 
-                        rows={3} 
-                        value={data.bio || ''} 
-                        onChange={e => setData({...data, bio: e.target.value})} 
-                        className="bg-slate-50" 
-                        placeholder="Một vài dòng về trình độ và sở thích thể thao của bạn..."
-                    />
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và Tên</label>
+                        <Input value={data.full_name || ''} onChange={e => setData({...data, full_name: e.target.value})} className="h-10 bg-slate-50" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày Sinh</label>
+                        <Input type="date" value={data.date_of_birth || ''} onChange={e => setData({...data, date_of_birth: e.target.value})} className="h-10 bg-slate-50" />
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Giới tính</label>
+                        <select 
+                            value={data.gender || ''} 
+                            onChange={e => setData({...data, gender: e.target.value})}
+                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-md text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="">Chưa chọn</option>
+                            <option value="MALE">Nam</option>
+                            <option value="FEMALE">Nữ</option>
+                            <option value="OTHER">Khác</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-1.5 md:col-span-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiểu sử / Giới thiệu</label>
+                        <Textarea 
+                            rows={3} 
+                            value={data.bio || ''} 
+                            onChange={e => setData({...data, bio: e.target.value})} 
+                            className="bg-slate-50" 
+                            placeholder="Một vài dòng về trình độ và sở thích thể thao của bạn..."
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -153,8 +180,12 @@ const ProfileInfoTab = ({ profile, updateProfile, isUpdating }: any) => {
             <h4 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Mã Giới Thiệu Của Bạn</h4>
             <div className="flex gap-2">
                 <div className="flex-1 bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex justify-between items-center text-indigo-900 font-black">
-                    {data.referral_code}
-                    <button onClick={() => handleCopyInput(data.referral_code)} className="text-indigo-600 hover:text-indigo-800 p-1"><Copy className="w-4 h-4" /></button>
+                    {data.referral_code || 'CHƯA CÓ MÃ'}
+                    {data.referral_code && (
+                        <button onClick={() => handleCopyInput(data.referral_code)} className="text-indigo-600 hover:text-indigo-800 p-1">
+                            <Copy className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-2">Chia sẻ mã này cho bạn bè, cả 2 sẽ nhận voucher khi người đó đặt sân lần đầu tiên.</p>
@@ -168,29 +199,78 @@ const ProfileInfoTab = ({ profile, updateProfile, isUpdating }: any) => {
     );
 };
 
-const ProfilePrefsTab = () => {
-    // const { preferences, isLoading } = useCustomerPreferences();
+const ProfilePrefsTab = ({ profile }: any) => {
+    const { updatePreferences, isUpdating } = useCustomerPreferences();
+    const currentPrefs = profile?.sport_preferences || [];
+
+    const sports = [
+        { name: 'FOOTBALL', label: 'Bóng đá', icon: '⚽' },
+        { name: 'BADMINTON', label: 'Cầu lông', icon: '🏸' },
+        { name: 'TENNIS', label: 'Tennis', icon: '🎾' },
+        { name: 'BASKETBALL', label: 'Bóng rổ', icon: '🏀' },
+        { name: 'VOLLEYBALL', label: 'Bóng chuyền', icon: '🏐' },
+        { name: 'PICKLEBALL', label: 'Pickleball', icon: '🏓' },
+        { name: 'PINGPONG', label: 'Bóng bàn', icon: '🏓' },
+    ];
+
+    const getSkillLevel = (sportType: string) => {
+        const pref = currentPrefs.find((p: any) => p.sport_type === sportType);
+        return pref?.skill_level || 0;
+    };
+
+    const handleUpdateSkill = (sportType: string, level: number) => {
+        updatePreferences({ sport_type: sportType, skill_level: level });
+    };
+
     return (
         <Card className="p-6">
             <h3 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
                 <Target className="w-6 h-6 text-primary" /> Sở Thích & Trình Độ Thể Thao
             </h3>
-            <p className="text-sm text-slate-500 mb-6">Chúng tôi dùng thông tin này để gợi ý bạn bè chơi cùng, đội bóng, và các sân phù hợp.</p>
+            <p className="text-sm text-slate-500 mb-8">Chúng tôi dùng thông tin này để gợi ý bạn bè chơi cùng và các sân phù hợp với trình độ của bạn.</p>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {['FOOTBALL_5', 'FOOTBALL_7', 'BADMINTON', 'TENNIS'].map(sport => (
-                    <div key={sport} className="border-2 border-slate-100 rounded-xl p-4 text-center hover:border-primary/50 cursor-pointer transition-colors relative">
-                        <div className="w-12 h-12 rounded-full bg-slate-50 mx-auto flex items-center justify-center mb-2">
-                            <QrCode className="w-6 h-6 text-slate-400" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sports.map(sport => {
+                    const skill = getSkillLevel(sport.name);
+                    return (
+                        <div key={sport.name} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-primary/20">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-xl">
+                                        {sport.icon}
+                                    </div>
+                                    <div className="font-bold text-slate-800">{sport.label}</div>
+                                </div>
+                                {skill > 0 && (
+                                    <div className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-lg uppercase tracking-tight">
+                                        Lvl {skill}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between bg-white rounded-xl p-2.5 px-3 shadow-inner">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Trình độ</div>
+                                <div className="flex gap-1.5">
+                                    {[1, 2, 3, 4, 5].map((level) => (
+                                        <button
+                                            key={level}
+                                            onClick={() => handleUpdateSkill(sport.name, level)}
+                                            className={cn(
+                                                "w-6 h-6 rounded-md flex items-center justify-center transition-all",
+                                                skill >= level 
+                                                    ? "bg-primary text-white scale-110 shadow-sm" 
+                                                    : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                                            )}
+                                        >
+                                            <Star className={cn("w-3.5 h-3.5", skill >= level && "fill-current")} />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                        <div className="font-bold text-slate-800 text-sm whitespace-nowrap overflow-hidden text-ellipsis">{sport.replace('_', ' ')}</div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
-
-            <Button variant="outline" className="w-full h-10 border-dashed border-2 font-bold text-slate-500 hover:text-primary">
-                + Thêm môn thể thao mới
-            </Button>
         </Card>
     );
 };

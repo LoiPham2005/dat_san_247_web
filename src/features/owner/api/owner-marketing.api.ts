@@ -153,20 +153,36 @@ const mockPromotionUsage: OwnerPromotionUsage[] = [
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+import apiClient from '@/lib/api/axios';
+
 export const ownerMarketingApi = {
     getVenueReviews: async (venueId: string): Promise<OwnerReview[]> => {
-        await delay(300);
-        return mockReviews.filter(r => r.venue_id === venueId);
+        const response = await apiClient.get('/v1/owner/reviews', { params: { venue_id: venueId } });
+        // Map backend Review to OwnerReview
+        return (response.data?.data || []).map((r: any) => ({
+            id: r.id,
+            booking_id: r.booking_id,
+            venue_id: r.venue_id,
+            court_id: r.court_id,
+            user_id: r.user_id,
+            user_name: r.users?.full_name || 'Khách hàng',
+            user_avatar: r.users?.avatar_url,
+            rating: r.rating,
+            rating_cleanliness: r.rating_cleanliness,
+            rating_facilities: r.rating_facilities,
+            rating_staff: r.rating_staff,
+            comment: r.comment,
+            response: r.response,
+            responded_by: r.responded_by,
+            responded_at: r.responded_at,
+            created_at: r.created_at,
+            is_visible: r.is_visible
+        }));
     },
 
-    replyReview: async (reviewId: string, response: string): Promise<OwnerReview> => {
-        await delay(500);
-        const review = mockReviews.find(r => r.id === reviewId);
-        if (!review) throw new Error("Không tìm thấy đánh giá");
-        review.response = response;
-        review.responded_at = new Date().toISOString();
-        review.responded_by = 'U-OWNER';
-        return { ...review };
+    replyReview: async (reviewId: string, reply: string): Promise<OwnerReview> => {
+        const response = await apiClient.patch(`/v1/owner/reviews/${reviewId}/reply`, { reply_comment: reply });
+        return response.data?.data;
     },
 
     getVenuePromotions: async (venueId: string): Promise<OwnerPromotion[]> => {

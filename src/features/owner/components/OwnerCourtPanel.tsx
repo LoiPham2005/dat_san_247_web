@@ -7,6 +7,8 @@ import { Input } from '@/components/common/Input';
 import { useOwnerCourts, useOwnerCourtDetail } from '../hooks/useOwnerCourt';
 import { OwnerCourt } from '../api/owner-court.api';
 import { Plus, Search, Dribbble, Settings2, Trash2, Edit3, ChevronLeft, CalendarClock, DollarSign, LayoutDashboard } from 'lucide-react';
+import { ConfirmDialog, ConfirmType } from '@/components/common/ConfirmDialog';
+import { TimePicker } from '@/components/common/TimePicker';
 
 export const OwnerCourtPanel = ({ venueId }: { venueId: string }) => {
     const { courts, isLoading, createCourt, isCreating } = useOwnerCourts(venueId);
@@ -16,10 +18,37 @@ export const OwnerCourtPanel = ({ venueId }: { venueId: string }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [newCourtData, setNewCourtData] = useState<Partial<OwnerCourt>>({});
 
+    const [confirm, setConfirm] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        type: ConfirmType;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        type: 'info',
+        onConfirm: () => { }
+    });
+
     const handleCreate = () => {
-        createCourt({ ...newCourtData });
-        setIsAdding(false);
-        setNewCourtData({});
+        if (!newCourtData.name || !newCourtData.price_per_hour) {
+            alert('Vui lòng nhập Tên sân và Giá tiêu chuẩn');
+            return;
+        }
+        setConfirm({
+            isOpen: true,
+            title: 'Tạo Sân Mới?',
+            description: `Bạn có chắc chắn muốn tạo "${newCourtData.name}" với giá ${newCourtData.price_per_hour}đ/giờ không?`,
+            type: 'info',
+            onConfirm: () => {
+                createCourt({ ...newCourtData });
+                setIsAdding(false);
+                setNewCourtData({});
+                setConfirm(prev => ({ ...prev, isOpen: false }));
+            }
+        });
     };
 
     if (selectedCourt) {
@@ -30,6 +59,15 @@ export const OwnerCourtPanel = ({ venueId }: { venueId: string }) => {
 
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 fade-in">
+            <ConfirmDialog
+                isOpen={confirm.isOpen}
+                title={confirm.title}
+                description={confirm.description}
+                type={confirm.type}
+                onClose={() => setConfirm(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirm.onConfirm}
+                loading={isCreating}
+            />
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div className="relative w-72">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -108,7 +146,7 @@ export const OwnerCourtPanel = ({ venueId }: { venueId: string }) => {
 
 const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venueId: string, onBack: () => void }) => {
     const { 
-        updateCourt, isUpdating, 
+        updateCourt, isUpdating, deleteCourt,
         pricingRules, createPricingRule, isCreatingPricingRule, deletePricingRule,
         maintenances, createMaintenance, isCreatingMaintenance, deleteMaintenance,
         amenities, createAmenity, isCreatingAmenity, deleteAmenity,
@@ -121,8 +159,31 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
     const [newPrice, setNewPrice] = useState<Partial<import('../api/owner-court.api').CourtPricingRule>>({});
     const [showPriceForm, setShowPriceForm] = useState(false);
 
+    const [confirm, setConfirm] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        type: ConfirmType;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        type: 'info',
+        onConfirm: () => { }
+    });
+
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 fade-in">
+            <ConfirmDialog
+                isOpen={confirm.isOpen}
+                title={confirm.title}
+                description={confirm.description}
+                type={confirm.type}
+                onClose={() => setConfirm(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirm.onConfirm}
+                loading={isUpdating || isCreatingPricingRule || isCreatingMaintenance || isCreatingAmenity || isCreatingSport}
+            />
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div className="flex items-center gap-3">
                     <Button variant="outline" size="icon" onClick={onBack} className="w-9 h-9 rounded-lg border-slate-200 hover:bg-slate-100">
@@ -175,8 +236,43 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                                 <option value="false">Tạm Khóa (Ẩn)</option>
                             </select>
                         </div>
-                        <div className="space-y-1.5 col-span-2 mt-4">
-                            <Button onClick={() => updateCourt(infoData)} disabled={isUpdating} className="w-full h-10 font-bold shadow-md">
+                        <div className="space-y-1.5 col-span-2 mt-4 flex gap-4">
+                            <Button 
+                                onClick={() => {
+                                    setConfirm({
+                                        isOpen: true,
+                                        title: 'Xóa Sân/Khu Vực Chơi Này?',
+                                        description: 'Hành động này sẽ xóa dữ liệu sân. Cân nhắc kỹ vì bạn không thể hoàn tác.',
+                                        type: 'danger',
+                                        onConfirm: () => {
+                                            deleteCourt();
+                                            setConfirm(prev => ({ ...prev, isOpen: false }));
+                                            onBack(); // Go back to the list of courts
+                                        }
+                                    });
+                                }} 
+                                variant="outline"
+                                className="w-1/3 h-10 font-bold border-rose-200 text-rose-600 hover:bg-rose-50"
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" /> Xóa Sân
+                            </Button>
+
+                            <Button 
+                                onClick={() => {
+                                    setConfirm({
+                                        isOpen: true,
+                                        title: 'Lưu thay đổi Sân?',
+                                        description: 'Thông tin cơ bản của sân này sẽ được cập nhật. Bạn có chắc chắn?',
+                                        type: 'info',
+                                        onConfirm: () => {
+                                            updateCourt(infoData);
+                                            setConfirm(prev => ({ ...prev, isOpen: false }));
+                                        }
+                                    });
+                                }} 
+                                disabled={isUpdating} 
+                                className="w-2/3 h-10 font-bold shadow-md"
+                            >
                                 {isUpdating ? 'Đang lưu...' : 'Lưu Thay Đổi Sân'}
                             </Button>
                         </div>
@@ -223,14 +319,40 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-700">Từ (Giờ)</label>
-                                <Input type="time" value={newPrice.start_time || '00:00'} onChange={e => setNewPrice({...newPrice, start_time: e.target.value})} className="h-9 text-sm" />
+                                <TimePicker value={newPrice.start_time || '00:00'} onChange={val => setNewPrice({...newPrice, start_time: val})} />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-700">Đến (Giờ)</label>
-                                <Input type="time" value={newPrice.end_time || '23:59'} onChange={e => setNewPrice({...newPrice, end_time: e.target.value})} className="h-9 text-sm" />
+                                <TimePicker value={newPrice.end_time || '23:59'} onChange={val => setNewPrice({...newPrice, end_time: val})} />
                             </div>
                             <div className="col-span-2 flex justify-end mt-2">
-                                <Button size="sm" disabled={isCreatingPricingRule} onClick={() => { createPricingRule(newPrice); setShowPriceForm(false); setNewPrice({}); }} className="h-8 font-bold bg-emerald-600">
+                                <Button 
+                                    size="sm" 
+                                    disabled={isCreatingPricingRule} 
+                                    onClick={() => { 
+                                        if (!newPrice.name || newPrice.price === undefined || newPrice.price === null) {
+                                            alert("Vui lòng nhập Tên quy tắc và Giá khuyến mãi hợp lệ.");
+                                            return;
+                                        }
+                                        if (!newPrice.start_time || !newPrice.end_time) {
+                                            alert("Vui lòng chọn thời gian hợp lệ.");
+                                            return;
+                                        }
+                                        setConfirm({
+                                            isOpen: true,
+                                            title: 'Thêm Khung Giờ Mới?',
+                                            description: `Khách hàng đặt sân trong khung giờ này sẽ bị tính giá ${newPrice.price}đ/giờ.`,
+                                            type: 'info',
+                                            onConfirm: () => {
+                                                createPricingRule(newPrice); 
+                                                setShowPriceForm(false); 
+                                                setNewPrice({}); 
+                                                setConfirm(prev => ({ ...prev, isOpen: false }));
+                                            }
+                                        });
+                                    }} 
+                                    className="h-8 font-bold bg-emerald-600"
+                                >
                                     Lưu Quy Tắc Nghỉ / Giá mới
                                 </Button>
                             </div>
@@ -252,7 +374,23 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <span className="font-black text-emerald-600">{pr.price.toLocaleString()} đ/h</span>
-                                        <Button variant="ghost" size="icon" className="w-8 h-8 text-rose-500 hover:bg-rose-50" onClick={() => deletePricingRule(pr.id)}>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="w-8 h-8 text-rose-500 hover:bg-rose-50" 
+                                            onClick={() => {
+                                                setConfirm({
+                                                    isOpen: true,
+                                                    title: 'Xóa Quy Tắc Giá?',
+                                                    description: 'Quy tắc giá này sẽ bị xóa khỏi hệ thống. Hành động không thể hoàn tác.',
+                                                    type: 'danger',
+                                                    onConfirm: () => {
+                                                        deletePricingRule(pr.id);
+                                                        setConfirm(prev => ({ ...prev, isOpen: false }));
+                                                    }
+                                                });
+                                            }}
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>
@@ -268,7 +406,47 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                 <Card className="p-6">
                     <p className="text-sm font-medium text-slate-600 mb-6">Đóng bảo trì Hệ thống Đặt sân trong khoảng thời gian xác định (ví dụ: Cải tạo, Lên cỏ mới, Tổ chức giải cá nhân).</p>
                     
-                    <Button onClick={() => createMaintenance({ reason: 'Bảo trì đột xuất định kỳ' })} disabled={isCreatingMaintenance} variant="outline" className="w-full h-11 border-dashed border-2 border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold">
+                    <div className="flex flex-col md:flex-row gap-4 mb-4">
+                        <div className="flex-1">
+                            <label className="text-xs font-bold text-slate-700">Từ thời gian</label>
+                            <Input type="datetime-local" id="m_start" className="w-full h-10" />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs font-bold text-slate-700">Đến thời gian</label>
+                            <Input type="datetime-local" id="m_end" className="w-full h-10" />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-xs font-bold text-slate-700">Lý do bảo trì</label>
+                            <Input id="m_reason" placeholder="Vd: Lên cỏ mới" className="w-full h-10" />
+                        </div>
+                    </div>
+
+                    <Button 
+                        onClick={() => {
+                            const start_at = (document.getElementById('m_start') as HTMLInputElement).value;
+                            const end_at = (document.getElementById('m_end') as HTMLInputElement).value;
+                            const reason = (document.getElementById('m_reason') as HTMLInputElement).value || 'Bảo trì cập nhật';
+
+                            if (!start_at || !end_at) {
+                                alert('Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc.');
+                                return;
+                            }
+
+                            setConfirm({
+                                isOpen: true,
+                                title: 'Khóa Sân?',
+                                description: `Lịch của sân này sẽ bị đóng từ ${new Date(start_at).toLocaleString()} đến ${new Date(end_at).toLocaleString()}. Khách hàng không thể đặt sân.`,
+                                type: 'warning',
+                                onConfirm: () => {
+                                    createMaintenance({ start_at, end_at, reason });
+                                    setConfirm(prev => ({ ...prev, isOpen: false }));
+                                }
+                            });
+                        }} 
+                        disabled={isCreatingMaintenance} 
+                        variant="outline" 
+                        className="w-full h-11 border-dashed border-2 border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold"
+                    >
                         <Plus className="w-4 h-4 mr-2" /> Đăng Ký Lịch Khóa Sân (Bảo Trì)
                     </Button>
 
@@ -279,7 +457,23 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                                     <h5 className="font-bold text-rose-900 text-sm">{m.reason}</h5>
                                     <p className="text-xs text-rose-700 font-medium mt-1">Từ: {new Date(m.start_at).toLocaleString()} - Đến: {new Date(m.end_at).toLocaleString()}</p>
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={() => deleteMaintenance(m.id)} className="h-8 text-xs font-bold text-rose-700 hover:bg-red-100 border border-rose-200">
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => {
+                                        setConfirm({
+                                            isOpen: true,
+                                            title: 'Hủy Bảo Trì (Mở Lại Sân)?',
+                                            description: 'Thời gian bảo trì sẽ được hủy, sân có thể tiếp tục nhận lịch đặt Online.',
+                                            type: 'danger',
+                                            onConfirm: () => {
+                                                deleteMaintenance(m.id);
+                                                setConfirm(prev => ({ ...prev, isOpen: false }));
+                                            }
+                                        });
+                                    }} 
+                                    className="h-8 text-xs font-bold text-rose-700 hover:bg-red-100 border border-rose-200"
+                                >
                                     Hủy Bảo Trì (Mở Lại Sân)
                                 </Button>
                             </div>
@@ -303,7 +497,16 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                         <Button 
                             onClick={() => {
                                 const val = (document.getElementById('sport_type_select') as HTMLSelectElement).value;
-                                createSport({ sport_type: val });
+                                setConfirm({
+                                    isOpen: true,
+                                    title: 'Đăng ký Môn Thể Thao?',
+                                    description: `Bạn có chắc chắn muốn cung cấp môn ${val} ở sân này?`,
+                                    type: 'info',
+                                    onConfirm: () => {
+                                        createSport({ sport_type: val });
+                                        setConfirm(prev => ({ ...prev, isOpen: false }));
+                                    }
+                                });
                             }} 
                             disabled={isCreatingSport} 
                             className="h-10 px-6 font-bold bg-emerald-600 hover:bg-emerald-700"
@@ -316,7 +519,25 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                         {sports.map(s => (
                             <div key={s.id} className="flex justify-between items-center p-4 hover:bg-slate-50">
                                 <span className="font-bold text-slate-800">{s.sport_type}</span>
-                                <Button variant="ghost" size="sm" onClick={() => deleteSport(s.id)} className="h-8 text-rose-500 hover:bg-rose-50"><Trash2 className="w-4 h-4" /></Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => {
+                                        setConfirm({
+                                            isOpen: true,
+                                            title: 'Xóa Môn Thể Thao?',
+                                            description: 'Bạn sẽ không hỗ trợ môn này tại sân này nữa?',
+                                            type: 'danger',
+                                            onConfirm: () => {
+                                                deleteSport(s.id);
+                                                setConfirm(prev => ({ ...prev, isOpen: false }));
+                                            }
+                                        });
+                                    }} 
+                                    className="h-8 text-rose-500 hover:bg-rose-50"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
                             </div>
                         ))}
                         {sports.length === 0 && <div className="p-4 text-center text-slate-500 text-sm">Chưa có môn nào</div>}
@@ -338,7 +559,18 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                             onClick={() => {
                                 const name = (document.getElementById('amenity_name_in') as HTMLInputElement).value;
                                 const is_free = (document.getElementById('amenity_free_in') as HTMLSelectElement).value === 'true';
-                                if(name) createAmenity({ name, is_free });
+                                if(!name) return;
+                                setConfirm({
+                                    isOpen: true,
+                                    title: 'Thêm Tiện Ích?',
+                                    description: `Tiện ích "${name}" sẽ hiển thị cho khách hàng tham khảo.`,
+                                    type: 'info',
+                                    onConfirm: () => {
+                                        createAmenity({ name, is_free });
+                                        (document.getElementById('amenity_name_in') as HTMLInputElement).value = '';
+                                        setConfirm(prev => ({ ...prev, isOpen: false }));
+                                    }
+                                });
                             }} 
                             disabled={isCreatingAmenity} 
                             className="h-10 px-6 font-bold bg-emerald-600 hover:bg-emerald-700"
@@ -356,7 +588,25 @@ const OwnerCourtDetail = ({ court, venueId, onBack }: { court: OwnerCourt, venue
                                         {a.is_free ? 'Miễn phí' : 'Phụ phí'}
                                     </span>
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={() => deleteAmenity(a.id)} className="h-8 text-rose-500 hover:bg-rose-50"><Trash2 className="w-4 h-4" /></Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => {
+                                        setConfirm({
+                                            isOpen: true,
+                                            title: 'Xóa Tiện Ích?',
+                                            description: 'Tiện ích này không còn được hỗ trợ. Bạn chắc chắn chứ?',
+                                            type: 'danger',
+                                            onConfirm: () => {
+                                                deleteAmenity(a.id);
+                                                setConfirm(prev => ({ ...prev, isOpen: false }));
+                                            }
+                                        });
+                                    }} 
+                                    className="h-8 text-rose-500 hover:bg-rose-50"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
                             </div>
                         ))}
                         {amenities.length === 0 && <div className="p-4 text-center text-slate-500 text-sm">Chưa có tiện ích riêng biệt.</div>}

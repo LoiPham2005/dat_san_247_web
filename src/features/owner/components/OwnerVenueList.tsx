@@ -6,8 +6,9 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { OwnerVenue } from '../api/owner-venue.api';
 import { useOwnerVenues } from '../hooks/useOwnerVenue';
-import { Plus, Search, MapPin, Settings2, ShieldCheck, AlertCircle, Building2 } from 'lucide-react';
+import { Plus, Search, MapPin, Settings2, AlertCircle, Building2 } from 'lucide-react';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 export const OwnerVenueList = ({ onSelect }: { onSelect: (venue: OwnerVenue) => void }) => {
     const { venues, isLoading, createVenue, isCreating } = useOwnerVenues();
@@ -16,13 +17,19 @@ export const OwnerVenueList = ({ onSelect }: { onSelect: (venue: OwnerVenue) => 
     const [isAdding, setIsAdding] = useState(false);
     const [newVenueName, setNewVenueName] = useState('');
     const [newVenueAddress, setNewVenueAddress] = useState('');
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const handleOpenConfirm = () => {
+        if (!newVenueName || !newVenueAddress) return;
+        setIsConfirmOpen(true);
+    };
 
     const handleCreate = () => {
-        if (!newVenueName || !newVenueAddress) return;
         createVenue({ name: newVenueName, address: newVenueAddress });
         setIsAdding(false);
         setNewVenueName('');
         setNewVenueAddress('');
+        setIsConfirmOpen(false);
     };
 
     const filteredVenues = venues.filter(v => 
@@ -32,6 +39,16 @@ export const OwnerVenueList = ({ onSelect }: { onSelect: (venue: OwnerVenue) => 
 
     return (
         <div className="space-y-8">
+            <ConfirmDialog 
+                isOpen={isConfirmOpen}
+                title="Khởi tạo cơ sở mới?"
+                description={`Bạn chuẩn bị tạo cơ sở "${newVenueName}". Sau khi tạo, bạn cần nộp hồ sơ pháp lý để được xét duyệt hoạt động.`}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleCreate}
+                loading={isCreating}
+                type="info"
+            />
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="relative w-full md:w-96">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
@@ -42,12 +59,14 @@ export const OwnerVenueList = ({ onSelect }: { onSelect: (venue: OwnerVenue) => 
                         className="pl-10 h-11 bg-white border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20"
                     />
                 </div>
-                <Button 
-                    onClick={() => setIsAdding(true)}
-                    className="h-11 px-6 font-bold shadow-md shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700"
-                >
-                    <Plus className="w-5 h-5 mr-2" /> Thêm Cơ Sở Mới
-                </Button>
+                {!isAdding && (
+                    <Button 
+                        onClick={() => setIsAdding(true)}
+                        className="h-11 px-6 font-bold shadow-md shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700"
+                    >
+                        <Plus className="w-5 h-5 mr-2" /> Thêm Cơ Sở Mới
+                    </Button>
+                )}
             </div>
 
             {isAdding && (
@@ -67,7 +86,7 @@ export const OwnerVenueList = ({ onSelect }: { onSelect: (venue: OwnerVenue) => 
                     </div>
                     <div className="flex justify-end gap-3 mt-6">
                         <Button variant="outline" onClick={() => setIsAdding(false)} className="h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-bold">Hủy bỏ</Button>
-                        <Button onClick={handleCreate} disabled={isCreating} className="h-10 bg-emerald-600 hover:bg-emerald-700 shadow-md font-bold text-white px-8">
+                        <Button onClick={handleOpenConfirm} disabled={isCreating} className="h-10 bg-emerald-600 hover:bg-emerald-700 shadow-md font-bold text-white px-8">
                             {isCreating ? 'Đang tạo...' : 'Lưu Cơ Sở'}
                         </Button>
                     </div>
@@ -85,7 +104,7 @@ export const OwnerVenueList = ({ onSelect }: { onSelect: (venue: OwnerVenue) => 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredVenues.map(venue => (
                         <Card key={venue.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 border-slate-200 group flex flex-col cursor-pointer" onClick={() => onSelect(venue)}>
-                            <div className="h-32 bg-slate-100 flex items-center justify-center relative overlow-hidden">
+                            <div className="h-32 bg-slate-100 flex items-center justify-center relative overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
                                 <Building2 className="w-10 h-10 text-slate-300" />
                                 <div className="absolute bottom-3 left-4 z-20 flex gap-2">

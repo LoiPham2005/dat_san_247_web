@@ -1,21 +1,31 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils/cn';
 import { useCustomerBookings, useCancelBooking, useCustomerWaitlists, useCustomerRecurringBookings } from '../hooks/useCustomerBooking';
 import { CustomerBooking, BookingStatus } from '../api/customer-booking.api';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Calendar, Clock, MapPin, Search, Filter, History, QrCode, ShieldAlert, XCircle, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ReviewDialog } from './ReviewDialog';
 
 export const CustomerBookingHistory = () => {
     const { data: bookings, isLoading } = useCustomerBookings();
     const { waitlists, cancelWaitlist } = useCustomerWaitlists();
     const { data: recurring } = useCustomerRecurringBookings();
     const { mutate: cancelBooking, isPending: isCanceling } = useCancelBooking();
+    const router = useRouter();
 
     const [activeTab, setActiveTab] = useState<'UPCOMING' | 'HISTORY' | 'WAITLIST' | 'RECURRING'>('UPCOMING');
     const [searchTerm, setSearchTerm] = useState('');
+    const [confirmId, setConfirmId] = useState<string | null>(null);
+    
+    // Review Dialog states
+    const [reviewOpen, setReviewOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<CustomerBooking | null>(null);
 
     if (isLoading) return <div className="text-center py-20 font-bold text-slate-500 text-lg animate-pulse">Đang tải lịch đặt sân...</div>;
 
@@ -57,8 +67,18 @@ export const CustomerBookingHistory = () => {
     };
 
     const handleCancel = (id: string) => {
-        if (confirm("Chính sách hủy sân: Bạn có thể mất cọc nếu hủy sát giờ. Bạn chắc chắn muốn hủy?")) {
-            cancelBooking({ id, reason: 'Khách hàng tự hủy qua App' });
+        setConfirmId(id);
+    };
+
+    const onConfirmCancel = () => {
+        if (confirmId) {
+            cancelBooking(
+                { id: confirmId, reason: 'Khách hàng tự hủy qua App' },
+                {
+                    onSuccess: () => setConfirmId(null),
+                    onError: () => setConfirmId(null)
+                }
+            );
         }
     };
 
@@ -199,12 +219,22 @@ export const CustomerBookingHistory = () => {
                                             </Button>
                                         )}
                                         {booking.status === 'COMPLETED' && (
-                                            <Button className="w-full h-11 bg-slate-900 hover:bg-slate-800 font-bold justify-center">
+                                            <Button 
+                                                onClick={() => {
+                                                    setSelectedBooking(booking);
+                                                    setReviewOpen(true);
+                                                }}
+                                                className="w-full h-11 bg-slate-900 hover:bg-slate-800 font-bold justify-center"
+                                            >
                                                 Đánh Giá Nhận Ưu Đãi
                                             </Button>
                                         )}
-                                        <Button variant="ghost" className="w-full h-11 text-slate-500 hover:bg-slate-100 font-bold justify-center text-xs uppercase tracking-wider">
-                                            Xem Phiếu Biên Lai <ChevronRight className="w-4 h-4 inline" />
+                                        <Button 
+                                            variant="ghost" 
+                                            onClick={() => router.push(`/bookings/${booking.id}`)}
+                                            className="w-full h-11 text-slate-500 hover:bg-slate-100 font-bold justify-center text-xs uppercase tracking-wider"
+                                        >
+                                            Xem Chi Tiết & Biên Lai <ChevronRight className="w-4 h-4 inline ml-1" />
                                         </Button>
                                     </div>
                                 </div>
@@ -220,7 +250,7 @@ export const CustomerBookingHistory = () => {
                     {waitlists.length === 0 && renderEmptyState(<Clock className="w-10 h-10 text-slate-300" />, "Bạn không ở trong danh sách chờ nào", "Khi một sân đã kín lịch, bạn có thể tham gia danh sách chờ để nhận thông báo nếu có người hủy.")}
                     
                     {waitlists.map(w => (
-                        <div key={w.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div key={w.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
                             <div>
                                 <h4 className="font-bold text-slate-800 text-lg">{w.venue_name}</h4>
                                 <p className="text-sm text-slate-500 font-medium mb-2">{w.court_name} • Mức ưu tiên: #{w.priority}</p>
@@ -233,6 +263,74 @@ export const CustomerBookingHistory = () => {
                     ))}
                 </div>
             )}
+
+            {/* RECURRING SECTION */}
+            {activeTab === 'RECURRING' && (
+                <div className="space-y-4">
+                    {(!recurring || recurring.length === 0) && renderEmptyState(<Calendar className="w-10 h-10 text-slate-300" />, "Bạn không có lịch đặt sân cố định nào", "Tính năng này giúp bạn giữ chỗ định kỳ hàng tuần một cách ổn định.")}
+                    
+                    {recurring?.map(r => (
+                        <div key={r.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h4 className="font-bold text-slate-800 text-lg">{r.venue_name}</h4>
+                                    <Badge variant={r.is_active ? "success" : "secondary"} className="text-[10px] h-5 px-1.5 font-bold">{r.is_active ? 'ĐANG HOẠT ĐỘNG' : 'TẠM DỪNG'}</Badge>
+                                </div>
+                                <p className="text-sm text-slate-500 font-medium mb-3">{r.court_name} • {r.repeat_type === 'WEEKLY' ? 'Lặp hàng tuần' : r.repeat_type}</p>
+                                
+                                <div className="flex flex-wrap gap-4">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                        <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-md"><Calendar className="w-3.5 h-3.5" /></div>
+                                        <span>Ngày lặp: {r.days.map(d => d.substring(0, 3)).join(', ')}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                        <div className="p-1.5 bg-blue-50 text-blue-600 rounded-md"><Clock className="w-3.5 h-3.5" /></div>
+                                        <span>Khung giờ: {r.start_time} - {r.end_time}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <Button variant="outline" className="h-11 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 px-6">Xem Chi Tiết Lịch</Button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <ConfirmDialog 
+                isOpen={!!confirmId}
+                onClose={() => setConfirmId(null)}
+                onConfirm={onConfirmCancel}
+                title="Xác nhận hủy đặt sân"
+                description="Bạn chắc chắn muốn hủy đặt sân này? Theo chính sách, bạn có thể mất tiền đặt cọc nếu hủy sát giờ thi đấu."
+                type="danger"
+                confirmText="Đồng ý hủy"
+                cancelText="Quay lại"
+                loading={isCanceling}
+            />
+
+            {selectedBooking && (
+                <ReviewDialog 
+                    isOpen={reviewOpen}
+                    onClose={() => {
+                        setReviewOpen(false);
+                        setSelectedBooking(null);
+                    }}
+                    bookingId={selectedBooking.id}
+                    venueName={selectedBooking.venue_name}
+                />
+            )}
         </div>
     );
 };
+
+function Badge({ children, variant, className }: any) {
+    const variants = {
+        success: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        secondary: "bg-slate-100 text-slate-700 border-slate-200"
+    };
+    return (
+        <span className={cn("px-2 py-0.5 rounded border uppercase tracking-wider", variants[variant as keyof typeof variants] || variants.secondary, className)}>
+            {children}
+        </span>
+    );
+}
+

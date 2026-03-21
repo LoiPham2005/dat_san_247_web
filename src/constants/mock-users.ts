@@ -1,7 +1,7 @@
 export const MOCK_USERS = [
     {
         email: 'superadmin@datsan247.vn',
-        password: 'password123',
+        password: '123456',
         fullName: 'Super Admin',
         role: 'super_admin',
         redirect: '/admin/dashboard',
@@ -9,7 +9,7 @@ export const MOCK_USERS = [
     },
     {
         email: 'admin@datsan247.vn',
-        password: 'password123',
+        password: '123456',
         fullName: 'Platform Admin',
         role: 'admin',
         redirect: '/admin/dashboard',
@@ -17,7 +17,7 @@ export const MOCK_USERS = [
     },
     {
         email: 'staff@datsan247.vn',
-        password: 'password123',
+        password: '123456',
         fullName: 'Platform Staff',
         role: 'staff',
         redirect: '/staff/dashboard',
@@ -25,7 +25,7 @@ export const MOCK_USERS = [
     },
     {
         email: 'owner@datsan247.vn',
-        password: 'password123',
+        password: '123456',
         fullName: 'Venue Owner',
         role: 'owner',
         redirect: '/owner/dashboard',
@@ -33,16 +33,16 @@ export const MOCK_USERS = [
     },
     {
         email: 'venuestaff@datsan247.vn',
-        password: 'password123',
+        password: '123456',
         fullName: 'Venue Staff',
         role: 'venue_staff',
         redirect: '/venue-staff/dashboard',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=venuestaff',
     },
     {
-        email: 'customer@gmail.com',
-        password: 'password123',
-        fullName: 'Phạm Đức Lợi',
+        email: 'customer@datsan247.vn',
+        password: '123456',
+        fullName: 'Test Customer',
         role: 'customer',
         redirect: '/',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=customer',

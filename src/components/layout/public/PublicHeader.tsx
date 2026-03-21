@@ -3,19 +3,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/common/Button';
-import { Menu, X, User, LogIn, LogOut, LayoutDashboard, History, Settings, Bell, Wallet, Store, Star, MessagesSquare } from 'lucide-react';
+import { Menu, X, User, LogIn, LogOut, History, Settings, Wallet, Store, Star, MessagesSquare } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { useSession, signOut } from "next-auth/react";
 import { usePathname } from 'next/navigation';
 
 export const PublicHeader = () => {
+    const { data: session } = useSession();
     const [isMenuOpen, setIsMenuOpen] = React.useState(false);
     const pathname = usePathname() || '';
+    const user = session?.user;
 
     const navLinks = [
         { name: 'Khám phá', href: '/venues' },
-        // { name: 'Booking', href: '/bookings' },
-        // { name: 'Tài Chính', href: '/wallet' },
-        // { name: 'Voucher', href: '/vouchers' },
         { name: 'Khuyến mãi', href: '/promotions' },
         { name: 'Về chúng tôi', href: '/about' },
         { name: 'Liên hệ', href: '/contact' },
@@ -49,57 +49,73 @@ export const PublicHeader = () => {
 
                 {/* Desktop Auth Actions */}
                 <div className="hidden md:flex items-center gap-3">
-                    <Link href="/login">
-                        <Button variant="ghost" size="sm" className="font-semibold text-slate-600">
-                            Đăng nhập
-                        </Button>
-                    </Link>
-                    <Link href="/register">
-                        <Button size="sm" className="font-semibold px-5 rounded-lg">
-                            Đăng ký
-                        </Button>
-                    </Link>
-
-                    {/* Temporary Demo Dropdown */}
-                    <div className="relative group ml-2">
-                        <button className="flex items-center gap-2 pl-2 pr-1 h-10 rounded-full border border-slate-200 bg-white hover:border-primary/50 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20">
-                            <div className="text-sm font-bold text-slate-700 hidden sm:block max-w-[100px] truncate">
-                                Khách Hàng Demo
-                            </div>
-                            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                                <User className="w-4 h-4 text-primary" />
-                            </div>
-                        </button>
-                        
-                        {/* Dropdown Menu */}
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right overflow-hidden p-1.5 z-50">
-                            <div className="px-3 py-2 border-b border-slate-100 mb-1">
-                                <div className="font-bold text-slate-800 truncate">Khách Hàng Demo</div>
-                                <div className="text-xs text-slate-500 truncate">demo@customer.com</div>
-                            </div>
+                    {!user ? (
+                        <>
+                            <Link href="/login">
+                                <Button variant="ghost" size="sm" className="font-semibold text-slate-600">
+                                    Đăng nhập
+                                </Button>
+                            </Link>
+                            <Link href="/register">
+                                <Button size="sm" className="font-semibold px-5 rounded-lg">
+                                    Đăng ký
+                                </Button>
+                            </Link>
+                        </>
+                    ) : (
+                        <div className="relative group ml-2">
+                            <button className="flex items-center gap-2 pl-2 pr-1 h-10 rounded-full border border-slate-200 bg-white hover:border-primary/50 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                <div className="text-sm font-bold text-slate-700 hidden sm:block max-w-[120px] truncate">
+                                    {user.name || 'Người dùng'}
+                                </div>
+                                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                                    {user.image ? (
+                                        <img src={user.image} alt={user.name || ''} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User className="w-4 h-4 text-primary" />
+                                    )}
+                                </div>
+                            </button>
                             
-                            <div className="space-y-0.5">
-                                <Link href="/profile" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/profile') && "bg-slate-50 text-primary")}>
-                                    <Settings className="w-4 h-4 mr-2 text-slate-400" /> Hồ sơ cá nhân
-                                </Link>
-                                <Link href="/bookings" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/bookings') && "bg-slate-50 text-primary")}>
-                                    <History className="w-4 h-4 mr-2 text-slate-400" /> Quản lý Booking
-                                </Link>
-                                <Link href="/wallet" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/wallet') && "bg-slate-50 text-primary")}>
-                                    <Wallet className="w-4 h-4 mr-2 text-slate-400" /> Tài chính & Hóa đơn
-                                </Link>
-                                <Link href="/vouchers" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/vouchers') && "bg-slate-50 text-primary")}>
-                                    <Store className="w-4 h-4 mr-2 text-slate-400" /> Kho Voucher
-                                </Link>
-                                <Link href="/reviews" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/reviews') && "bg-slate-50 text-primary")}>
-                                    <Star className="w-4 h-4 mr-2 text-slate-400" /> Đánh giá của tôi
-                                </Link>
-                                <Link href="/support" className={cn("flex px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-primary hover:bg-slate-50 transition-colors", pathname.includes('/support') && "bg-slate-50 text-primary")}>
-                                    <MessagesSquare className="w-4 h-4 mr-2 text-slate-400" /> Hỗ trợ & Báo cáo
-                                </Link>
+                            {/* Dropdown Menu */}
+                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right overflow-hidden p-1.5 z-50">
+                                <div className="px-3 py-3 border-b border-slate-100 mb-1 bg-slate-50/50">
+                                    <div className="font-bold text-slate-800 truncate">{user.name}</div>
+                                    <div className="text-xs text-slate-500 truncate font-medium">{user.email}</div>
+                                </div>
+                                
+                                <div className="space-y-0.5">
+                                    <Link href="/profile" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/profile') && "bg-primary/10 text-primary")}>
+                                        <Settings className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Hồ sơ cá nhân
+                                    </Link>
+                                    <Link href="/bookings" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/bookings') && "bg-primary/10 text-primary")}>
+                                        <History className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Quản lý Booking
+                                    </Link>
+                                    <Link href="/wallet" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/wallet') && "bg-primary/10 text-primary")}>
+                                        <Wallet className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Tài chính & Hóa đơn
+                                    </Link>
+                                    <Link href="/vouchers" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/vouchers') && "bg-primary/10 text-primary")}>
+                                        <Store className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Kho Voucher
+                                    </Link>
+                                    <Link href="/reviews" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/reviews') && "bg-primary/10 text-primary")}>
+                                        <Star className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Đánh giá của tôi
+                                    </Link>
+                                    <Link href="/support" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/support') && "bg-primary/10 text-primary")}>
+                                        <MessagesSquare className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Hỗ trợ & Báo cáo
+                                    </Link>
+                                    
+                                    <div className="pt-1.5 mt-1.5 border-t border-slate-100">
+                                        <button 
+                                            onClick={() => signOut()}
+                                            className="w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition-all text-left"
+                                        >
+                                            <LogOut className="w-4 h-4 mr-3" /> Đăng xuất tài khoản
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Mobile Menu Toggle */}
@@ -126,16 +142,39 @@ export const PublicHeader = () => {
                             </Link>
                         ))}
                         <div className="flex flex-col gap-2 pt-4 border-t">
-                            <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                                <Button variant="outline" className="w-full text-primary border-primary">
-                                    <LogIn className="w-4 h-4 mr-2" /> Đăng nhập
-                                </Button>
-                            </Link>
-                            <Link href="/register" onClick={() => setIsMenuOpen(false)}>
-                                <Button className="w-full">
-                                    <User className="w-4 h-4 mr-2" /> Đăng ký
-                                </Button>
-                            </Link>
+                            {!user ? (
+                                <>
+                                    <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                                        <Button variant="outline" className="w-full text-primary border-primary">
+                                            <LogIn className="w-4 h-4 mr-2" /> Đăng nhập
+                                        </Button>
+                                    </Link>
+                                    <Link href="/register" onClick={() => setIsMenuOpen(false)}>
+                                        <Button className="w-full">
+                                            <User className="w-4 h-4 mr-2" /> Đăng ký
+                                        </Button>
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="px-3 py-2 mb-2 bg-slate-50 rounded-xl">
+                                        <div className="font-bold text-slate-800 text-sm">{user.name}</div>
+                                        <div className="text-xs text-slate-500">{user.email}</div>
+                                    </div>
+                                    <Link href="/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center px-3 py-2 text-sm font-bold text-slate-600">
+                                        <Settings className="w-4 h-4 mr-3" /> Hồ sơ cá nhân
+                                    </Link>
+                                    <Link href="/bookings" onClick={() => setIsMenuOpen(false)} className="flex items-center px-3 py-2 text-sm font-bold text-slate-600">
+                                        <History className="w-4 h-4 mr-3" /> Quản lý Booking
+                                    </Link>
+                                    <button 
+                                        onClick={() => signOut()}
+                                        className="flex items-center px-3 py-2 text-sm font-bold text-rose-600 text-left"
+                                    >
+                                        <LogOut className="w-4 h-4 mr-3" /> Đăng xuất
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </nav>
                 </div>

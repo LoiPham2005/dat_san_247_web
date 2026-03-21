@@ -17,12 +17,33 @@ export const useVenueDetail = (slug: string) => {
     });
 };
 
-export const useUserFavorites = () => {
+export const useVenueSchedule = (slug: string, date: string) => {
+    return useQuery({
+        queryKey: ['venue_schedule', slug, date],
+        queryFn: () => venueSearchApi.getVenueSchedule(slug, date),
+        enabled: !!slug && !!date
+    });
+};
+
+export const useCreateBooking = () => {
+    return useMutation({
+        mutationFn: (data: any) => venueSearchApi.createBooking(data)
+    });
+};
+
+export const useCreateRecurringBooking = () => {
+    return useMutation({
+        mutationFn: (data: any) => venueSearchApi.createRecurringBooking(data)
+    });
+};
+
+export const useUserFavorites = (enabled: boolean = true) => {
     const queryClient = useQueryClient();
 
     const query = useQuery({
         queryKey: ['user_favorites'],
         queryFn: () => venueSearchApi.getFavorites(),
+        enabled
     });
 
     const toggleFavorite = useMutation({
@@ -39,7 +60,7 @@ export const useUserFavorites = () => {
                 if (exist) return old.filter(f => f.venue_id !== venueId);
                 
                 // Add dummy favorite
-                return [...old, { id: 'temp', venue_id: venueId, venue: {}, created_at: new Date().toISOString() }];
+                return [...old, { id: 'temp', venue_id: venueId, venue: {}, created_at: new Date().toISOString() } as unknown as FavoriteVenue];
             });
             
             return { previousFavorites };
@@ -64,12 +85,13 @@ export const useUserFavorites = () => {
     };
 };
 
-export const useSearchHistory = () => {
+export const useSearchHistory = (enabled: boolean = true) => {
     const queryClient = useQueryClient();
 
     const query = useQuery({
         queryKey: ['search_history'],
         queryFn: () => venueSearchApi.getSearchHistory(),
+        enabled
     });
 
     const clearHistory = useMutation({
@@ -80,9 +102,17 @@ export const useSearchHistory = () => {
         }
     });
 
+    const saveHistory = useMutation({
+        mutationFn: ({ keyword, sportType }: { keyword: string, sportType?: string }) => venueSearchApi.saveSearchHistory(keyword, sportType),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['search_history'] });
+        }
+    });
+
     return {
         history: query.data || [],
         isLoading: query.isLoading,
-        clearHistory: clearHistory.mutate
+        clearHistory: clearHistory.mutate,
+        saveHistory: saveHistory.mutate
     };
 };

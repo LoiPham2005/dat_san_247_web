@@ -123,52 +123,79 @@ let mockSearchHistory: SearchHistory[] = [
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+import apiClient from '@/lib/api/axios';
+
+export interface VenueScheduleResult {
+    venue: { id: string, name: string, address: string };
+    date: string;
+    courts: {
+        id: string;
+        name: string;
+        type: string;
+        price_per_hour: number;
+        pricing_rules: {
+            id: string;
+            name: string;
+            price: number;
+            start_time: string;
+            end_time: string;
+            day_of_week: string | null;
+        }[]
+    }[];
+    bookings: {
+        court_id: string;
+        start_time: string;
+        end_time: string;
+    }[];
+}
+
 export const venueSearchApi = {
     searchVenues: async (params: VenueSearchParams): Promise<any[]> => {
-        await delay(600);
-        let results = [...mockVenues] as any;
-        if (params.keyword) {
-            const kw = params.keyword.toLowerCase();
-            results = results.filter((v: any) => v.name.toLowerCase().includes(kw) || v.district.toLowerCase().includes(kw));
-        }
-        if (params.sport_type) {
-            results = results.filter((v: any) => v.sports.includes(params.sport_type));
-        }
-        return results;
+        const response = await apiClient.get<any>('/public/venues', { params });
+        return response.data?.data || [];
     },
-    
-    getVenueDetail: async (slug: string): Promise<VenueDetail | null> => {
-        await delay(500);
-        return mockVenues.find(v => v.slug === slug) as VenueDetail || null;
+
+    getVenueDetail: async (slug: string): Promise<VenueDetail> => {
+        const response = await apiClient.get(`/public/venues/detail/${slug}`);
+        return response.data?.data;
+    },
+
+    getVenueSchedule: async (slug: string, date: string): Promise<VenueScheduleResult> => {
+        const response = await apiClient.get(`/public/venues/${slug}/schedule?date=${date}`);
+        return response.data?.data;
+    },
+
+    createBooking: async (data: any): Promise<any> => {
+        const response = await apiClient.post('/customer/bookings', data);
+        return response.data?.data;
+    },
+
+    createRecurringBooking: async (data: any): Promise<any> => {
+        const response = await apiClient.post('/customer/bookings/recurring', data);
+        return response.data?.data;
     },
 
     getFavorites: async (): Promise<FavoriteVenue[]> => {
-        await delay(400);
-        return mockFavorites;
+        const response = await apiClient.get<any>('/public/venues/me/favorites');
+        return response.data?.data || [];
     },
 
     toggleFavorite: async (venueId: string): Promise<boolean> => {
-        await delay(300);
-        const exists = mockFavorites.find(f => f.venue_id === venueId);
-        if (exists) {
-            mockFavorites = mockFavorites.filter(f => f.venue_id !== venueId);
-            return false; // Removed
-        } else {
-            const venue = mockVenues.find(v => v.id === venueId);
-            if (venue) {
-                mockFavorites.push({ id: `FAV-${Date.now()}`, venue_id: venueId, venue, created_at: new Date().toISOString() });
-            }
-            return true; // Added
-        }
+        const response = await apiClient.post<any>('/public/venues/me/favorites', { venue_id: venueId });
+        return response.data?.data;
     },
 
     getSearchHistory: async (): Promise<SearchHistory[]> => {
-        await delay(300);
-        return mockSearchHistory;
+        const response = await apiClient.get<any>('/public/venues/me/search-history');
+        return response.data?.data || [];
     },
 
     clearSearchHistory: async (): Promise<void> => {
-        await delay(300);
-        mockSearchHistory = [];
+        await apiClient.delete('/public/venues/me/search-history');
+    },
+
+    saveSearchHistory: async (keyword: string, sportType?: string): Promise<void> => {
+        if (!keyword.trim()) return;
+        await apiClient.post('/public/venues/me/search-history', { keyword, sport_type: sportType });
     }
 };

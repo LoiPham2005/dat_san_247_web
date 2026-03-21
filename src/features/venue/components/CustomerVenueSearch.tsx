@@ -16,16 +16,36 @@ export const CustomerVenueSearch = () => {
     const [keyword, setKeyword] = useState('');
     const [sportType, setSportType] = useState('');
     
-    // Auto trigger search whenever these change.
-    const { data: venues, isLoading } = useVenueSearch({ keyword, sport_type: sportType });
-    const { history, clearHistory } = useSearchHistory();
-    const { favorites } = useUserFavorites();
+    const [priceMin, setPriceMin] = useState<number | undefined>();
+    const [priceMax, setPriceMax] = useState<number | undefined>();
+    const [activePriceFilter, setActivePriceFilter] = useState<string>('');
 
-    const [showFilters, setShowFilters] = useState(false);
+    // Filters for actual API trigger
+    const [appliedFilters, setAppliedFilters] = useState({ priceMin: undefined as number|undefined, priceMax: undefined as number|undefined });
 
-    // Mock search logic UI triggers
+    const handleApplyFilters = () => {
+        setAppliedFilters({ priceMin, priceMax });
+    };
+
+    // Auto trigger search whenever core params change.
+    const { data: venues, isLoading } = useVenueSearch({ 
+        keyword, 
+        sport_type: sportType,
+        price_min: appliedFilters.priceMin,
+        price_max: appliedFilters.priceMax
+    });
+    const { history, clearHistory, saveHistory } = useSearchHistory(!!session);
+    const { favorites } = useUserFavorites(!!session);
+
+    const handleSearch = () => {
+        if (keyword.trim()) {
+            saveHistory({ keyword, sportType });
+        }
+    };
+
     const triggerSearch = (term: string) => {
         setKeyword(term);
+        saveHistory({ keyword: term, sportType });
     };
 
     return (
@@ -48,6 +68,9 @@ export const CustomerVenueSearch = () => {
                         <Input 
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSearch();
+                            }}
                             placeholder="Tìm tên sân, khu vực hoặc quận/huyện..." 
                             className="w-full h-14 pl-12 border-none bg-transparent hover:bg-slate-50 focus:ring-0 text-slate-800 font-semibold placeholder:font-medium placeholder:text-slate-400 rounded-xl"
                         />
@@ -70,7 +93,7 @@ export const CustomerVenueSearch = () => {
                         </select>
                     </div>
 
-                    <Button className="h-14 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 hidden md:flex">
+                    <Button onClick={handleSearch} className="h-14 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 hidden md:flex">
                         Tìm Kiếm
                     </Button>
                 </div>
@@ -123,14 +146,15 @@ export const CustomerVenueSearch = () => {
                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Mức Giá / Giờ</h4>
                                 <div className="space-y-2">
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" className="rounded text-primary focus:ring-primary w-4 h-4" /> <span className="text-sm font-medium text-slate-700">Dưới 100k</span>
+                                        <input type="radio" name="price_filter" checked={activePriceFilter === 'UNDER_100'} onChange={() => { setActivePriceFilter('UNDER_100'); setPriceMin(undefined); setPriceMax(100000); }} className="text-primary focus:ring-primary w-4 h-4" /> <span className="text-sm font-medium text-slate-700">Dưới 100k</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" className="rounded text-primary focus:ring-primary w-4 h-4" /> <span className="text-sm font-medium text-slate-700">100k - 300k</span>
+                                        <input type="radio" name="price_filter" checked={activePriceFilter === '100_TO_300'} onChange={() => { setActivePriceFilter('100_TO_300'); setPriceMin(100000); setPriceMax(300000); }} className="text-primary focus:ring-primary w-4 h-4" /> <span className="text-sm font-medium text-slate-700">100k - 300k</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" className="rounded text-primary focus:ring-primary w-4 h-4" /> <span className="text-sm font-medium text-slate-700">Trên 300k</span>
+                                        <input type="radio" name="price_filter" checked={activePriceFilter === 'ABOVE_300'} onChange={() => { setActivePriceFilter('ABOVE_300'); setPriceMin(300000); setPriceMax(undefined); }} className="text-primary focus:ring-primary w-4 h-4" /> <span className="text-sm font-medium text-slate-700">Trên 300k</span>
                                     </label>
+                                    <button onClick={() => { setActivePriceFilter(''); setPriceMin(undefined); setPriceMax(undefined); handleApplyFilters(); }} className="text-xs font-bold text-slate-400 hover:text-slate-600 mt-2">Bỏ xóa bộ lọc giá</button>
                                 </div>
                             </div>
 
@@ -149,7 +173,7 @@ export const CustomerVenueSearch = () => {
                                 </div>
                             </div>
                         </div>
-                        <Button className="w-full mt-6 bg-slate-900 hover:bg-slate-800 font-bold rounded-xl h-10">Áp dụng bộ lọc</Button>
+                        <Button onClick={handleApplyFilters} className="w-full mt-6 bg-slate-900 hover:bg-slate-800 font-bold rounded-xl h-10">Áp dụng bộ lọc</Button>
                     </Card>
                 </div>
 

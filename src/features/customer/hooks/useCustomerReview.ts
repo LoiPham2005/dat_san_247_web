@@ -22,6 +22,19 @@ export const useCreateReview = () => {
     });
 };
 
+export const useUpdateReview = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string, data: any }) => customerReviewApi.updateReview(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['my_reviews'] });
+            toast.success('Đã cập nhật đánh giá!');
+        },
+        onError: () => toast.error('Cập nhật đánh giá thất bại')
+    });
+};
+
 export const useDeleteReview = () => {
     const queryClient = useQueryClient();
 

@@ -41,7 +41,7 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     });
 
     const deleteCourt = useMutation({
-        mutationFn: () => ownerCourtApi.deleteCourt(courtId!),
+        mutationFn: () => ownerCourtApi.deleteCourt(courtId!, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_courts', venueId] });
             toast.success("Xóa sân thành công");
@@ -52,12 +52,12 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     // PRICING RULES
     const pricingRulesQuery = useQuery({
         queryKey: ['owner_court_pricing', courtId],
-        queryFn: () => ownerCourtApi.getPricingRules(courtId!),
-        enabled: !!courtId
+        queryFn: () => ownerCourtApi.getPricingRules(courtId!, venueId!),
+        enabled: !!courtId && !!venueId
     });
 
     const createPricingRule = useMutation({
-        mutationFn: (data: Partial<CourtPricingRule>) => ownerCourtApi.createPricingRule({ ...data, court_id: courtId! }),
+        mutationFn: (data: Partial<CourtPricingRule>) => ownerCourtApi.createPricingRule({ ...data, court_id: courtId! }, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_pricing', courtId] });
             toast.success("Đã thêm Bảng giá linh hoạt!");
@@ -66,7 +66,7 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     });
 
     const deletePricingRule = useMutation({
-        mutationFn: (id: string) => ownerCourtApi.deletePricingRule(id),
+        mutationFn: (id: string) => ownerCourtApi.deletePricingRule(id, courtId!, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_pricing', courtId] });
             toast.success("Xóa Bảng giá linh hoạt thành công");
@@ -77,12 +77,12 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     // MAINTENANCE
     const maintenanceQuery = useQuery({
         queryKey: ['owner_court_maintenance', courtId],
-        queryFn: () => ownerCourtApi.getMaintenances(courtId!),
-        enabled: !!courtId
+        queryFn: () => ownerCourtApi.getMaintenances(courtId!, venueId!),
+        enabled: !!courtId && !!venueId
     });
 
     const createMaintenance = useMutation({
-        mutationFn: (data: Partial<CourtMaintenance>) => ownerCourtApi.createMaintenance({ ...data, court_id: courtId! }),
+        mutationFn: (data: Partial<CourtMaintenance>) => ownerCourtApi.createMaintenance({ ...data, court_id: courtId! }, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_maintenance', courtId] });
             toast.success("Đã đăng ký Lịch bảo trì!");
@@ -91,7 +91,7 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     });
 
     const deleteMaintenance = useMutation({
-        mutationFn: (id: string) => ownerCourtApi.deleteMaintenance(id),
+        mutationFn: (id: string) => ownerCourtApi.deleteMaintenance(id, courtId!, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_maintenance', courtId] });
             toast.success("Xóa Lịch bảo trì thành công");
@@ -102,12 +102,12 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     // AMENITIES
     const amenitiesQuery = useQuery({
         queryKey: ['owner_court_amenities', courtId],
-        queryFn: () => ownerCourtApi.getAmenities(courtId!),
-        enabled: !!courtId
+        queryFn: () => ownerCourtApi.getAmenities(courtId!, venueId!),
+        enabled: !!courtId && !!venueId
     });
 
     const createAmenity = useMutation({
-        mutationFn: (data: Partial<CourtAmenity>) => ownerCourtApi.createAmenity({ ...data, court_id: courtId! }),
+        mutationFn: (data: Partial<CourtAmenity>) => ownerCourtApi.createAmenity({ ...data, court_id: courtId! }, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_amenities', courtId] });
             toast.success("Thêm tiện ích thành công");
@@ -116,7 +116,7 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     });
 
     const deleteAmenity = useMutation({
-        mutationFn: (id: string) => ownerCourtApi.deleteAmenity(id),
+        mutationFn: (id: string) => ownerCourtApi.deleteAmenity(id, courtId!, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_amenities', courtId] });
             toast.success("Xóa tiện ích thành công");
@@ -127,12 +127,12 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     // SPORTS
     const sportsQuery = useQuery({
         queryKey: ['owner_court_sports', courtId],
-        queryFn: () => ownerCourtApi.getSports(courtId!),
-        enabled: !!courtId
+        queryFn: () => ownerCourtApi.getSports(courtId!, venueId!),
+        enabled: !!courtId && !!venueId
     });
 
     const createSport = useMutation({
-        mutationFn: (data: Partial<CourtSportAssignment>) => ownerCourtApi.createSport({ ...data, court_id: courtId! }),
+        mutationFn: (data: Partial<CourtSportAssignment>) => ownerCourtApi.createSport({ ...data, court_id: courtId! }, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_sports', courtId] });
             toast.success("Thêm môn thể thao thành công");
@@ -141,7 +141,7 @@ export const useOwnerCourtDetail = (courtId: string | null, venueId: string | nu
     });
 
     const deleteSport = useMutation({
-        mutationFn: (id: string) => ownerCourtApi.deleteSport(id),
+        mutationFn: (id: string) => ownerCourtApi.deleteSport(id, courtId!, venueId!),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['owner_court_sports', courtId] });
             toast.success("Xóa môn thể thao thành công");

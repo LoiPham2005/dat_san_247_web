@@ -97,21 +97,42 @@ const mockInvoices: CustomerInvoice[] = [
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+import apiClient from '@/lib/api/axios';
+
 export const customerPaymentApi = {
     getWallet: async (): Promise<CustomerWallet> => {
-        await delay(500);
-        return mockWallet;
+        const response = await apiClient.get('/customer/wallet');
+        return response.data?.data;
     },
     getTransactions: async (): Promise<CustomerTransaction[]> => {
-        await delay(600);
-        return mockTransactions;
+        const response = await apiClient.get('/customer/transactions');
+        return (response.data?.data || []).map((tx: any) => ({
+            id: tx.id,
+            type: tx.type,
+            amount: Number(tx.amount),
+            balance_after: Number(tx.balance_after),
+            status: tx.status,
+            description: tx.description || (tx.type === 'PAYMENT' ? `Thanh toán đặt sân ${tx.bookings?.booking_code}` : 'Giao dịch hệ thống'),
+            created_at: tx.created_at,
+            booking_id: tx.booking_id
+        }));
     },
     getInvoices: async (): Promise<CustomerInvoice[]> => {
-        await delay(600);
-        return mockInvoices;
+        const response = await apiClient.get('/customer/invoices');
+        return (response.data?.data || []).map((inv: any) => ({
+            id: inv.id,
+            invoice_number: inv.invoice_number,
+            amount: Number(inv.amount),
+            tax_amount: Number(inv.tax_amount),
+            status: inv.status,
+            issued_at: inv.issued_at,
+            booking_id: inv.booking_id,
+            venue_name: inv.bookings?.venues?.name || 'Sân thể thao',
+            pdf_url: inv.pdf_url
+        }));
     },
     deposit: async (amount: number, method: 'VNPAY' | 'MOMO' | 'ZALOPAY'): Promise<{ payment_url: string }> => {
-        await delay(800);
-        return { payment_url: `https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=${amount * 100}&vnp_Command=pay&vnp_CreateDate=20240315103000` };
+        const response = await apiClient.post('/customer/wallet/deposit', { amount, method });
+        return response.data?.data || { payment_url: '#' };
     }
 };

@@ -17,124 +17,27 @@ export interface AdminVenue {
     admin_notes: string | null;
 }
 
-const mockVenues: AdminVenue[] = [
-    {
-        id: 'v1',
-        name: 'Sân Bóng Đá Chảo Lửa',
-        city: 'TP.HCM',
-        district: 'Quận Tân Bình',
-        owner_name: 'Nguyễn Văn Chủ',
-        owner_email: 'owner@gmail.com',
-        status: 'APPROVED',
-        is_featured: true,
-        featured_until: '2026-12-31T23:59:59Z',
-        commission_rate: 10,
-        rating: 4.8,
-        total_reviews: 120,
-        created_at: '2026-02-01T10:00:00Z',
-        admin_notes: 'Chủ sân thân thiện, giữ giá ổn định.'
-    },
-    {
-        id: 'v2',
-        name: 'Cầu Lông Viettel',
-        city: 'TP.HCM',
-        district: 'Quận 10',
-        owner_name: 'Trần Kỹ Thuật',
-        owner_email: 'admin@datsan247.vn',
-        status: 'APPROVED',
-        is_featured: false,
-        featured_until: null,
-        commission_rate: 8.5,
-        rating: 4.9,
-        total_reviews: 84,
-        created_at: '2026-02-05T09:00:00Z',
-        admin_notes: null
-    },
-    {
-        id: 'v3',
-        name: 'Sân Tennis Cỏ Mới',
-        city: 'Hà Nội',
-        district: 'Cầu Giấy',
-        owner_name: 'Lê CSKH',
-        owner_email: 'staff01@datsan247.vn',
-        status: 'PENDING',
-        is_featured: false,
-        featured_until: null,
-        commission_rate: 10,
-        rating: 0,
-        total_reviews: 0,
-        created_at: '2026-03-08T15:30:00Z',
-        admin_notes: 'Chờ xác thực GPKD'
-    },
-    {
-        id: 'v4',
-        name: 'Trung Tâm Thể Thao Đa Năng',
-        city: 'Đà Nẵng',
-        district: 'Hải Châu',
-        owner_name: 'Minh Mới Đăng Ký',
-        owner_email: 'newuser@gmail.com',
-        status: 'REJECTED',
-        is_featured: false,
-        featured_until: null,
-        commission_rate: 15,
-        rating: 4.0,
-        total_reviews: 12,
-        created_at: '2026-01-15T08:00:00Z',
-        admin_notes: 'Thiếu an toàn cháy nổ'
-    },
-    {
-        id: 'v5',
-        name: 'Sân Bóng Mini Gian Lận',
-        city: 'Hà Nội',
-        district: 'Đống Đa',
-        owner_name: 'Khách Cố Chấp',
-        owner_email: 'baduser@gmail.com',
-        status: 'SUSPENDED',
-        is_featured: false,
-        featured_until: null,
-        commission_rate: 12,
-        rating: 2.1,
-        total_reviews: 45,
-        created_at: '2025-11-20T14:00:00Z',
-        admin_notes: 'Nhiều report phụ phí gửi xe.'
-    }
-];
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import apiClient from '@/lib/api/axios';
 
 export const adminVenueApi = {
     getVenues: async (): Promise<AdminVenue[]> => {
-        await delay(500);
-        return [...mockVenues].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const response = await apiClient.get('/admin/venues');
+        return response.data?.data || [];
     },
     updateStatus: async (id: string, status: VenueStatus): Promise<AdminVenue> => {
-        await delay(400);
-        const venue = mockVenues.find(v => v.id === id);
-        if (!venue) throw new Error("Venue not found");
-        venue.status = status;
-        return { ...venue };
+        const response = await apiClient.patch(`/admin/venues/${id}/status`, { status });
+        return response.data?.data;
     },
     updateFeatured: async (id: string, is_featured: boolean): Promise<AdminVenue> => {
-        await delay(400);
-        const venue = mockVenues.find(v => v.id === id);
-        if (!venue) throw new Error("Venue not found");
-        venue.is_featured = is_featured;
-        // Mock set until next month
-        venue.featured_until = is_featured ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null;
-        return { ...venue };
+        const response = await apiClient.patch(`/admin/venues/${id}/featured`, { is_featured });
+        return response.data?.data;
     },
     updateCommissionRate: async (id: string, rate: number): Promise<AdminVenue> => {
-        await delay(300);
-        const venue = mockVenues.find(v => v.id === id);
-        if (!venue) throw new Error("Venue not found");
-        venue.commission_rate = rate;
-        return { ...venue };
+        const response = await apiClient.patch(`/admin/venues/${id}/commission`, { rate });
+        return response.data?.data;
     },
     updateAdminNotes: async (id: string, notes: string): Promise<AdminVenue> => {
-        await delay(300);
-        const venue = mockVenues.find(v => v.id === id);
-        if (!venue) throw new Error("Venue not found");
-        venue.admin_notes = notes;
-        return { ...venue };
+        const response = await apiClient.patch(`/admin/venues/${id}/notes`, { notes });
+        return response.data?.data;
     }
 };

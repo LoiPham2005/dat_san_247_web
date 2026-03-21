@@ -60,3 +60,19 @@ export const useCustomerRecurringBookings = () => {
         queryFn: () => customerBookingApi.getMyRecurringBookings(),
     });
 };
+
+export const useCreateReview = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: { booking_id: string, rating: number, comment?: string }) => customerBookingApi.createReview(data),
+        onSuccess: (_, { booking_id }) => {
+            queryClient.invalidateQueries({ queryKey: ['my_bookings'] });
+            queryClient.invalidateQueries({ queryKey: ['my_booking', booking_id] });
+            toast.success('Cảm ơn bạn đã đánh giá dịch vụ!');
+        },
+        onError: (err: any) => {
+            const msg = err.response?.data?.message || 'Gửi đánh giá thất bại';
+            toast.error(msg);
+        }
+    });
+};

@@ -1,19 +1,47 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
-    return NextResponse.next();
-}
+export default withAuth(
+    function middleware(req) {
+        const token = req.nextauth.token;
+        const role = token?.role as string;
+        const pathname = req.nextUrl.pathname;
+
+        // Bảo vệ route /admin
+        if (pathname.startsWith("/admin") && role !== "super_admin" && role !== "admin") {
+            return NextResponse.redirect(new URL("/", req.url));
+        }
+
+        // Bảo vệ route /owner
+        if (pathname.startsWith("/owner") && role !== "owner") {
+            return NextResponse.redirect(new URL("/", req.url));
+        }
+
+        // Bảo vệ route /staff
+        if (pathname.startsWith("/staff") && role !== "staff") {
+            return NextResponse.redirect(new URL("/", req.url));
+        }
+
+        // Bảo vệ route /venue-staff
+        if (pathname.startsWith("/venue-staff") && role !== "venue_staff") {
+            return NextResponse.redirect(new URL("/", req.url));
+        }
+
+        return NextResponse.next();
+    },
+    {
+        callbacks: {
+            authorized: ({ token }) => !!token,
+        },
+    }
+);
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         */
-        '/((?!api|_next/static|_next/image|favicon.ico).*)',
+        "/admin/:path*",
+        "/owner/:path*",
+        "/staff/:path*",
+        "/venue-staff/:path*",
+        "/profile/:path*",
     ],
 };

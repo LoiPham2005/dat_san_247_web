@@ -56,10 +56,11 @@ export const useCustomerPreferences = () => {
     });
 
     const updatePreferences = useMutation({
-        mutationFn: (data: UserSportPreference[]) => customerProfileApi.updatePreferences(data),
+        mutationFn: ({ sport_type, skill_level }: { sport_type: string, skill_level: number }) => 
+            customerProfileApi.updatePreferences(sport_type, skill_level),
         onSuccess: (data) => {
-            queryClient.setQueryData(['customer_preferences'], data);
-            toast.success('Lưu sở thích thể thao thành công');
+            queryClient.invalidateQueries({ queryKey: ['customer_profile'] });
+            toast.success('Cập nhật trình độ thành công');
         },
         onError: () => toast.error('Lưu thất bại, thử lại sau')
     });

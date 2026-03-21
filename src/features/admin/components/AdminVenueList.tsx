@@ -10,7 +10,7 @@ import { Card } from '@/components/common/Card';
 import { Search, MapPin, Store, Star, Percent, Settings2, Eye, ShieldCheck, ChevronDown } from 'lucide-react';
 
 export const AdminVenueList = () => {
-    const { venues, isLoading, updateStatus, updateFeatured, updateCommission } = useAdminVenues();
+    const { venues, isLoading, updateStatus, updateFeatured, updateCommission, updateAdminNotes } = useAdminVenues();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
     const [editingCommissionId, setEditingCommissionId] = useState<string | null>(null);
@@ -39,10 +39,8 @@ export const AdminVenueList = () => {
     };
 
     const handleNoteSave = (id: string) => {
-        // @ts-ignore
-        if (useAdminVenues().updateAdminNotes) {
-            // @ts-ignore
-            useAdminVenues().updateAdminNotes({ id, notes: tempNote });
+        if (updateAdminNotes) {
+            updateAdminNotes({ id, notes: tempNote });
         }
         setEditingNoteId(null);
     };
@@ -195,8 +193,7 @@ export const AdminVenueList = () => {
                                             <div className="flex justify-end gap-2 mt-2">
                                                 <button onClick={() => setEditingNoteId(null)} className="text-[10px] font-bold text-slate-500">Hủy</button>
                                                 <button onClick={() => {
-                                                    // @ts-ignore
-                                                    useAdminVenues().updateAdminNotes?.({ id: venue.id, notes: tempNote });
+                                                    updateAdminNotes({ id: venue.id, notes: tempNote });
                                                     setEditingNoteId(null);
                                                 }} className="text-[10px] font-bold text-primary">Lưu ghi chú</button>
                                             </div>
@@ -211,7 +208,6 @@ export const AdminVenueList = () => {
                                             }}
                                             title="Bấm để sửa ghi chú nội bộ"
                                         >
-                                            {/* @ts-ignore */}
                                             {venue.admin_notes ? `📝 ${venue.admin_notes}` : "📝 Thêm ghi chú nội bộ..."}
                                         </div>
                                     )}
@@ -282,7 +278,7 @@ export const AdminVenueList = () => {
                                         </div>
                                     </div>
 
-                                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs shadow-sm bg-white hover:bg-slate-50">
+                                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs shadow-sm bg-white hover:bg-slate-50" onClick={() => window.location.href = `/admin/venues/${venue.id}`}>
                                         <Eye className="w-3 h-3 mr-1.5" />
                                         Chi tiết
                                     </Button>
