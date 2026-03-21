@@ -3,9 +3,9 @@
 import React from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { 
-    Users, Store, CalendarCheck, DollarSign, 
-    TrendingUp, TrendingDown, Clock, ChevronRight, Activity 
+import {
+    Users, Store, CalendarCheck, DollarSign,
+    TrendingUp, TrendingDown, Clock, ChevronRight, Activity
 } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -41,7 +41,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-4 flex items-center text-sm font-semibold text-emerald-600">
                         <TrendingUp className="w-4 h-4 mr-1" />
-                        +14.5% 
+                        +14.5%
                         <span className="text-slate-400 ml-2 font-medium">so với tháng trước</span>
                     </div>
                     <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-emerald-50 rounded-full opacity-50 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-4 flex items-center text-sm font-semibold text-emerald-600">
                         <TrendingUp className="w-4 h-4 mr-1" />
-                        +8.2% 
+                        +8.2%
                         <span className="text-slate-400 ml-2 font-medium">so với tháng trước</span>
                     </div>
                     <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-sky-50 rounded-full opacity-50 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
@@ -77,7 +77,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="mt-4 flex items-center text-sm font-semibold text-rose-500">
                         <TrendingDown className="w-4 h-4 mr-1" />
-                        -2.1% 
+                        -2.1%
                         <span className="text-slate-400 ml-2 font-medium">so với tuần trước</span>
                     </div>
                     <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-50 rounded-full opacity-50 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
@@ -169,6 +169,6 @@ export default function AdminDashboardPage() {
     );
 }
 
-const CreditCard = ({ className }: {className: string}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+const CreditCard = ({ className }: { className: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" x2="22" y1="10" y2="10" /></svg>
 )
