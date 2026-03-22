@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useAdminSupport } from '../hooks/useAdminSupport';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
-import { Search, MessageSquareDashed, Flag, Star, AlertTriangle, ShieldCheck, CornerDownRight, UserCog, User, Clock, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { Search, MessageSquareDashed, Flag, Star, AlertTriangle, ShieldCheck, CornerDownRight, UserCog, User, Clock, CheckCircle2, XCircle, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ReportStatus, ReportAction, SupportTicketStatus } from '../api/admin-support.api';
 
@@ -12,13 +13,19 @@ export const AdminSupportList = () => {
     const { 
         tickets, reports, reviews, 
         isLoadingTickets, isLoadingReports, isLoadingReviews,
-        updateTicket, updateReport, toggleReview,
-        isUpdatingTicket, isUpdatingReport, isTogglingReview
+        updateTicket, updateReport, updateReview, deleteReview,
+        isUpdatingTicket, isUpdatingReport, isUpdatingReview, isDeletingReview
     } = useAdminSupport();
 
     const [activeTab, setActiveTab] = useState<'TICKETS' | 'REPORTS' | 'REVIEWS'>('TICKETS');
     const [searchTerm, setSearchTerm] = useState('');
     const [simulatedRole, setSimulatedRole] = useState<'admin' | 'super_admin'>('admin');
+    // const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    // const [responseBody, setResponseBody] = useState('');
+    
+    // Delete Confirmation
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [reviewToDelete, setReviewToDelete] = useState<string | null>(null);
 
     const isLoading = isLoadingTickets || isLoadingReports || isLoadingReviews;
 
@@ -36,6 +43,13 @@ export const AdminSupportList = () => {
     const filteredTickets = tickets.filter(t => t.subject.toLowerCase().includes(searchTerm.toLowerCase()) || t.id.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredReports = reports.filter(r => r.description.toLowerCase().includes(searchTerm.toLowerCase()) || r.id.toLowerCase().includes(searchTerm.toLowerCase()));
     const filteredReviews = reviews.filter(r => r.comment.toLowerCase().includes(searchTerm.toLowerCase()) || r.venue_name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // const handleSendResponse = (id: string) => {
+    //     if (!responseBody.trim()) return;
+    //     updateReview({ id, response: responseBody });
+    //     setReplyingTo(null);
+    //     setResponseBody('');
+    // };
 
     return (
         <div className="space-y-6">
@@ -225,50 +239,134 @@ export const AdminSupportList = () => {
             {/* TAB: REVIEWS */}
             {activeTab === 'REVIEWS' && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
-                    <div className="p-4 bg-slate-50/50 text-xs text-slate-500 font-medium">Bảng này chỉ liệt kê các đánh giá bị report hoặc nghi ngờ điểm số thấp bất thường cẩn kiểm duyệt ẩn giấu.</div>
+                    <div className="p-4 bg-slate-50/50 text-xs text-slate-500 font-medium flex justify-between">
+                        <span>Bảng liệt kê các đánh giá cần kiểm duyệt nội dung phản cảm hoặc phản hồi khách hàng.</span>
+                        <div className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Quyền: {simulatedRole.toUpperCase()}</div>
+                    </div>
                     {filteredReviews.map(review => (
-                        <div key={review.id} className="p-5 flex flex-col md:flex-row justify-between gap-6 hover:bg-slate-50/50 transition-colors group">
-                            <div className="flex-1 space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex gap-0.5" title={`${review.rating} sao`}>
-                                        {[1, 2, 3, 4, 5].map(star => (
-                                            <Star key={star} className={`w-4 h-4 ${star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
-                                        ))}
+                        <div key={review.id} className="p-5 flex flex-col hover:bg-slate-50/50 transition-colors group">
+                            <div className="flex flex-col md:flex-row justify-between gap-6 mb-4">
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex gap-0.5" title={`${review.rating} sao`}>
+                                            {[1, 2, 3, 4, 5].map(star => (
+                                                <Star key={star} className={`w-4 h-4 ${star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+                                            ))}
+                                        </div>
+                                        <span className="font-bold text-slate-800">• {review.venue_name}</span>
                                     </div>
-                                    <span className="font-bold text-slate-800">• {review.venue_name}</span>
+                                    <p className="text-slate-700 italic border-l-4 border-slate-200 pl-3 py-1">"{review.comment}"</p>
+                                    <div className="text-xs text-slate-500 font-medium pt-1">
+                                        Viết bởi: <strong>{review.customer_name}</strong> • {format(new Date(review.created_at), 'HH:mm dd/MM/yyyy')}
+                                    </div>
                                 </div>
-                                <p className="text-slate-700 italic border-l-4 border-slate-200 pl-3 py-1">"{review.comment}"</p>
-                                <div className="text-xs text-slate-500 font-medium pt-1">
-                                    Viết bởi: <strong>{review.customer_name}</strong> • {format(new Date(review.created_at), 'HH:mm dd/MM/yyyy')}
+
+                                <div className="flex flex-col items-end gap-3 shrink-0">
+                                    <div className="flex gap-2">
+                                        {review.is_visible ? (
+                                            <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase px-2 py-1 rounded w-fit flex items-center gap-1">
+                                                <Eye className="w-3 h-3" /> Đang Hiện
+                                            </span>
+                                        ) : (
+                                            <span className="bg-slate-100 text-slate-500 text-[10px] font-bold uppercase px-2 py-1 rounded w-fit flex items-center gap-1">
+                                                <EyeOff className="w-3 h-3" /> Bị Ẩn
+                                            </span>
+                                        )}
+                                        <span className="font-mono text-[10px] text-slate-400 pt-1">ID: {review.id.slice(0, 8)}</span>
+                                    </div>
+                                    
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            size="sm" 
+                                            variant="outline" 
+                                            className={`h-8 w-8 p-0 border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200`}
+                                            disabled={isDeletingReview}
+                                            onClick={() => {
+                                                setReviewToDelete(review.id);
+                                                setIsDeleteDialogOpen(true);
+                                            }}
+                                            title="Xóa vĩnh viễn"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="outline" 
+                                            className={`h-8 text-xs font-semibold ${review.is_visible ? 'border-amber-200 text-amber-600 hover:bg-amber-50' : 'border-sky-200 text-sky-600 hover:bg-sky-50'}`}
+                                            disabled={isUpdatingReview}
+                                            onClick={() => updateReview({ id: review.id, is_visible: !review.is_visible })}
+                                        >
+                                            {review.is_visible ? 'Ẩn Đánh Giá' : 'Hiện Đánh Giá'}
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col items-end gap-3 shrink-0">
-                                {review.is_visible ? (
-                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase px-2 py-1 rounded w-fit flex items-center gap-1">
-                                        <Eye className="w-3 h-3" /> Public (Đang Hiện)
-                                    </span>
+                            {/* Response Section */}
+                            {/* <div className="bg-slate-100/50 rounded-xl p-4 border border-slate-200/60 ml-0 md:ml-6">
+                                {replyingTo === review.id ? (
+                                    <div className="space-y-3">
+                                        <textarea
+                                            className="w-full min-h-[80px] p-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white"
+                                            placeholder="Nhập nội dung phản hồi quản trị viên..."
+                                            value={responseBody}
+                                            onChange={(e) => setResponseBody(e.target.value)}
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <Button size="sm" variant="ghost" onClick={() => { setReplyingTo(null); setResponseBody(''); }}>Hủy</Button>
+                                            <Button size="sm" className="h-8" onClick={() => handleSendResponse(review.id)} disabled={isUpdatingReview}>
+                                                Gửi Phản Hồi
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ) : review.response ? (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex items-center gap-2 text-primary">
+                                                <CornerDownRight className="w-4 h-4" />
+                                                <span className="text-xs font-bold uppercase tracking-wider">Phản hồi của Admin</span>
+                                            </div>
+                                            <Button 
+                                                variant="ghost" size="sm" 
+                                                className="h-6 px-2 text-[10px] text-slate-400 hover:text-primary"
+                                                onClick={() => { setReplyingTo(review.id); setResponseBody(review.response || ''); }}
+                                            >Sửa</Button>
+                                        </div>
+                                        <p className="text-sm text-slate-700 font-medium">"{review.response}"</p>
+                                        <div className="text-[10px] text-slate-400">Gửi lúc: {review.responded_at ? format(new Date(review.responded_at), 'HH:mm dd/MM/yyyy') : '---'}</div>
+                                    </div>
                                 ) : (
-                                    <span className="bg-slate-100 text-slate-500 text-[10px] font-bold uppercase px-2 py-1 rounded w-fit flex items-center gap-1">
-                                        <EyeOff className="w-3 h-3" /> Bị Ẩn (Hidden)
-                                    </span>
+                                    <button 
+                                        className="w-full py-4 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 hover:text-primary hover:border-primary/40 hover:bg-white transition-all flex items-center justify-center gap-2 text-sm font-medium"
+                                        onClick={() => { setReplyingTo(review.id); setResponseBody(''); }}
+                                    >
+                                        <MessageSquareDashed className="w-4 h-4" /> Viết phản hồi chính thức từ sàn
+                                    </button>
                                 )}
-                                
-                                <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className={`h-8 text-xs font-semibold ${review.is_visible ? 'border-amber-200 text-amber-600 hover:bg-amber-50' : 'border-sky-200 text-sky-600 hover:bg-sky-50'}`}
-                                    disabled={isTogglingReview}
-                                    onClick={() => toggleReview({ id: review.id, is_visible: !review.is_visible })}
-                                >
-                                    {review.is_visible ? 'Force HIDE (Ẩn Đánh giá này)' : 'Khôi phục Hiển thị'}
-                                </Button>
-                            </div>
+                            </div> */}
                         </div>
                     ))}
                     {filteredReviews.length === 0 && <div className="py-12 text-center text-slate-500 bg-white border-t border-slate-200 border-dashed">Không có đánh giá chờ duyệt.</div>}
                 </div>
             )}
+
+            <ConfirmDialog 
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={() => {
+                    if (reviewToDelete) {
+                        deleteReview(reviewToDelete);
+                        setIsDeleteDialogOpen(false);
+                        setReviewToDelete(null);
+                    }
+                }}
+                title="Xóa vĩnh viễn đánh giá?"
+                description="Hành động này không thể hoàn tác. Đánh giá sẽ biến mất vĩnh viễn khỏi hệ thống và trang cá nhân sân."
+                confirmText="Xóa vĩnh viễn"
+                cancelText="Quay lại"
+                type="danger"
+                loading={isDeletingReview}
+            />
         </div>
     );
 };

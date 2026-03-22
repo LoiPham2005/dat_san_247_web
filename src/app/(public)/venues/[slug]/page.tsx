@@ -10,6 +10,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/common/Ca
 import { MapPin, Star, Phone, ShieldCheck, Share2, Heart, Info, ChevronRight, Check, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useRouter } from 'next/navigation';
+import { ReportButton } from '@/features/report/components/ReportButton';
+import { VenueReviews } from '@/features/venue/components/VenueReviews';
 
 export default function VenueDetailPage({ params }: { params: { slug: string } }) {
     const router = useRouter();
@@ -33,7 +35,13 @@ export default function VenueDetailPage({ params }: { params: { slug: string } }
                         <ChevronRight className="w-4 h-4" />
                         <span className="text-slate-900 font-bold">{venue.name}</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                        <ReportButton 
+                            targetType="VENUE" 
+                            targetId={venue.id} 
+                            targetName={venue.name}
+                            className="bg-white hover:bg-rose-50 border-slate-200"
+                        />
                         <Button 
                             variant="outline" 
                             size="sm" 
@@ -179,6 +187,13 @@ export default function VenueDetailPage({ params }: { params: { slug: string } }
                             ))}
                         </div>
 
+                        {/* Reviews Section */}
+                        <VenueReviews 
+                            venueId={venue.id} 
+                            reviews={venue.reviews} 
+                            averageRating={venue.average_rating} 
+                            reviewCount={venue.review_count} 
+                        />
                     </div>
 
                     {/* Booking Sidebar / Card */}

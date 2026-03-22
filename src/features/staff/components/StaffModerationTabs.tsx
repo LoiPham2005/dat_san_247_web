@@ -15,8 +15,30 @@ export const StaffModerationTabs = () => {
     const [activeTab, setActiveTab] = useState<'REPORTS' | 'REVIEWS'>('REPORTS');
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredReports = reports.filter(r => r.target_name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const filteredReviews = reviews.filter(r => r.venue_name.toLowerCase().includes(searchTerm.toLowerCase()) || r.comment?.toLowerCase().includes(searchTerm.toLowerCase()));
+    const getReasonLabel = (reason: string) => {
+        const labels: Record<string, string> = {
+            'SPAM': 'Spam / Nhảm nhí',
+            'INAPPROPRIATE': 'Nội dung không phù hợp',
+            'FAKE': 'Thông tin giả mạo',
+            'FRAUD': 'Lừa đảo',
+            'DISPUTE_TRANSACTION': 'Tranh chấp giao dịch',
+            'OTHER': 'Lý do khác'
+        };
+        return labels[reason] || reason;
+    };
+
+    const getStatusLabel = (status: string) => {
+        const labels: Record<string, string> = {
+            'PENDING': 'Đang chờ',
+            'REVIEWING': 'Đang xem xét',
+            'RESOLVED': 'Đã xử lý',
+            'DISMISSED': 'Đã bác bỏ'
+        };
+        return labels[status] || status;
+    };
+
+    const filteredReports = reports.filter(r => (r.target_name || '').toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredReviews = reviews.filter(r => (r.venue_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (r.comment || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
     const isLoading = isLoadingReports || isLoadingReviews;
 
@@ -97,7 +119,7 @@ export const StaffModerationTabs = () => {
                                         <span className="font-mono text-xs text-slate-400">ID: {report.target_id}</span>
                                     </div>
                                     <div className="inline-flex mt-2 mb-1 bg-rose-50 border border-rose-100 text-rose-700 px-2.5 py-1.5 rounded-md text-xs font-bold uppercase tracking-tight">
-                                        Lý do: {report.reason.replace('_', ' ')}
+                                        Lý do: {getReasonLabel(report.reason)}
                                     </div>
                                     <p className="text-slate-600 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100 mt-2 font-medium">"{report.description}"</p>
                                 </div>

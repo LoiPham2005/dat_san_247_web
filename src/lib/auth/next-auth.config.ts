@@ -35,12 +35,13 @@ export const authOptions: NextAuthOptions = {
                             email: data.user.email,
                             name: data.user.full_name,
                             role: roleSlug,
+                            isVenueStaff: (data.user as any).is_venue_staff || false,
                             image: data.user.avatar_url,
                             accessToken: data.access_token,
                             refreshToken: data.refresh_token,
                         };
 
-                        console.log('>>> [NEXT-AUTH DEBUG] Authorize Success:', userResult.email, 'Role:', userResult.role);
+                        console.log('>>> [NEXT-AUTH DEBUG] Authorize Success:', userResult.email, 'Role:', userResult.role, 'isStaff:', userResult.isVenueStaff);
                         return userResult;
                     }
 
@@ -57,6 +58,7 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.role = (user as any).role;
+                token.isVenueStaff = (user as any).isVenueStaff;
                 token.accessToken = (user as any).accessToken;
             }
             return token;
@@ -64,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         async session({ session, token }) {
             if (session.user) {
                 (session.user as any).role = token.role;
+                (session.user as any).isVenueStaff = token.isVenueStaff;
                 (session.user as any).accessToken = token.accessToken;
             }
             return session;

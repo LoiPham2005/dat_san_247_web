@@ -1,3 +1,5 @@
+import apiClient from '@/lib/api/axios';
+
 export type VenueStaffRole = 'OWNER' | 'MANAGER' | 'STAFF' | 'RECEPTIONIST';
 export type VenueStaffInviteStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'REVOKED';
 
@@ -7,6 +9,7 @@ export interface OwnerVenueStaff {
     user_id: string;
     full_name: string;
     email: string;
+    avatar_url?: string;
     role: VenueStaffRole;
     is_active: boolean;
     joined_at: string;
@@ -18,94 +21,49 @@ export interface OwnerStaffInvite {
     invite_email: string;
     role: VenueStaffRole;
     status: VenueStaffInviteStatus;
+    token: string;
     expires_at: string;
     created_at: string;
 }
 
-const mockStaff: OwnerVenueStaff[] = [
-    {
-        id: 'VS-1',
-        venue_id: 'VN-1',
-        user_id: 'U-101',
-        full_name: 'Nguyễn Văn Quản Lý',
-        email: 'manager@datsan247.vn',
-        role: 'MANAGER',
-        is_active: true,
-        joined_at: new Date(Date.now() - 86400000 * 30).toISOString()
-    },
-    {
-        id: 'VS-2',
-        venue_id: 'VN-1',
-        user_id: 'U-102',
-        full_name: 'Trần Lễ Tân',
-        email: 'receptionist@datsan247.vn',
-        role: 'RECEPTIONIST',
-        is_active: true,
-        joined_at: new Date(Date.now() - 86400000 * 10).toISOString()
-    }
-];
-
-const mockInvites: OwnerStaffInvite[] = [
-    {
-        id: 'VSI-1',
-        venue_id: 'VN-1',
-        invite_email: 'new_staff@example.com',
-        role: 'STAFF',
-        status: 'PENDING',
-        expires_at: new Date(Date.now() + 86400000 * 2).toISOString(),
-        created_at: new Date().toISOString()
-    }
-];
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const ownerStaffApi = {
     getStaffList: async (venueId: string): Promise<OwnerVenueStaff[]> => {
-        await delay(400);
-        return mockStaff.filter(s => s.venue_id === venueId);
+        const response = await apiClient.get(`/venue-staff/owner/${venueId}`);
+        return response.data.data;
     },
 
-    updateStaffRole: async (staffId: string, role: VenueStaffRole): Promise<OwnerVenueStaff> => {
-        await delay(500);
-        const idx = mockStaff.findIndex(s => s.id === staffId);
-        if (idx === -1) throw new Error("Staff not found");
-        mockStaff[idx] = { ...mockStaff[idx], role };
-        return mockStaff[idx];
+    updateStaffRole: async (staffId: string, role: VenueStaffRole): Promise<any> => {
+        const response = await apiClient.patch(`/venue-staff/owner/${staffId}/role`, { role });
+        return response.data.data;
     },
 
-    toggleStaffStatus: async (staffId: string, is_active: boolean): Promise<OwnerVenueStaff> => {
-        await delay(400);
-        const idx = mockStaff.findIndex(s => s.id === staffId);
-        if (idx === -1) throw new Error("Staff not found");
-        mockStaff[idx] = { ...mockStaff[idx], is_active };
-        return mockStaff[idx];
+    toggleStaffStatus: async (staffId: string, is_active: boolean): Promise<any> => {
+        const response = await apiClient.patch(`/venue-staff/owner/${staffId}/status`, { is_active });
+        return response.data.data;
     },
 
     getStaffInvites: async (venueId: string): Promise<OwnerStaffInvite[]> => {
-        await delay(300);
-        return mockInvites.filter(i => i.venue_id === venueId);
+        const response = await apiClient.get(`/venue-staff/owner/${venueId}/invites`);
+        return response.data.data;
     },
 
     inviteStaff: async (data: { venue_id: string, email: string, role: VenueStaffRole }): Promise<OwnerStaffInvite> => {
-        await delay(600);
-        const inv: OwnerStaffInvite = {
-            id: `VSI-${Date.now()}`,
-            venue_id: data.venue_id,
-            invite_email: data.email,
-            role: data.role,
-            status: 'PENDING',
-            expires_at: new Date(Date.now() + 86400000 * 7).toISOString(),
-            created_at: new Date().toISOString()
-        };
-        mockInvites.push(inv);
-        return inv;
+        const response = await apiClient.post(`/venue-staff/owner/invite`, data);
+        return response.data.data;
     },
 
-    revokeInvite: async (inviteId: string): Promise<OwnerStaffInvite> => {
-        await delay(400);
-        const idx = mockInvites.findIndex(i => i.id === inviteId);
-        if (idx === -1) throw new Error("Invite not found");
-        mockInvites[idx] = { ...mockInvites[idx], status: 'REVOKED' };
-        return mockInvites[idx];
+    revokeInvite: async (inviteId: string): Promise<any> => {
+        const response = await apiClient.delete(`/venue-staff/owner/invite/${inviteId}`);
+        return response.data.data;
+    },
+    
+    acceptInvite: async (token: string): Promise<any> => {
+        const response = await apiClient.post(`/venue-staff/invite/${token}/accept`);
+        return response.data.data;
+    },
+    
+    forceAcceptInvite: async (inviteId: string): Promise<any> => {
+        const response = await apiClient.post(`/venue-staff/owner/invite/${inviteId}/force-accept`);
+        return response.data.data;
     }
 };

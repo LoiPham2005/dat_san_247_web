@@ -6,10 +6,28 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { MapPin, Search, CalendarDays, Activity, Medal, ShieldCheck, Zap, Trophy, Star, ChevronRight, PlayCircle, Flame } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
 
 export default function HomePage() {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        if (status === "authenticated" && session?.user) {
+            const role = (session.user as any).role;
+            if (role === "super_admin" || role === "admin") {
+                router.push("/admin/dashboard");
+            } else if (role === "owner") {
+                router.push("/owner/venues");
+            } else if (role === "staff") {
+                router.push("/staff/lookup");
+            } else if (role === "venue_staff") {
+                router.push("/venue-staff/check-in");
+            }
+        }
+    }, [status, session, router]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

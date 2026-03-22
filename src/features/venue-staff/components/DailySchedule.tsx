@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
-import { useOwnerBookings } from '@/features/owner/hooks/useOwnerBooking';
-import { BookingStatus, OwnerBooking } from '@/features/owner/api/owner-booking.api';
+import { useVenueSchedule } from '../hooks/useVenueSchedule';
+import { BookingStatus } from '@/features/owner/api/owner-booking.api';
 import { Calendar, Search, User, Phone, MapPin, Clock, CheckCircle2, QrCode, Filter, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const DailySchedule = ({ venueId }: { venueId: string }) => {
-    const { bookings, isLoading, updateStatus } = useOwnerBookings(venueId);
+    const { bookings, isLoading, updateStatus } = useVenueSchedule(venueId);
     
     const [searchTerm, setSearchTerm] = useState('');
     const [currentDate, setCurrentDate] = useState(new Date());

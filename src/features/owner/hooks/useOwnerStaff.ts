@@ -66,12 +66,36 @@ export const useOwnerStaffInvites = (venueId: string) => {
         onError: () => toast.error("Thu hồi thất bại.")
     });
 
+    const acceptInvite = useMutation({
+        mutationFn: (token: string) => ownerStaffApi.acceptInvite(token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_staff', venueId] });
+            queryClient.invalidateQueries({ queryKey: ['owner_staff_invites', venueId] });
+            toast.success("Chấp nhận lời mời thành công!");
+        },
+        onError: (err: any) => toast.error(err.response?.data?.message || "Lỗi chấp nhận lời mời")
+    });
+
+    const forceAccept = useMutation({
+        mutationFn: (inviteId: string) => ownerStaffApi.forceAcceptInvite(inviteId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['owner_staff', venueId] });
+            queryClient.invalidateQueries({ queryKey: ['owner_staff_invites', venueId] });
+            toast.success("Đã chấp nhận lời mời cho nhân viên!");
+        },
+        onError: (err: any) => toast.error(err.response?.data?.message || "Lỗi chấp nhận lời mời")
+    });
+
     return {
         invites: invitesQuery.data || [],
         isLoadingInvites: invitesQuery.isLoading,
         inviteStaff: inviteStaff.mutate,
         isInviting: inviteStaff.isPending,
         revokeInvite: revokeInvite.mutate,
-        isRevoking: revokeInvite.isPending
+        isRevoking: revokeInvite.isPending,
+        acceptInvite: acceptInvite.mutate,
+        isAccepting: acceptInvite.isPending,
+        forceAccept: forceAccept.mutate,
+        isForceAccepting: forceAccept.isPending
     };
 };

@@ -7,11 +7,12 @@ import { Input } from '@/components/common/Input';
 import { useOwnerStaff, useOwnerStaffInvites } from '../hooks/useOwnerStaff';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { Mail, Shield, CheckCircle2, MoreVertical, XCircle, Clock, Send, Ban } from 'lucide-react';
-import { VenueStaffRole } from '../api/owner-staff.api';
+import { VenueStaffRole, OwnerStaffInvite } from '../api/owner-staff.api';
+import { toast } from 'sonner';
 
 export const OwnerStaffManagement = ({ venueId }: { venueId: string }) => {
     const { staffList, isLoadingStaff, updateRole, toggleStatus } = useOwnerStaff(venueId);
-    const { invites, isLoadingInvites, inviteStaff, isInviting, revokeInvite } = useOwnerStaffInvites(venueId);
+    const { invites, isLoadingInvites, inviteStaff, isInviting, revokeInvite, forceAccept, isForceAccepting } = useOwnerStaffInvites(venueId);
 
     const [activeTab, setActiveTab] = useState<'STAFF'|'INVITES'>('STAFF');
 
@@ -173,7 +174,36 @@ export const OwnerStaffManagement = ({ venueId }: { venueId: string }) => {
                                             )}
                                             
                                             {invite.status === 'PENDING' && (
-                                                <Button variant="ghost" size="sm" onClick={() => revokeInvite(invite.id)} className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 font-bold border border-rose-200 bg-rose-50">Thu Hồi</Button>
+                                                <div className="flex gap-2">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="sm" 
+                                                        onClick={() => {
+                                                            const link = `${window.location.origin}/venue-staff/invite?token=${invite.token}`;
+                                                            navigator.clipboard.writeText(link);
+                                                            toast.success("Đã sao chép link mời!");
+                                                        }} 
+                                                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 h-8 font-bold border-indigo-200 bg-indigo-50"
+                                                    >
+                                                        Sao chép Link
+                                                    </Button>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        onClick={() => revokeInvite(invite.id)} 
+                                                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 font-bold border border-rose-200 bg-rose-50"
+                                                    >
+                                                        Thu Hồi
+                                                    </Button>
+                                                    <Button 
+                                                        size="sm" 
+                                                        onClick={() => forceAccept(invite.id)} 
+                                                        loading={isForceAccepting}
+                                                        className="bg-emerald-600 hover:bg-emerald-700 h-8 font-bold shadow-sm"
+                                                    >
+                                                        Test Chấp Nhận
+                                                    </Button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

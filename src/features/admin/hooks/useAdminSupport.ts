@@ -29,14 +29,23 @@ export const useAdminSupport = () => {
         onError: () => toast.error("Có lỗi xảy ra khi cập nhật Báo cáo")
     });
 
-    const toggleReview = useMutation({
-        mutationFn: ({ id, is_visible }: { id: string, is_visible: boolean }) => 
-            adminSupportApi.toggleReviewVisibility(id, is_visible),
+    const updateReview = useMutation({
+        mutationFn: ({ id, response, is_visible }: { id: string, response?: string, is_visible?: boolean }) => 
+            adminSupportApi.updateReview(id, { response, is_visible }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin_reviews'] });
-            toast.success("Đã thay đổi trạng thái hiển thị của Đánh giá");
+            toast.success("Cập nhật Đánh giá thành công");
         },
         onError: () => toast.error("Thao tác thất bại")
+    });
+
+    const deleteReview = useMutation({
+        mutationFn: (id: string) => adminSupportApi.deleteReview(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin_reviews'] });
+            toast.success("Đã xóa đánh giá vĩnh viễn");
+        },
+        onError: () => toast.error("Xóa thất bại")
     });
 
     return {
@@ -52,7 +61,9 @@ export const useAdminSupport = () => {
 
         reviews: reviewsQuery.data || [],
         isLoadingReviews: reviewsQuery.isLoading,
-        toggleReview: toggleReview.mutate,
-        isTogglingReview: toggleReview.isPending,
+        updateReview: updateReview.mutate,
+        isUpdatingReview: updateReview.isPending,
+        deleteReview: deleteReview.mutate,
+        isDeletingReview: deleteReview.isPending,
     };
 };

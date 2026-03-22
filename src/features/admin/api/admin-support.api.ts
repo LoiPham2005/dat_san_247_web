@@ -35,10 +35,13 @@ export interface AdminReport {
 
 export interface AdminReview {
     id: string;
+    venue_id: string;
     venue_name: string;
     customer_name: string;
     rating: number;
     comment: string;
+    response: string | null;
+    responded_at: string | null;
     is_visible: boolean;
     created_at: string;
 }
@@ -113,19 +116,25 @@ const mockReports: AdminReport[] = [
 const mockReviews: AdminReview[] = [
     {
         id: 'RV-888',
+        venue_id: 'VN-999',
         venue_name: 'Sân Tennis Chuẩn Olympic',
         customer_name: 'Kẻ Bất Mãn',
         rating: 1,
         comment: 'Sân chó má, nhân viên thái độ lồi lõm dkm lũ lừa đảo!',
+        response: null,
+        responded_at: null,
         is_visible: true,
         created_at: '2026-03-09T18:30:00Z'
     },
     {
         id: 'RV-889',
+        venue_id: 'VN-123',
         venue_name: 'Cầu Lông Viettel',
         customer_name: 'Người Tử Tế',
         rating: 5,
         comment: 'Sân đẹp tuyệt vời, rẻ, sạch sẽ. Đáng tiền.',
+        response: 'Cảm ơn bạn đã ủng hộ sân nhé!',
+        responded_at: '2026-03-08T12:00:00Z',
         is_visible: true,
         created_at: '2026-03-08T10:00:00Z'
     }
@@ -151,11 +160,14 @@ export const adminSupportApi = {
         return response.data?.data;
     },
     getReviews: async (): Promise<AdminReview[]> => {
-        const response = await apiClient.get('/admin/reviews');
+        const response = await apiClient.get('/admin/support/reviews');
         return response.data?.data || [];
     },
-    toggleReviewVisibility: async (id: string, is_visible: boolean): Promise<AdminReview> => {
-        const response = await apiClient.patch(`/admin/reviews/${id}/visibility`, { is_visible });
+    updateReview: async (id: string, data: { response?: string, is_visible?: boolean }): Promise<AdminReview> => {
+        const response = await apiClient.patch(`/admin/support/reviews/${id}`, data);
         return response.data?.data;
+    },
+    deleteReview: async (id: string): Promise<void> => {
+        await apiClient.delete(`/admin/support/reviews/${id}`);
     }
 };

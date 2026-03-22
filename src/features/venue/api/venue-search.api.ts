@@ -46,6 +46,13 @@ export interface VenueDetail {
         end_time: string;
         price: number;
     }[];
+    reviews: {
+        id: string;
+        customer_name: string;
+        rating: number;
+        comment: string;
+        created_at: string;
+    }[];
 }
 
 export interface SearchHistory {
