@@ -16,7 +16,7 @@ const MENU_ITEMS = [
     { name: 'Tất Cả Lịch Đặt', path: '/venue-staff/bookings', icon: CalendarCheck },
     { name: 'Nhân Sự', path: '/venue-staff/staff', icon: Users },
     { name: 'Đánh Giá & Phản Hồi', path: '/venue-staff/reviews', icon: Star },
-    { name: 'Thông Tin Cơ Sở', path: '/venue-staff/venue', icon: Info },
+    // { name: 'Thông Tin Cơ Sở', path: '/venue-staff/venue', icon: Info },
     { name: 'Cài Đặt', path: '/venue-staff/settings', icon: Settings },
 ];
 

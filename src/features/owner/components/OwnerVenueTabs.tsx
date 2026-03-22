@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
@@ -27,16 +28,26 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
 const DAYS_ORDER: DayOfWeek[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
 export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: () => void }) => {
+    const { data: session } = useSession();
+    const isStaff = (session?.user as any)?.role === 'venue_staff';
     const [activeTab, setActiveTab] = useState<'info' | 'verification' | 'hours' | 'courts'>('info');
     const {
         updateVenue, isUpdating,
         verification, submitVerification, isSubmittingVerification,
         operatingHours, updateOperatingHours, isUpdatingHoursPending,
         deleteVenue, isDeleting
-    } = useOwnerVenueDetail(venue.id);
+    } = useOwnerVenueDetail(venue?.id || null);
 
-    // Form states
+    // Guard against missing venue data during initial loads
     const [infoData, setInfoData] = useState({ ...venue });
+    
+    // Update local state when venue prop changes (after fetch completion)
+    useEffect(() => {
+        if (venue) {
+            setInfoData({ ...venue });
+        }
+    }, [venue]);
+
     const [localHours, setLocalHours] = useState<Partial<VenueOperatingHour>[]>([]);
     const [verificationDocs, setVerificationDocs] = useState({
         business_license_url: '',
@@ -89,7 +100,7 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                 is_closed: false
             };
         });
-        
+
         setLocalHours(initializedHours);
     }, [operatingHours]);
 
@@ -100,7 +111,23 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
             description: 'Bạn có chắc chắn muốn cập nhật thông tin cơ bản của cơ sở này không?',
             type: 'info',
             onConfirm: () => {
-                updateVenue(infoData);
+                // Filter out non-updatable fields to avoid 400 Bad Request (forbidNonWhitelisted)
+                const updatePayload: any = {};
+                const updatableFields = [
+                    'name', 'description', 'address', 'city', 'district', 'ward', 
+                    'phone', 'email', 'fb_url', 'instagram_url', 'zalo_url', 'youtube_url',
+                    'thumbnail_url', 'auto_accept_bookings', 'min_booking_hours', 
+                    'max_booking_hours', 'min_booking_before_hours', 'cancellation_before_hours',
+                    'vat_rate', 'commission_rate'
+                ];
+
+                updatableFields.forEach(field => {
+                    if (infoData[field as keyof typeof infoData] !== undefined) {
+                        updatePayload[field] = infoData[field as keyof typeof infoData];
+                    }
+                });
+
+                updateVenue(updatePayload);
                 setConfirm(prev => ({ ...prev, isOpen: false }));
             }
         });
@@ -201,12 +228,14 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                 >
                     <Building2 className="w-4 h-4" /> Thông Tin Chính
                 </button>
-                <button
-                    className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'verification' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-                    onClick={() => setActiveTab('verification')}
-                >
-                    <FileText className="w-4 h-4" /> Hồ Sơ Pháp Lý
-                </button>
+                {!isStaff && (
+                    <button
+                        className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'verification' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                        onClick={() => setActiveTab('verification')}
+                    >
+                        <FileText className="w-4 h-4" /> Hồ Sơ Pháp Lý
+                    </button>
+                )}
                 <button
                     className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'hours' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
                     onClick={() => setActiveTab('hours')}
@@ -269,21 +298,23 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                             </Button>
                         </div>
 
-                        {/* DANGER ZONE */}
-                        <div className="pt-8 mt-8 border-t border-red-100">
-                            <h3 className="text-lg font-bold text-red-600 mb-2 flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5" /> Danger Zone
-                            </h3>
-                            <div className="p-4 rounded-xl bg-red-50 border border-red-100 flex items-center justify-between">
-                                <div>
-                                    <div className="text-sm font-bold text-red-900">Xóa Cơ Sở</div>
-                                    <div className="text-xs text-red-700 font-medium">Bạn không thể hoàn tác sau khi hành động này thực hiện.</div>
+                        {/* DANGER ZONE - Only for owners */}
+                        {!isStaff && (
+                            <div className="pt-8 mt-8 border-t border-red-100">
+                                <h3 className="text-lg font-bold text-red-600 mb-2 flex items-center gap-2">
+                                    <AlertCircle className="w-5 h-5" /> Danger Zone
+                                </h3>
+                                <div className="p-4 rounded-xl bg-red-50 border border-red-100 flex items-center justify-between">
+                                    <div>
+                                        <div className="text-sm font-bold text-red-900">Xóa Cơ Sở</div>
+                                        <div className="text-xs text-red-700 font-medium">Bạn không thể hoàn tác sau khi hành động này thực hiện.</div>
+                                    </div>
+                                    <Button variant="outline" onClick={handleDeleteVenue} className="border-red-200 text-red-600 hover:bg-red-100 h-10 font-bold">
+                                        <Trash2 className="w-4 h-4 mr-2" /> Xóa Ngay
+                                    </Button>
                                 </div>
-                                <Button variant="outline" onClick={handleDeleteVenue} className="border-red-200 text-red-600 hover:bg-red-100 h-10 font-bold">
-                                    <Trash2 className="w-4 h-4 mr-2" /> Xóa Ngay
-                                </Button>
                             </div>
-                        </div>
+                        )}
                     </Card>
 
                     <Card className="col-span-1 p-6 shadow-sm border-slate-200 h-fit space-y-6">
@@ -355,28 +386,28 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                     <Card className="p-8 shadow-sm border-slate-200">
                         <h3 className="text-xl font-black text-slate-900 mb-6">Tải lên Bản Sao Hồ Sơ</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ImageUploader 
+                            <ImageUploader
                                 title="Giấy Phép Kinh Doanh"
                                 description="Bản scan rõ nét (JPG, PNG, PDF)"
                                 value={verificationDocs.business_license_url}
                                 onChange={(url) => setVerificationDocs({ ...verificationDocs, business_license_url: url })}
                                 disabled={verification?.status === 'VERIFIED' || verification?.status === 'PENDING'}
                             />
-                            <ImageUploader 
+                            <ImageUploader
                                 title="Ảnh Chân Dung Chủ Sở Hữu"
                                 description="Ảnh chân dung thẳng mặt (JPG, PNG)"
                                 value={verificationDocs.owner_photo_url}
                                 onChange={(url) => setVerificationDocs({ ...verificationDocs, owner_photo_url: url })}
                                 disabled={verification?.status === 'VERIFIED' || verification?.status === 'PENDING'}
                             />
-                            <ImageUploader 
+                            <ImageUploader
                                 title="CCCD/CMND (Mặt Trước)"
                                 description="Chụp rõ mặt trước (JPG, PNG)"
                                 value={verificationDocs.id_card_front_url}
                                 onChange={(url) => setVerificationDocs({ ...verificationDocs, id_card_front_url: url })}
                                 disabled={verification?.status === 'VERIFIED' || verification?.status === 'PENDING'}
                             />
-                            <ImageUploader 
+                            <ImageUploader
                                 title="CCCD/CMND (Mặt Sau)"
                                 description="Chụp rõ mặt sau (JPG, PNG)"
                                 value={verificationDocs.id_card_back_url}
@@ -416,16 +447,16 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                                         <div className="w-32 font-bold text-slate-800">{DAY_LABELS[day]}</div>
                                         <div className="flex-1 flex items-center gap-4">
                                             <div className="flex items-center gap-2 flex-1 relative">
-                                                <TimePicker 
-                                                    value={hour.opening_time} 
+                                                <TimePicker
+                                                    value={hour.opening_time}
                                                     onChange={(val) => updateDayHour(day, 'opening_time', val)}
-                                                    disabled={hour.is_closed} 
+                                                    disabled={hour.is_closed}
                                                 />
                                                 <span className="text-slate-400 font-semibold">-</span>
-                                                <TimePicker 
-                                                    value={hour.closing_time} 
+                                                <TimePicker
+                                                    value={hour.closing_time}
                                                     onChange={(val) => updateDayHour(day, 'closing_time', val)}
-                                                    disabled={hour.is_closed} 
+                                                    disabled={hour.is_closed}
                                                 />
                                             </div>
                                             <div className="flex items-center gap-3 ml-4 bg-slate-100/50 px-3 py-1.5 rounded-lg border border-slate-200">

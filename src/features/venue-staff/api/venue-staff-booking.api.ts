@@ -16,10 +16,29 @@ export interface VenueStaffBooking {
     payment_method: string;
 }
 
+export interface VenueStaffScheduleParams {
+    venue_id: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    date?: string;
+}
+
+export interface VenueStaffScheduleResponse {
+    data: VenueStaffBooking[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
 export const venueStaffBookingApi = {
-    getSchedule: async (venueId: string): Promise<VenueStaffBooking[]> => {
+    getSchedule: async (params: VenueStaffScheduleParams): Promise<VenueStaffScheduleResponse> => {
         const response = await apiClient.get(`/bookings/venue-staff/schedule`, {
-            params: { venue_id: venueId }
+            params
         });
         return response.data.data;
     },

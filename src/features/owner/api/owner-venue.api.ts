@@ -46,6 +46,16 @@ export const ownerVenueApi = {
         return response.data.data;
     },
 
+    getDashboardStats: async (): Promise<any> => {
+        const response = await apiClient.get('/owner/venues/dashboard/stats');
+        return response.data.data;
+    },
+
+    getVenueDetail: async (id: string): Promise<OwnerVenue> => {
+        const response = await apiClient.get(`/owner/venues/${id}`);
+        return response.data.data;
+    },
+
     createVenue: async (data: Partial<OwnerVenue>): Promise<OwnerVenue> => {
         const response = await apiClient.post('/owner/venues', data);
         return response.data.data;

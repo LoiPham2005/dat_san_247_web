@@ -1,26 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { venueStaffBookingApi, VenueStaffBooking } from '../api/venue-staff-booking.api';
+import { venueStaffBookingApi, VenueStaffBooking, VenueStaffScheduleParams, VenueStaffScheduleResponse } from '../api/venue-staff-booking.api';
 import { BookingStatus } from '@/features/owner/api/owner-booking.api';
 import { toast } from 'sonner';
 
-export const useVenueSchedule = (venueId: string) => {
+export const useVenueSchedule = (params: VenueStaffScheduleParams) => {
     const queryClient = useQueryClient();
 
-    const { data: bookings = [], isLoading, error } = useQuery<VenueStaffBooking[]>({
-        queryKey: ['venue-schedule', venueId],
-        queryFn: () => venueStaffBookingApi.getSchedule(venueId),
-        enabled: !!venueId,
-        refetchInterval: 30000, // Tự động làm mới mỗi 30 giây
+    const { data, isLoading, error } = useQuery<VenueStaffScheduleResponse>({
+        queryKey: ['venue-schedule', params],
+        queryFn: () => venueStaffBookingApi.getSchedule(params),
+        enabled: !!params.venue_id,
+        refetchInterval: 60000,
     });
 
     const updateStatusMutation = useMutation({
         mutationFn: ({ id, status }: { id: string, status: BookingStatus }) =>
             venueStaffBookingApi.updateStatus(id, status),
         onSuccess: (updatedBooking) => {
-            queryClient.setQueryData(['venue-schedule', venueId], (old: VenueStaffBooking[] | undefined) => {
-                if (!old) return [];
-                return old.map(b => b.id === updatedBooking.id ? { ...b, status: updatedBooking.status } : b);
-            });
+            queryClient.invalidateQueries({ queryKey: ['venue-schedule'] });
             toast.success(`Cập nhật trạng thái thành công: ${updatedBooking.status}`);
         },
         onError: (err: any) => {
@@ -29,7 +26,8 @@ export const useVenueSchedule = (venueId: string) => {
     });
 
     return {
-        bookings,
+        bookings: data?.data || [],
+        meta: data?.meta,
         isLoading,
         error,
         updateStatus: updateStatusMutation.mutate,

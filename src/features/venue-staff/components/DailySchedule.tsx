@@ -6,14 +6,36 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { useVenueSchedule } from '../hooks/useVenueSchedule';
 import { BookingStatus } from '@/features/owner/api/owner-booking.api';
-import { Calendar, Search, User, Phone, MapPin, Clock, CheckCircle2, QrCode, Filter, Bell } from 'lucide-react';
+import { 
+    Calendar as LucideCalendar, 
+    Search as LucideSearch, 
+    User as LucideUser, 
+    Phone as LucidePhone, 
+    MapPin as LucideMapPin, 
+    Clock as LucideClock, 
+    CheckCircle2 as LucideCheckCircle2, 
+    QrCode as LucideQrCode, 
+    Bell as LucideBell 
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { Pagination } from '@/components/common/Pagination';
+import { VenueStaffBooking } from '../api/venue-staff-booking.api';
 
 export const DailySchedule = ({ venueId }: { venueId: string }) => {
-    const { bookings, isLoading, updateStatus } = useVenueSchedule(venueId);
-    
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentDate, setCurrentDate] = useState(new Date());
+    
+    const dateStr = currentDate.toISOString().split('T')[0];
+
+    const { bookings, meta, isLoading, updateStatus } = useVenueSchedule({
+        venue_id: venueId,
+        page,
+        limit,
+        search: searchTerm || undefined,
+        date: dateStr
+    });
     
     // Auto update current time
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -22,24 +44,21 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
         return () => clearInterval(timer);
     }, []);
 
-    const todayStr = currentDate.toISOString().split('T')[0];
-    const todayBookings = bookings.filter(b => b.booking_date === todayStr);
-
-    const filteredBookings = todayBookings
-        .filter(b => 
-            b.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            b.customer_phone.includes(searchTerm) ||
-            b.booking_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            b.court_name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => a.start_time.localeCompare(b.start_time));
-
     const handleCheckIn = (id: string) => {
         updateStatus({ id, status: 'CHECKED_IN' });
     };
 
     const handleCheckout = (id: string) => {
         updateStatus({ id, status: 'COMPLETED' });
+    };
+
+    const handlePageChange = (p: number) => {
+        setPage(p);
+    };
+
+    const handleLimitChange = (l: number) => {
+        setLimit(l);
+        setPage(1);
     };
 
     const getStatusStyles = (status: BookingStatus) => {
@@ -76,25 +95,27 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
                     <div>
                         <h2 className="font-extrabold text-slate-800 text-lg">Lịch Trình Hôm Nay</h2>
                         <div className="text-xs font-semibold text-slate-500 mt-1 flex gap-4">
-                            <span>Có <strong className="text-indigo-600">{todayBookings.length}</strong> ca đặt sân</span>
-                            <span>Đang đá: <strong className="text-emerald-600">{todayBookings.filter(b => b.status === 'CHECKED_IN').length}</strong></span>
-                            <span>Chờ tiếp đón: <strong className="text-blue-600">{todayBookings.filter(b => b.status === 'CONFIRMED').length}</strong></span>
+                            <span>Có <strong className="text-indigo-600">{meta?.total || 0}</strong> ca đặt sân</span>
+                            <span>Đang ở trang <strong className="text-blue-600">{page}/{meta?.totalPages || 1}</strong></span>
                         </div>
                     </div>
                 </div>
                 
                 <div className="flex items-center gap-3">
                     <div className="relative w-full md:w-64">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <LucideSearch className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                         <Input 
                             placeholder="Tìm SĐT, Tên KH, Mã..." 
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setPage(1);
+                            }}
                             className="bg-slate-50 border-slate-200 pl-9 h-10 w-full"
                         />
                     </div>
                     <Button variant="outline" className="h-10 px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
-                        <QrCode className="w-4 h-4 mr-2" /> Quét Mã
+                        <LucideQrCode className="w-4 h-4 mr-2" /> Quét Mã
                     </Button>
                 </div>
             </div>
@@ -103,28 +124,40 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-indigo-600" /> Lịch Đặt Trực Tiếp Tại Sân
+                        <LucideCalendar className="w-5 h-5 text-indigo-600" /> Lịch Đặt Ngày {currentDate.toLocaleDateString('vi-VN')}
                     </h3>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={() => setCurrentDate(new Date(currentDate.getTime() - 86400000))}>Hôm qua</Button>
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-bold text-indigo-700 bg-indigo-50 border-indigo-200" onClick={() => setCurrentDate(new Date())}>Hôm nay</Button>
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={() => setCurrentDate(new Date(currentDate.getTime() + 86400000))}>Ngày mai</Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={() => {
+                            setCurrentDate(new Date(currentDate.getTime() - 86400000));
+                            setPage(1);
+                        }}>Hôm qua</Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs font-bold text-indigo-700 bg-indigo-50 border-indigo-200" onClick={() => {
+                            setCurrentDate(new Date());
+                            setPage(1);
+                        }}>Hôm nay</Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={() => {
+                            setCurrentDate(new Date(currentDate.getTime() + 86400000));
+                            setPage(1);
+                        }}>Ngày mai</Button>
                     </div>
                 </div>
                 
                 {isLoading ? (
-                    <div className="p-16 text-center text-slate-500 font-medium">Đang tải lịch trình...</div>
-                ) : filteredBookings.length === 0 ? (
+                    <div className="p-16 text-center text-slate-500 font-medium tracking-wide">
+                         <div className="h-8 w-8 animate-spin rounded-full border-r-2 border-primary border-t-2 mx-auto mb-4"></div>
+                         Đang tải lịch trình...
+                    </div>
+                ) : bookings.length === 0 ? (
                     <div className="p-16 text-center bg-slate-50/50">
-                        <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                        <p className="text-slate-500 font-bold mb-1">Không có lịch nào được tìm thấy</p>
-                        <p className="text-slate-400 text-sm">Chưa có khách hàng đặt sân vào ngày này.</p>
+                        <LucideClock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-500 font-bold mb-1 text-lg">Hôm nay chưa có lịch đặt sân</p>
+                        <p className="text-slate-400 text-sm">Khi có khách đặt, thông tin sẽ xuất hiện tại đây.</p>
                     </div>
                 ) : (
+                    <>
                     <div className="divide-y divide-slate-100">
-                        {filteredBookings.map((booking) => {
+                        {bookings.map((booking: VenueStaffBooking) => {
                             const isPast = booking.status === 'COMPLETED' || booking.status === 'CANCELLED';
-                            const isNowOrFuture = booking.status === 'CONFIRMED' || booking.status === 'CHECKED_IN';
                             
                             return (
                                 <div key={booking.id} className={`p-4 flex flex-col md:flex-row gap-4 hover:bg-slate-50 transition-colors ${isPast ? 'opacity-70' : ''}`}>
@@ -132,10 +165,10 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
                                     <div className="md:w-48 shrink-0 flex flex-col md:border-r border-slate-100 pr-4 relative">
                                         <div className="flex items-center gap-2 font-black text-slate-900 text-lg tracking-tight">
                                             {booking.start_time} - {booking.end_time}
-                                            {booking.status === 'CHECKED_IN' && <span className="absolute -left-2 top-2 bottom-2 w-1 bg-emerald-500 rounded-r-md"></span>}
+                                            {booking.status === 'CHECKED_IN' && <span className="absolute -left-4 top-2 bottom-2 w-1.5 bg-emerald-500 rounded-r-md"></span>}
                                         </div>
                                         <div className="text-sm font-bold text-indigo-600 mt-1 flex items-center gap-1.5">
-                                            <MapPin className="w-3.5 h-3.5" /> {booking.court_name}
+                                            <LucideMapPin className="w-3.5 h-3.5" /> {booking.court_name}
                                         </div>
                                         <div className={`mt-2 inline-flex self-start px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${getStatusStyles(booking.status)}`}>
                                             {getStatusLabel(booking.status)}
@@ -150,16 +183,18 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
                                         </div>
                                         <div className="flex gap-4 mb-3">
                                             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-                                                <Phone className="w-4 h-4 text-slate-400" /> {booking.customer_phone}
+                                                <LucidePhone className="w-4 h-4 text-slate-400" /> {booking.customer_phone}
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-                                                <User className="w-4 h-4 text-slate-400" /> Đã trả: {booking.payment_status === 'PAID' ? 'Toàn bộ' : 'Chưa thu'}
+                                            <div className="text-sm font-semibold text-slate-600">
+                                                 Thanh toán: <span className={booking.payment_status === 'PAID' ? 'text-emerald-600' : 'text-amber-600'}>
+                                                    {booking.payment_status === 'PAID' ? 'Đã trả' : 'Tại sân'}
+                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* GHI CHÚ */}
-                                        <div className="text-xs bg-amber-50 text-amber-800 p-2 rounded-lg border border-amber-100 font-medium inline-block">
-                                            Tiền sân: <span className="font-bold">{booking.total_amount.toLocaleString()}đ</span>
+                                        <div className="text-xs bg-indigo-50 text-indigo-800 p-2 rounded-lg border border-indigo-100 font-medium inline-block">
+                                            Tổng tiền: <span className="font-bold">{(booking.total_amount || 0).toLocaleString()}đ</span>
                                         </div>
                                     </div>
 
@@ -170,38 +205,20 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
                                                 className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-10 shadow-md shadow-emerald-600/20"
                                                 onClick={() => handleCheckIn(booking.id)}
                                             >
-                                                <CheckCircle2 className="w-4 h-4 mr-2" /> Nhận Sân (Check-in)
+                                                <LucideCheckCircle2 className="w-4 h-4 mr-2" /> Nhận Sân
                                             </Button>
                                         )}
                                         {booking.status === 'CHECKED_IN' && (
-                                            <>
-                                                <Button 
-                                                    variant="outline" 
-                                                    className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold h-9 text-xs"
-                                                    onClick={() => toast.info('Chức năng bán nước/thêm dịch vụ sắp ra mắt.')}
-                                                >
-                                                    Thêm Dịch Vụ
-                                                </Button>
-                                                <Button 
-                                                    className="w-full bg-slate-800 hover:bg-slate-900 font-bold h-9 text-xs"
-                                                    onClick={() => handleCheckout(booking.id)}
-                                                >
-                                                    Thanh Toán & Trả Sân
-                                                </Button>
-                                            </>
-                                        )}
-                                        {booking.status === 'PENDING' && (
                                             <Button 
-                                                variant="outline"
-                                                className="w-full border-amber-200 text-amber-700 hover:bg-amber-50 font-bold justify-center"
-                                                onClick={() => toast.info('Xin hãy chuyển lịch này cho Quản lý phê duyệt.')}
+                                                className="w-full bg-slate-800 hover:bg-slate-900 font-bold h-10"
+                                                onClick={() => handleCheckout(booking.id)}
                                             >
-                                                <Bell className="w-4 h-4 mr-2" /> Báo Quản Lý
+                                                Trả Sân & Thanh Toán
                                             </Button>
                                         )}
                                         {booking.status === 'COMPLETED' && (
-                                            <div className="w-full flex justify-end text-xs font-bold text-slate-400 items-center gap-1">
-                                                <CheckCircle2 className="w-4 h-4 inline" /> Đã Hoàn Thành
+                                            <div className="w-full flex justify-end text-xs font-bold text-emerald-600 items-center gap-1">
+                                                <LucideCheckCircle2 className="w-4 h-4 inline" /> Hoàn Thành
                                             </div>
                                         )}
                                     </div>
@@ -209,14 +226,28 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
                             );
                         })}
                     </div>
+                    
+                    {meta && (
+                        <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+                            <Pagination
+                                currentPage={page}
+                                totalPages={meta.totalPages}
+                                onPageChange={handlePageChange}
+                                limit={limit}
+                                onLimitChange={handleLimitChange}
+                                totalItems={meta.total}
+                            />
+                        </div>
+                    )}
+                    </>
                 )}
             </div>
             
             <div className="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm flex gap-3">
-                <div className="shrink-0 mt-0.5"><Bell className="w-5 h-5 text-blue-600" /></div>
+                <div className="shrink-0 mt-0.5"><LucideBell className="w-5 h-5 text-blue-600" /></div>
                 <div>
                     <strong>Lưu ý dành cho Lễ Tân (Receptionist):</strong><br/>
-                    Hãy thực hiện thao tác <span className="font-bold underline text-blue-900">Nhận Sân (Check-in)</span> ngay khi khách có mặt và quét mã QR Code khai báo thành công, nhằm đảm bảo ghi nhận chuẩn thời điểm nhận sân trong hệ thống.
+                    Thực hiện <strong>Nhận Sân</strong> ngay khi khách đến để hệ thống ghi nhận thời gian phục vụ chính xác nhất.
                 </div>
             </div>
         </div>
