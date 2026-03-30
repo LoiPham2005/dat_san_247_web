@@ -194,10 +194,10 @@ export default function VenueGlobalSchedulePage({ params }: { params: { slug: st
                                 <div className="w-32 md:w-48 shrink-0 p-4 font-bold text-slate-400 uppercase tracking-widest text-xs border-r border-slate-200 flex items-center justify-center bg-slate-100">
                                     Sân \ Giờ
                                 </div>
-                                <div className="flex-1 flex text-xs font-bold text-slate-500">
+                                <div className="flex-1 flex text-[10px] font-bold text-slate-400">
                                     {timeSlots.map((time, idx) => (
-                                        <div key={idx} className="flex-1 min-w-[60px] border-r border-slate-200 py-3 flex items-center justify-center">
-                                            {time}
+                                        <div key={idx} className="flex-1 min-w-[60px] border-r border-slate-200 py-4 flex items-center justify-start relative">
+                                            <span className="absolute left-0 -translate-x-1/2 bg-slate-100 px-1 py-0.5 rounded shadow-sm z-10">{time}</span>
                                         </div>
                                     ))}
                                 </div>

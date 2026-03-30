@@ -8,12 +8,13 @@ import { Input } from '@/components/common/Input';
 import { Textarea } from '@/components/common/Textarea';
 import { OwnerVenue, VenueVerification, VenueOperatingHour, DayOfWeek } from '../api/owner-venue.api';
 import { useOwnerVenueDetail } from '../hooks/useOwnerVenue';
-import { ArrowLeft, MapPin, Building2, FileText, Clock, UploadCloud, Info, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Building2, FileText, Clock, UploadCloud, Info, CheckCircle2, AlertCircle, Trash2, Map as MapIcon, Navigation } from 'lucide-react';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { OwnerCourtPanel } from './OwnerCourtPanel';
 import { ConfirmDialog, ConfirmType } from '@/components/common/ConfirmDialog';
 import { TimePicker } from '@/components/common/TimePicker';
 import { ImageUploader } from '@/components/common/ImageUploader';
+import MapPickerModal from './MapPickerModal';
 
 const DAY_LABELS: Record<DayOfWeek, string> = {
     MONDAY: 'Thứ 2',
@@ -31,6 +32,7 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
     const { data: session } = useSession();
     const isStaff = (session?.user as any)?.role === 'venue_staff';
     const [activeTab, setActiveTab] = useState<'info' | 'verification' | 'hours' | 'courts'>('info');
+    const [isMapOpen, setIsMapOpen] = useState(false);
     const {
         updateVenue, isUpdating,
         verification, submitVerification, isSubmittingVerification,
@@ -118,12 +120,18 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                     'phone', 'email', 'fb_url', 'instagram_url', 'zalo_url', 'youtube_url',
                     'thumbnail_url', 'auto_accept_bookings', 'min_booking_hours', 
                     'max_booking_hours', 'min_booking_before_hours', 'cancellation_before_hours',
-                    'vat_rate', 'commission_rate'
+                    'vat_rate', 'commission_rate', 'latitude', 'longitude'
                 ];
 
                 updatableFields.forEach(field => {
-                    if (infoData[field as keyof typeof infoData] !== undefined) {
-                        updatePayload[field] = infoData[field as keyof typeof infoData];
+                    const value = infoData[field as keyof typeof infoData];
+                    if (value !== undefined) {
+                        // Cast numeric fields to numbers to satisfy backend class-validator @IsNumber()
+                        if (['vat_rate', 'commission_rate', 'latitude', 'longitude', 'min_booking_hours', 'max_booking_hours', 'min_booking_before_hours', 'cancellation_before_hours'].includes(field)) {
+                            updatePayload[field] = value === null || value === '' ? 0 : Number(value);
+                        } else {
+                            updatePayload[field] = value;
+                        }
                     }
                 });
 
@@ -190,6 +198,11 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
         ));
     };
 
+    const handleMapSave = (lat: number, lng: number) => {
+        setInfoData({ ...infoData, latitude: lat, longitude: lng });
+        setIsMapOpen(false);
+    };
+
     return (
         <div className="space-y-6">
             <ConfirmDialog
@@ -201,6 +214,14 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                 onClose={() => setConfirm(prev => ({ ...prev, isOpen: false }))}
                 onConfirm={confirm.onConfirm}
                 loading={isUpdating || isSubmittingVerification || isUpdatingHoursPending || isDeleting}
+            />
+
+            <MapPickerModal
+                isOpen={isMapOpen}
+                initialLat={infoData.latitude}
+                initialLng={infoData.longitude}
+                onClose={() => setIsMapOpen(false)}
+                onSave={handleMapSave}
             />
 
             <div className="flex items-center justify-between">
@@ -262,8 +283,23 @@ export const OwnerVenueTabs = ({ venue, onBack }: { venue: OwnerVenue, onBack: (
                                     <Input value={infoData.name} onChange={e => setInfoData({ ...infoData, name: e.target.value })} className="h-11 font-semibold" />
                                 </div>
                                 <div className="space-y-1.5 col-span-2">
-                                    <label className="text-xs font-bold text-slate-700 uppercase">Địa chỉ cụ thể <span className="text-red-500">*</span></label>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-slate-700 uppercase">Địa chỉ cụ thể <span className="text-red-500">*</span></label>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-7 text-[10px] font-black uppercase text-primary bg-primary/5 hover:bg-primary/10 rounded-lg px-2"
+                                            onClick={() => setIsMapOpen(true)}
+                                        >
+                                            <MapIcon className="w-3 h-3 mr-1" /> Chọn trên bản đồ
+                                        </Button>
+                                    </div>
                                     <Input value={infoData.address} onChange={e => setInfoData({ ...infoData, address: e.target.value })} className="h-11 border-slate-300" />
+                                    {infoData.latitude && infoData.longitude && (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 italic">
+                                            <Navigation className="w-3 h-3" /> Tọa độ: {infoData.latitude.toFixed(5)}, {infoData.longitude.toFixed(5)}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-slate-700 uppercase">Thành Phố</label>

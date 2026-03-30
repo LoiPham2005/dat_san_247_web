@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
+import { DatePicker } from '@/components/common/DatePicker';
 import { useVenueSchedule } from '../hooks/useVenueSchedule';
 import { BookingStatus } from '@/features/owner/api/owner-booking.api';
 import { 
@@ -20,12 +21,17 @@ import {
 import { toast } from 'sonner';
 import { Pagination } from '@/components/common/Pagination';
 import { VenueStaffBooking } from '../api/venue-staff-booking.api';
+import { format, isSameDay } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { cn } from '@/lib/utils/cn';
+import { QRScannerDialog } from './QRScannerDialog';
 
 export const DailySchedule = ({ venueId }: { venueId: string }) => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
     
     const dateStr = currentDate.toISOString().split('T')[0];
 
@@ -114,28 +120,72 @@ export const DailySchedule = ({ venueId }: { venueId: string }) => {
                             className="bg-slate-50 border-slate-200 pl-9 h-10 w-full"
                         />
                     </div>
-                    <Button variant="outline" className="h-10 px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setIsQRScannerOpen(true)}
+                        className="h-10 px-3 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-bold"
+                    >
                         <LucideQrCode className="w-4 h-4 mr-2" /> Quét Mã
                     </Button>
                 </div>
             </div>
 
+            <QRScannerDialog 
+                isOpen={isQRScannerOpen}
+                onClose={() => setIsQRScannerOpen(false)}
+                onScanSuccess={(decodedText) => {
+                    setIsQRScannerOpen(false);
+                    // Search and check-in
+                    const foundBooking = bookings.find(b => b.booking_code === decodedText || b.id === decodedText);
+                    if (foundBooking) {
+                        if (foundBooking.status === 'CONFIRMED') {
+                            handleCheckIn(foundBooking.id);
+                            toast.success(`Check-in thành công: ${foundBooking.customer_name}`);
+                        } else {
+                            toast.info(`Lịch đặt đang ở trạng thái: ${foundBooking.status}`);
+                        }
+                    } else {
+                        // If not in current list, just fill search term for user to find manually
+                        setSearchTerm(decodedText);
+                        toast.info(`Tìm kiếm: ${decodedText}`);
+                    }
+                }}
+            />
+
             {/* DANH SÁCH LỊCH TRÌNH */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                        <LucideCalendar className="w-5 h-5 text-indigo-600" /> Lịch Đặt Ngày {currentDate.toLocaleDateString('vi-VN')}
+                <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h3 className="font-extrabold text-slate-800 flex items-center gap-2.5">
+                        <LucideCalendar className="w-5 h-5 text-indigo-600" /> 
+                        LịCH TRÌNH 
+                        <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg text-xs font-black uppercase">
+                            {format(currentDate, 'iiii, dd/MM', { locale: vi })}
+                        </span>
                     </h3>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={() => {
+                    
+                    <div className="flex flex-wrap items-center gap-2">
+                        <DatePicker 
+                            date={currentDate} 
+                            onChange={(d) => {
+                                setCurrentDate(d);
+                                setPage(1);
+                            }}
+                        />
+                        <div className="h-4 w-px bg-slate-200 mx-1 hidden md:block"></div>
+                        <Button variant="outline" size="sm" className="h-9 px-4 text-xs font-bold border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50" onClick={() => {
                             setCurrentDate(new Date(currentDate.getTime() - 86400000));
                             setPage(1);
-                        }}>Hôm qua</Button>
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-bold text-indigo-700 bg-indigo-50 border-indigo-200" onClick={() => {
+                        }}>Ngày trước</Button>
+                        <Button variant="outline" size="sm" className={cn(
+                            "h-9 px-4 text-xs font-black transition-all",
+                            isSameDay(currentDate, new Date()) 
+                                ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200" 
+                                : "text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100"
+                        )} onClick={() => {
                             setCurrentDate(new Date());
                             setPage(1);
                         }}>Hôm nay</Button>
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold" onClick={() => {
+                        <Button variant="outline" size="sm" className="h-9 px-4 text-xs font-bold border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50" onClick={() => {
                             setCurrentDate(new Date(currentDate.getTime() + 86400000));
                             setPage(1);
                         }}>Ngày mai</Button>

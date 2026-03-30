@@ -183,9 +183,11 @@ export const CustomerVenueSearch = () => {
                         <h2 className="text-xl font-bold text-slate-800">
                             {keyword ? `Kết quả tìm kiếm cho "${keyword}"` : "Sân Thể Thao Đề Xuất Cho Bạn"}
                         </h2>
-                        <Button variant="outline" className="h-9 px-3 border-slate-200 hidden lg:flex rounded-xl font-bold text-slate-600 hover:text-slate-900">
-                            <Map className="w-4 h-4 mr-2" /> Xem trên Bản Đồ
-                        </Button>
+                        <Link href="/venues/map">
+                            <Button variant="outline" className="h-9 px-3 border-slate-200 hidden lg:flex rounded-xl font-bold text-slate-600 hover:text-slate-900">
+                                <Map className="w-4 h-4 mr-2" /> Xem trên Bản Đồ
+                            </Button>
+                        </Link>
                         <Button variant="outline" className="h-9 w-9 p-0 border-slate-200 lg:hidden flex items-center justify-center rounded-xl text-slate-600">
                             <Filter className="w-4 h-4" />
                         </Button>
@@ -205,7 +207,7 @@ export const CustomerVenueSearch = () => {
                             {venues?.map((venue: any) => (
                                 <VenueCard 
                                     key={venue.id} 
-                                    venue={{...venue, rating: venue.average_rating, total_reviews: venue.review_count}} 
+                                    venue={{...venue, rating: venue.rating, total_reviews: venue.total_reviews}} 
                                     isFavorite={favorites.some((f: any) => f.venue_id === venue.id)}
                                 />
                             ))}

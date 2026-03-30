@@ -19,6 +19,8 @@ export interface OwnerVenue {
     fb_url: string | null;
     instagram_url: string | null;
     rejection_reason: string | null;
+    latitude: number | null;
+    longitude: number | null;
 }
 
 export interface VenueVerification {
