@@ -118,8 +118,28 @@ Dành cho người quản lý cơ sở thể thao. Các API này yêu cầu Head
 ### 🎒 8. Venue Staff (Lễ tân - Tại sân)
 Dành cho nhân viên trực tại sân. Yêu cầu Role `STAFF` hoặc `MANAGER`.
 
+#### 📊 8.1. Dashboard & Thống kê
 | Endpoint | Method | Mô tả | Chi tiết (Body/Query) |
 | :--- | :--- | :--- | :--- |
-| `/bookings/venue-staff/schedule` | `GET` | **Lịch trình ca làm việc** | Params: `venue_id`, `date`, `search` (Tìm SĐT/Mã QR) |
-| `/bookings/venue-staff/{id}/status` | `PATCH` | **Check-in / Trả sân** | `{ status: "CHECKED_IN" }` hoặc `"COMPLETED"` |
-| `/owner/venues/dashboard/stats` | `GET` | Thống kê nhanh ca làm | Số ca check-in, doanh thu trong ngày |
+| `/owner/venues/dashboard/stats` | `GET` | Thống kê nhanh ca làm | Số ca check-in, doanh thu ngày, lịch chờ duyệt |
+
+#### 📅 8.2. Check-in & Lịch trình
+| Endpoint | Method | Mô tả | Chi tiết (Body/Query) |
+| :--- | :--- | :--- | :--- |
+| `/bookings/venue-staff/schedule` | `GET` | Lấy danh sách lịch đặt (ca trực)| Query: `venue_id`, `date`, `search`, `status` |
+| `/bookings/venue-staff/{id}/status` | `PATCH` | Cập nhật Check-in / Hoàn thành | Body: `{ status: "CHECKED_IN" / "COMPLETED" }` |
+
+#### 👥 8.3. Staff Management (Cho Manager)
+| Endpoint | Method | Mô tả | Chi tiết (Body/Query) |
+| :--- | :--- | :--- | :--- |
+| `/venue-staff/owner/{vId}` | `GET` | Danh sách nhân viên tại sân | Lấy tất cả nhân viên của cơ sở |
+| `/venue-staff/owner/invite` | `POST` | Mời nhân viên mới | Body: `{ email, venue_id, role }` |
+| `/venue-staff/owner/{id}/role` | `PATCH` | Cập nhật quyền nhân viên | Body: `{ role: "MANAGER/STAFF..." }` |
+| `/venue-staff/owner/{id}/status`| `PATCH` | Khóa/Mở khóa tài khoản | Body: `{ is_active: true/false }` |
+| `/venue-staff/invite/{token}/accept` | `POST` | Chấp nhận lời mời | API công khai xác thực qua Token email |
+
+#### ⭐ 8.4. Reviews (Đánh giá & Phản hồi)
+| Endpoint | Method | Mô tả | Chi tiết (Body/Query) |
+| :--- | :--- | :--- | :--- |
+| `/v1/owner/reviews` | `GET` | Lấy danh sách đánh giá | Query: `venue_id` |
+| `/v1/owner/reviews/{id}/reply` | `PATCH` | Phản hồi đánh giá của khách | Body: `{ reply_comment: "..." }` |
