@@ -20,6 +20,7 @@ export interface OwnerPayoutBankAccount {
     bank_code: string;
     account_number: string;
     account_name: string;
+    qr_code_url?: string;
     is_default: boolean;
     created_at: string;
 }

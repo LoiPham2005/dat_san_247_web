@@ -1,16 +1,25 @@
 "use client";
 
 import React from 'react';
-import { Bell, Search, User, LogOut, Settings } from 'lucide-react';
+import { Search, User, LogOut, Settings, Menu, PanelLeftOpen } from 'lucide-react';
 import { useSession, signOut } from "next-auth/react";
+import { NotificationBell } from '@/features/notification';
+import { useSidebar } from '@/components/providers/SidebarProvider';
 
 export const VenueStaffHeader = () => {
     const { data: session } = useSession();
+    const { isCollapsed, toggleSidebar } = useSidebar();
     const user = session?.user;
 
     return (
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-50">
-            <div className="flex items-center flex-1 max-w-md">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm transition-all duration-300">
+            <div className="flex items-center gap-4 flex-1">
+                <button 
+                    onClick={toggleSidebar}
+                    className="p-1 px-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200"
+                >
+                    {isCollapsed ? <PanelLeftOpen className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
                 <div className="relative w-full">
                     <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
@@ -22,10 +31,7 @@ export const VenueStaffHeader = () => {
             </div>
 
             <div className="flex items-center gap-4">
-                <button className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center relative transition-colors">
-                    <Bell className="w-5 h-5 text-slate-600" />
-                    <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white animate-pulse"></span>
-                </button>
+                <NotificationBell />
                 
                 <div className="h-4 w-px bg-slate-200 mx-1"></div>
                 

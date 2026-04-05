@@ -1,1 +1,3 @@
-// src/features/notification/index.ts
+export * from './components/NotificationBell';
+export * from './hooks/useNotificationsList';
+export * from './api/notification.api';

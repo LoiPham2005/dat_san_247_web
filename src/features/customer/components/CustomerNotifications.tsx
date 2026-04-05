@@ -22,8 +22,11 @@ export const CustomerNotifications = () => {
 
     const getIcon = (type: NotificationType) => {
         switch (type) {
-            case 'PAYMENT': return <CreditCard className="w-5 h-5 text-emerald-600" />;
-            case 'BOOKING': return <CalendarRange className="w-5 h-5 text-indigo-600" />;
+            case 'PAYMENT':
+            case 'PAYMENT_SUCCESS': return <CreditCard className="w-5 h-5 text-emerald-600" />;
+            case 'BOOKING':
+            case 'BOOKING_CONFIRMED': return <CalendarRange className="w-5 h-5 text-indigo-600" />;
+            case 'BOOKING_CANCELLED': return <CalendarRange className="w-5 h-5 text-rose-600" />;
             case 'PROMOTION': return <TicketPercent className="w-5 h-5 text-rose-600" />;
             case 'REVIEW': return <Info className="w-5 h-5 text-amber-600" />;
             default: return <Bell className="w-5 h-5 text-slate-600" />;
@@ -32,8 +35,11 @@ export const CustomerNotifications = () => {
 
     const getBgColor = (type: NotificationType) => {
         switch (type) {
-            case 'PAYMENT': return 'bg-emerald-100';
-            case 'BOOKING': return 'bg-indigo-100';
+            case 'PAYMENT':
+            case 'PAYMENT_SUCCESS': return 'bg-emerald-100';
+            case 'BOOKING':
+            case 'BOOKING_CONFIRMED': return 'bg-indigo-100';
+            case 'BOOKING_CANCELLED': return 'bg-rose-100';
             case 'PROMOTION': return 'bg-rose-100';
             case 'REVIEW': return 'bg-amber-100';
             default: return 'bg-slate-100';

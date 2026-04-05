@@ -6,15 +6,10 @@ import { OwnerPromotionManagement } from '@/features/owner/components/OwnerPromo
 import { Button } from '@/components/common/Button';
 import { Store, Tag } from 'lucide-react';
 
-export default function OwnerPromotionsPage() {
-    const { venues, isLoading } = useOwnerVenues();
-    const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+import { useOwnerFacility } from '@/features/owner/context/OwnerFacilityContext';
 
-    useEffect(() => {
-        if (venues.length > 0 && !selectedVenueId) {
-            setSelectedVenueId(venues[0].id);
-        }
-    }, [venues, selectedVenueId]);
+export default function OwnerPromotionsPage() {
+    const { venues, isLoading, selectedVenueId, setSelectedVenueId } = useOwnerFacility();
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -26,25 +21,6 @@ export default function OwnerPromotionsPage() {
                     <p className="text-sm text-slate-500 font-medium mt-1">Quản lý và theo dõi hiệu quả các chương trình voucher, mã giảm giá.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-slate-500 uppercase">Cơ Sở:</span>
-                    <select 
-                        value={selectedVenueId || ''} 
-                        onChange={(e) => setSelectedVenueId(e.target.value)}
-                        className="h-10 px-4 pr-8 rounded-xl border border-slate-200 bg-white font-bold text-slate-800 outline-none focus:border-emerald-500"
-                        disabled={isLoading || venues.length === 0}
-                    >
-                        {isLoading ? (
-                            <option value="">Đang tải...</option>
-                        ) : venues.length === 0 ? (
-                            <option value="">Chưa có cơ sở nào</option>
-                        ) : (
-                            venues.map(v => (
-                                <option key={v.id} value={v.id}>{v.name}</option>
-                            ))
-                        )}
-                    </select>
-                </div>
             </div>
 
             {venues.length === 0 && !isLoading ? (

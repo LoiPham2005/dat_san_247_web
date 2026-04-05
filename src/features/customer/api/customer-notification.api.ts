@@ -1,4 +1,6 @@
-export type NotificationType = 'SYSTEM' | 'BOOKING' | 'PAYMENT' | 'PROMOTION' | 'REVIEW';
+import apiClient from '@/lib/api/axios';
+
+export type NotificationType = 'SYSTEM' | 'BOOKING' | 'PAYMENT' | 'PROMOTION' | 'REVIEW' | 'BOOKING_CONFIRMED' | 'BOOKING_CANCELLED' | 'PAYMENT_SUCCESS';
 export type NotificationChannel = 'IN_APP' | 'EMAIL' | 'PUSH';
 export type NotificationReferenceType = 'BOOKING' | 'PAYMENT' | 'REVIEW';
 
@@ -21,73 +23,35 @@ export interface NotificationSettings {
     notif_system: boolean;
 }
 
-let mockNotifications: CustomerNotification[] = [
-    {
-        id: 'NOTIF-1',
-        type: 'PAYMENT',
-        channel: 'IN_APP',
-        title: 'Nạp tiền thành công',
-        message: 'Bạn đã nạp thành công 2,000,000đ vào ví DatSan247. Số dư hiện tại là 2,550,000đ.',
-        reference_id: 'TXN-002',
-        reference_type: 'PAYMENT',
-        is_read: false,
-        created_at: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-        id: 'NOTIF-2',
-        type: 'BOOKING',
-        channel: 'IN_APP',
-        title: 'Nhắc nhở lịch đá bóng',
-        message: 'Bạn có lịch đá bóng tại Sân Bóng Vipe Cầu Giấy lúc 19:00 hôm nay. Vui lòng đến sớm 15 phút để check-in nhé!',
-        reference_id: 'BK-12345',
-        reference_type: 'BOOKING',
-        is_read: false,
-        created_at: new Date(Date.now() - 7200000).toISOString()
-    },
-    {
-        id: 'NOTIF-3',
-        type: 'PROMOTION',
-        channel: 'IN_APP',
-        title: 'Tặng bạn mã giảm giá 50K',
-        message: 'DatSan247 tặng bạn mã CHAOHE2026 giảm ngay 50K cho lần đặt sân tiếp theo. Nhanh tay kẻo lỡ!',
-        reference_id: 'PR-102',
-        reference_type: null,
-        is_read: true,
-        created_at: new Date(Date.now() - 86400000 * 2).toISOString()
-    }
-];
-
-let mockSettings: NotificationSettings = {
-    notif_booking: true,
-    notif_payment: true,
-    notif_promotion: true,
-    notif_system: true,
-};
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const customerNotificationApi = {
-    getNotifications: async (): Promise<CustomerNotification[]> => {
-        await delay(400);
-        return mockNotifications;
+    getNotifications: async (params?: { limit?: number; offset?: number }): Promise<CustomerNotification[]> => {
+        const response = await apiClient.get('/notifications', { params });
+        return response.data?.data || [];
     },
     markAsRead: async (id: string): Promise<boolean> => {
-        await delay(200);
-        mockNotifications = mockNotifications.map(n => n.id === id ? { ...n, is_read: true } : n);
+        await apiClient.post(`/notifications/${id}/read`);
         return true;
     },
     markAllAsRead: async (): Promise<boolean> => {
-        await delay(300);
-        mockNotifications = mockNotifications.map(n => ({ ...n, is_read: true }));
+        await apiClient.post('/notifications/read-all');
         return true;
     },
     getSettings: async (): Promise<NotificationSettings> => {
-        await delay(300);
-        return mockSettings;
+        // Nếu backend chưa có endpoint này, em để mặc định cho bác nhé
+        try {
+            const response = await apiClient.get('/notifications/settings');
+            return response.data?.data;
+        } catch (error) {
+            return {
+                notif_booking: true,
+                notif_payment: true,
+                notif_promotion: true,
+                notif_system: true,
+            };
+        }
     },
     updateSettings: async (settings: NotificationSettings): Promise<NotificationSettings> => {
-        await delay(500);
-        mockSettings = { ...settings };
-        return mockSettings;
+        const response = await apiClient.patch('/notifications/settings', settings);
+        return response.data?.data;
     }
 };

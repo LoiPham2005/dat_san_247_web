@@ -7,6 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Store, User, LogOut, LayoutDashboard, History, Settings, Bell, Wallet, Star, MessagesSquare, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { usePathname } from 'next/navigation';
+import { NotificationBell } from '@/features/notification';
 
 export const CustomerHeader = () => {
     const { data: session } = useSession();
@@ -46,10 +47,8 @@ export const CustomerHeader = () => {
                             <Link href="/wallet" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 font-bold border border-orange-100 hover:bg-orange-100 transition-colors text-xs">
                                 <Wallet className="w-3.5 h-3.5" /> 0 ₫
                             </Link>
-                            <Link href="/notifications" className="relative text-slate-500 hover:text-primary transition-colors">
-                                <Bell className="w-5 h-5" />
-                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white"></span>
-                            </Link>
+                            
+                            <NotificationBell />
 
                             <div className="relative group">
                                 <button className="flex items-center gap-2 pl-2 pr-1 h-10 rounded-full border border-slate-200 bg-white hover:border-primary/50 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20">

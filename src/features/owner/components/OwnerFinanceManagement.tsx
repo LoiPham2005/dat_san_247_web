@@ -7,6 +7,7 @@ import { Input } from '@/components/common/Input';
 import { useOwnerPayouts, useOwnerBankAccounts, useOwnerWallet, useOwnerFinancialStats } from '../hooks/useOwnerFinance';
 import { Wallet, Landmark, ArrowUpCircle, Clock, CheckCircle2, XCircle, TrendingUp, History, CreditCard, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImageUploader } from '@/components/common/ImageUploader';
 
 export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
     const { payouts, requestPayout, isRequesting, isLoading: isPayoutsLoading } = useOwnerPayouts();
@@ -14,12 +15,13 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
     const { data: wallet, isLoading: isWalletLoading } = useOwnerWallet();
     const { stats, commissions, isLoadingStats, isLoadingCommissions } = useOwnerFinancialStats(venueId);
 
-    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PAYOUT' | 'BANKS'>('OVERVIEW');
+    const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PAYOUT' | 'BANKS' | 'MAINTENANCE'>('OVERVIEW');
 
     // Add Bank Form
     const [bankName, setBankName] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
 
     // Payout Form
     const [payoutAmount, setPayoutAmount] = useState<number | ''>('');
@@ -30,8 +32,15 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
             toast.error("Vui lòng điền đủ thông tin ngân hàng.");
             return;
         }
-        addAccount({ bank_name: bankName, bank_code: bankName, account_number: accountNumber, account_name: accountName, is_default: accounts.length === 0 });
-        setBankName(''); setAccountNumber(''); setAccountName('');
+        addAccount({ 
+            bank_name: bankName, 
+            bank_code: bankName, 
+            account_number: accountNumber, 
+            account_name: accountName, 
+            qr_code_url: qrCodeUrl,
+            is_default: accounts.length === 0 
+        });
+        setBankName(''); setAccountNumber(''); setAccountName(''); setQrCodeUrl('');
     };
 
     const handlePayoutDesc = () => {
@@ -68,6 +77,12 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
                     onClick={() => setActiveTab('BANKS')}
                 >
                     <Landmark className="w-4 h-4" /> Tài Khoản Ngân Hàng
+                </button>
+                <button 
+                    className={`px-4 py-3 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'MAINTENANCE' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                    onClick={() => setActiveTab('MAINTENANCE')}
+                >
+                    <CreditCard className="w-4 h-4" /> Phí Duy Trì Hệ Thống
                 </button>
             </div>
 
@@ -260,24 +275,37 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
                 <div className="space-y-6 animate-in slide-in-from-bottom-2 fade-in">
                     <Card className="p-6">
                         <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">
-                            <CreditCard className="w-5 h-5 text-emerald-600" /> Thêm Tài Khoản Ngân Hàng Mới
+                            <CreditCard className="w-5 h-5 text-emerald-600" /> Thêm Tài Khoản Ngân Hàng Nhận Tiền
                         </h3>
-                        <div className="flex flex-col md:flex-row gap-4 items-end">
-                            <div className="flex-1 w-full relative">
-                                <label className="text-xs font-bold text-slate-500 block mb-1.5">Ngân Hàng <span className="text-rose-500">*</span></label>
-                                <Input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="VD: Vietcombank, Techcombank..." className="w-full" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                            <div className="md:col-span-2 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="w-full relative">
+                                        <label className="text-xs font-bold text-slate-500 block mb-1.5">Ngân Hàng <span className="text-rose-500">*</span></label>
+                                        <Input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="VD: MBBank, VCB..." className="w-full" />
+                                    </div>
+                                    <div className="w-full relative">
+                                        <label className="text-xs font-bold text-slate-500 block mb-1.5">Số Tài Khoản <span className="text-rose-500">*</span></label>
+                                        <Input value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder="Nhập số tài khoản" className="w-full" />
+                                    </div>
+                                </div>
+                                <div className="w-full relative">
+                                    <label className="text-xs font-bold text-slate-500 block mb-1.5">Tên Chủ Tài Khoản <span className="text-rose-500">*</span></label>
+                                    <Input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="VD: NGUYEN VAN A" className="w-full uppercase font-black" />
+                                </div>
+                                <Button onClick={handleAddBank} disabled={isAdding} className="h-11 px-6 font-black bg-slate-900 w-full shrink-0 mt-2">
+                                    {isAdding ? 'Đang Thêm...' : 'Lưu Tài Khoản Nhận Tiền'}
+                                </Button>
                             </div>
-                            <div className="flex-1 w-full relative">
-                                <label className="text-xs font-bold text-slate-500 block mb-1.5">Số Tài Khoản <span className="text-rose-500">*</span></label>
-                                <Input value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder="Nhập số tài khoản" className="w-full" />
+                            <div className="md:col-span-1">
+                                <label className="text-xs font-bold text-slate-500 block mb-1.5">Mã QR Thanh Toán (Tùy chọn)</label>
+                                <ImageUploader 
+                                    value={qrCodeUrl}
+                                    onChange={setQrCodeUrl}
+                                    title="Tải ảnh QR"
+                                    description="Ảnh QR ngân hàng của bạn"
+                                />
                             </div>
-                            <div className="flex-1 w-full relative">
-                                <label className="text-xs font-bold text-slate-500 block mb-1.5">Tên Chủ Tài Khoản <span className="text-rose-500">*</span></label>
-                                <Input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="VD: NGUYEN VAN A" className="w-full uppercase" />
-                            </div>
-                            <Button onClick={handleAddBank} disabled={isAdding} className="h-11 px-6 font-bold bg-emerald-600 w-full md:w-auto shrink-0">
-                                {isAdding ? 'Đang Thêm...' : 'Lưu Tài Khoản'}
-                            </Button>
                         </div>
                     </Card>
 
@@ -298,9 +326,16 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
                                             </div>
                                             <CreditCard className="w-6 h-6 text-slate-500/50" />
                                         </div>
-                                        <div>
-                                            <div className="font-mono text-xl tracking-[0.2em] mb-2">{acc.account_number}</div>
-                                            <div className="font-bold uppercase text-slate-400 tracking-wider text-sm">{acc.account_name}</div>
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <div className="font-mono text-xl tracking-[0.2em] mb-2">{acc.account_number}</div>
+                                                <div className="font-bold uppercase text-slate-400 tracking-wider text-sm">{acc.account_name}</div>
+                                            </div>
+                                            {acc.qr_code_url && (
+                                                <div className="bg-white p-1 rounded-lg w-16 h-16 shrink-0 shadow-lg group-hover:scale-150 transition-transform origin-bottom-right">
+                                                    <img src={acc.qr_code_url} alt="QR" className="w-full h-full object-contain" />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
@@ -312,6 +347,58 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
                             ))
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* TAB MAINTENANCE */}
+            {activeTab === 'MAINTENANCE' && (
+                <div className="space-y-6 animate-in slide-in-from-bottom-2 fade-in">
+                    <Card className="p-8 border-2 border-emerald-500 bg-emerald-50/10 relative overflow-hidden max-w-3xl mx-auto shadow-2xl">
+                        <div className="absolute right-[-50px] top-[-50px] bg-emerald-500/5 w-64 h-64 rounded-full"></div>
+                        <div className="relative z-10 flex flex-col items-center gap-8 text-center">
+                            <div className="space-y-2">
+                                <h2 className="text-3xl font-black text-emerald-950 uppercase tracking-tight">Thanh Toán Phí Duy Trì</h2>
+                                <p className="text-slate-600 font-bold">Vui lòng quét mã QR bên dưới để gia hạn thời gian hoạt động của sân.</p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-[2rem] shadow-[0_20px_50px_rgba(16,185,129,0.15)] border-4 border-emerald-400/20">
+                                <img 
+                                    src={`https://img.vietqr.io/image/MB-0964175396-compact.png?amount=500000&addInfo=PAYMENT%20MAINTENANCE%20${venueId}&accountName=DAT%20SAN%20247`}
+                                    alt="VietQR Maintenance Fee"
+                                    className="w-64 h-64 object-contain"
+                                />
+                                <div className="mt-4 bg-emerald-600 text-white py-2 px-4 rounded-xl font-black text-sm tracking-widest uppercase">
+                                    Mã VietQR Động
+                                </div>
+                            </div>
+
+                            <div className="w-full space-y-3 max-w-sm">
+                                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-emerald-100">
+                                    <span className="text-slate-500 font-bold text-sm">Gói duy trì:</span>
+                                    <span className="text-emerald-800 font-black">30 Ngày Hoạt Động</span>
+                                </div>
+                                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm border border-emerald-100">
+                                    <span className="text-slate-500 font-bold text-sm">Số tiền nộp:</span>
+                                    <span className="text-emerald-600 font-black text-xl">500,000 đ</span>
+                                </div>
+                                <div className="p-4 bg-emerald-900 text-emerald-100 rounded-xl text-center">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Nội dung chuyển khoản</p>
+                                    <p className="font-black text-lg mt-1 tracking-widest">PMT {venueId.substring(0,8).toUpperCase()}</p>
+                                </div>
+                            </div>
+
+                            <Button 
+                                className="w-full max-w-sm h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                onClick={() => {
+                                    toast.success("Hệ thống đã ghi nhận yêu cầu xác minh. Kết quả sẽ được gửi về Email của bạn sau 1-5 phút!");
+                                }}
+                            >
+                                Tôi Đã Chuyển Khoản Xong
+                            </Button>
+
+                            <p className="text-xs text-slate-400 font-medium">Bạn gặp khó khăn khi thanh toán? <a href="/contact" className="text-emerald-600 underline">Liên hệ hỗ trợ 24/7</a></p>
+                        </div>
+                    </Card>
                 </div>
             )}
         </div>

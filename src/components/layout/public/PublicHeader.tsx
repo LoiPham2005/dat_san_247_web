@@ -4,13 +4,14 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/common/Button';
 import { 
-    Menu, X, Search, Bell, User, History, LogOut, Wallet, 
+    Menu, X, Search, User, History, LogOut, Wallet, 
     Heart, Star, Store, MapPin, Calendar, LayoutDashboard, 
     MessagesSquare, ChevronDown, Shield, LogIn, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from 'next/navigation';
+import { NotificationBell } from '@/features/notification';
 
 export const PublicHeader = () => {
     const { data: session } = useSession();
@@ -67,102 +68,106 @@ export const PublicHeader = () => {
                             </Link>
                         </>
                     ) : (
-                        <div className="relative group ml-2">
-                            <button className="flex items-center gap-2 pl-2 pr-1 h-10 rounded-full border border-slate-200 bg-white hover:border-primary/50 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                <div className="text-sm font-bold text-slate-700 hidden sm:block max-w-[120px] truncate">
-                                    {user.name || 'Người dùng'}
-                                </div>
-                                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                                    {user.image ? (
-                                        <img src={user.image} alt={user.name || ''} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <User className="w-4 h-4 text-primary" />
-                                    )}
-                                </div>
-                            </button>
+                        <div className="flex items-center gap-3">
+                            <NotificationBell />
                             
-                            {/* Dropdown Menu */}
-                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right overflow-hidden p-1.5 z-50">
-                                <div className="px-3 py-3 border-b border-slate-100 mb-1 bg-slate-50/50">
-                                    <div className="font-bold text-slate-800 truncate">{user.name}</div>
-                                    <div className="text-xs text-slate-500 truncate font-medium">{user.email}</div>
-                                </div>
+                            <div className="relative group">
+                                <button className="flex items-center gap-2 pl-2 pr-1 h-10 rounded-full border border-slate-200 bg-white hover:border-primary/50 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                    <div className="text-sm font-bold text-slate-700 hidden sm:block max-w-[120px] truncate">
+                                        {user.name || 'Người dùng'}
+                                    </div>
+                                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                                        {user.image ? (
+                                            <img src={user.image} alt={user.name || ''} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User className="w-4 h-4 text-primary" />
+                                        )}
+                                    </div>
+                                </button>
                                 
-                                {/* Links based on Role */}
-                                <div className="space-y-0.5">
-                                    {(user as any).role === 'super_admin' || (user as any).role === 'admin' ? (
-                                        <>
-                                            <Link href="/admin/dashboard" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
-                                                <Settings className="w-4 h-4 mr-3 text-slate-400" /> Bảng điều khiển Admin
-                                            </Link>
-                                            <Link href="/admin/venues" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
-                                                <Store className="w-4 h-4 mr-3 text-slate-400" /> Quản lý Sân bóng
-                                            </Link>
-                                            <Link href="/admin/support" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
-                                                <MessagesSquare className="w-4 h-4 mr-3 text-slate-400" /> Hỗ trợ & Kiểm duyệt
-                                            </Link>
-                                        </>
-                                    ) : (user as any).role === 'staff' ? (
-                                        <>
-                                            <Link href="/staff/lookup" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
-                                                <Search className="w-4 h-4 mr-3 text-slate-400" /> Tra cứu & Phục vụ
-                                            </Link>
-                                            <Link href="/staff/moderation" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
-                                                <MessagesSquare className="w-4 h-4 mr-3 text-slate-400" /> Kiểm duyệt nội dung
-                                            </Link>
-                                        </>
-                                    ) : (user as any).role === 'owner' ? (
-                                        <>
-                                            <Link href="/owner/venues" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
-                                                <Store className="w-4 h-4 mr-3 text-slate-400" /> Cơ sở của tôi
-                                            </Link>
-                                            <Link href="/owner/bookings" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
-                                                <History className="w-4 h-4 mr-3 text-slate-400" /> Lịch đặt sân
-                                            </Link>
-                                        </>
-                                    ) : (
-                                        <>
-                                            {(user as any).isVenueStaff && (
-                                                <Link href="/venue-staff/schedule" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all mb-2 border border-indigo-100">
-                                                    <Shield className="w-4 h-4 mr-3 text-indigo-500" />Giao diện Nhân viên
+                                {/* Dropdown Menu */}
+                                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right overflow-hidden p-1.5 z-50">
+                                    <div className="px-3 py-3 border-b border-slate-100 mb-1 bg-slate-50/50">
+                                        <div className="font-bold text-slate-800 truncate">{user.name}</div>
+                                        <div className="text-xs text-slate-500 truncate font-medium">{user.email}</div>
+                                    </div>
+                                    
+                                    {/* Links based on Role */}
+                                    <div className="space-y-0.5">
+                                        {(user as any).role === 'super_admin' || (user as any).role === 'admin' ? (
+                                            <>
+                                                <Link href="/admin/dashboard" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
+                                                    <Settings className="w-4 h-4 mr-3 text-slate-400" /> Bảng điều khiển Admin
                                                 </Link>
-                                            )}
-                                            <Link href="/profile" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/profile') && "bg-primary/10 text-primary")}>
-                                                <User className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Hồ sơ cá nhân
-                                            </Link>
-                                            <Link href="/bookings" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/bookings') && "bg-primary/10 text-primary")}>
-                                                <History className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Quản lý Booking
-                                            </Link>
-                                            <Link href="/vouchers" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/vouchers') && "bg-primary/10 text-primary")}>
-                                                <Star className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Kho Vouchers
-                                            </Link>
-                                            <Link href="/wallet" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/wallet') && "bg-primary/10 text-primary")}>
-                                                <Wallet className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Tài chính & Hóa đơn
-                                            </Link>
-                                            <Link href="/messages" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/messages') && "bg-primary/10 text-primary")}>
-                                                <MessagesSquare className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Tin nhắn
-                                            </Link>
-                                            <Link href="/favorites" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/favorites') && "bg-primary/10 text-primary")}>
-                                                <Heart className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Sân yêu thích
-                                            </Link>
-                                            <Link href="/reviews" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/reviews') && "bg-primary/10 text-primary")}>
-                                                <Star className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Đánh giá của tôi
-                                            </Link>
-                                            <Link href="/support" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/support') && "bg-primary/10 text-primary")}>
-                                                <MessagesSquare className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Trợ giúp & Chat
-                                            </Link>
-                                        </>
-                                    )}
-                                </div>
-                                
-                                <div className="pt-1.5 mt-1.5 border-t border-slate-100">
-                                    <button 
-                                        onClick={() => signOut({ callbackUrl: '/' })}
-                                        className="w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition-all text-left"
-                                        id="logout-button"
-                                    >
-                                        <LogOut className="w-4 h-4 mr-3" /> Đăng xuất tài khoản
-                                    </button>
+                                                <Link href="/admin/venues" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
+                                                    <Store className="w-4 h-4 mr-3 text-slate-400" /> Quản lý Sân bóng
+                                                </Link>
+                                                <Link href="/admin/support" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
+                                                    <MessagesSquare className="w-4 h-4 mr-3 text-slate-400" /> Hỗ trợ & Kiểm duyệt
+                                                </Link>
+                                            </>
+                                        ) : (user as any).role === 'staff' ? (
+                                            <>
+                                                <Link href="/staff/lookup" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
+                                                    <Search className="w-4 h-4 mr-3 text-slate-400" /> Tra cứu & Phục vụ
+                                                </Link>
+                                                <Link href="/staff/moderation" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
+                                                    <MessagesSquare className="w-4 h-4 mr-3 text-slate-400" /> Kiểm duyệt nội dung
+                                                </Link>
+                                            </>
+                                        ) : (user as any).role === 'owner' ? (
+                                            <>
+                                                <Link href="/owner/venues" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
+                                                    <Store className="w-4 h-4 mr-3 text-slate-400" /> Cơ sở của tôi
+                                                </Link>
+                                                <Link href="/owner/bookings" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all">
+                                                    <History className="w-4 h-4 mr-3 text-slate-400" /> Lịch đặt sân
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {(user as any).isVenueStaff && (
+                                                    <Link href="/venue-staff/schedule" className="flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all mb-2 border border-indigo-100">
+                                                        <Shield className="w-4 h-4 mr-3 text-indigo-500" />Giao diện Nhân viên
+                                                    </Link>
+                                                )}
+                                                <Link href="/profile" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/profile') && "bg-primary/10 text-primary")}>
+                                                    <User className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Hồ sơ cá nhân
+                                                </Link>
+                                                <Link href="/bookings" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/bookings') && "bg-primary/10 text-primary")}>
+                                                    <History className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Quản lý Booking
+                                                </Link>
+                                                <Link href="/vouchers" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/vouchers') && "bg-primary/10 text-primary")}>
+                                                    <Star className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Kho Vouchers
+                                                </Link>
+                                                <Link href="/wallet" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/wallet') && "bg-primary/10 text-primary")}>
+                                                    <Wallet className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Tài chính & Hóa đơn
+                                                </Link>
+                                                <Link href="/messages" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/messages') && "bg-primary/10 text-primary")}>
+                                                    <MessagesSquare className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Tin nhắn
+                                                </Link>
+                                                <Link href="/favorites" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/favorites') && "bg-primary/10 text-primary")}>
+                                                    <Heart className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Sân yêu thích
+                                                </Link>
+                                                <Link href="/reviews" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/reviews') && "bg-primary/10 text-primary")}>
+                                                    <Star className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Đánh giá của tôi
+                                                </Link>
+                                                <Link href="/support" className={cn("flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:text-primary hover:bg-primary/5 transition-all", pathname.includes('/support') && "bg-primary/10 text-primary")}>
+                                                    <MessagesSquare className="w-4 h-4 mr-3 text-slate-400 group-hover:text-primary" /> Trợ giúp & Chat
+                                                </Link>
+                                            </>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="pt-1.5 mt-1.5 border-t border-slate-100">
+                                        <button 
+                                            onClick={() => signOut({ callbackUrl: '/' })}
+                                            className="w-full flex items-center px-3 py-2.5 rounded-xl text-sm font-bold text-rose-600 hover:bg-rose-50 transition-all text-left"
+                                            id="logout-button"
+                                        >
+                                            <LogOut className="w-4 h-4 mr-3" /> Đăng xuất tài khoản
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
