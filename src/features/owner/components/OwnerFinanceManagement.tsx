@@ -1,13 +1,113 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { useOwnerPayouts, useOwnerBankAccounts, useOwnerWallet, useOwnerFinancialStats } from '../hooks/useOwnerFinance';
-import { Wallet, Landmark, ArrowUpCircle, Clock, CheckCircle2, XCircle, TrendingUp, History, CreditCard, ChevronRight } from 'lucide-react';
+import { Wallet, Landmark, Clock, CheckCircle2, XCircle, TrendingUp, History, CreditCard, Search, ChevronDown } from 'lucide-react';
+
+const VN_BANKS = [
+    { name: 'Vietcombank', shortName: 'VCB', code: 'VCB' },
+    { name: 'Techcombank', shortName: 'TCB', code: 'TCB' },
+    { name: 'MB Bank', shortName: 'MB', code: 'MB' },
+    { name: 'BIDV', shortName: 'BIDV', code: 'BIDV' },
+    { name: 'VietinBank', shortName: 'VTB', code: 'ICB' },
+    { name: 'Agribank', shortName: 'AGR', code: 'VBARD' },
+    { name: 'ACB', shortName: 'ACB', code: 'ACB' },
+    { name: 'VPBank', shortName: 'VPB', code: 'VPB' },
+    { name: 'TPBank', shortName: 'TPB', code: 'TPB' },
+    { name: 'Sacombank', shortName: 'STB', code: 'STB' },
+    { name: 'HDBank', shortName: 'HDB', code: 'HDB' },
+    { name: 'VIB', shortName: 'VIB', code: 'VIB' },
+    { name: 'SHB', shortName: 'SHB', code: 'SHB' },
+    { name: 'Eximbank', shortName: 'EIB', code: 'EIB' },
+    { name: 'MSB', shortName: 'MSB', code: 'MSB' },
+    { name: 'SeABank', shortName: 'SEAB', code: 'SEAB' },
+    { name: 'OCB', shortName: 'OCB', code: 'OCB' },
+    { name: 'LPBank', shortName: 'LPB', code: 'LPB' },
+    { name: 'NamABank', shortName: 'NAB', code: 'NAB' },
+    { name: 'PVcomBank', shortName: 'PVCOM', code: 'PVCB' },
+    { name: 'Viet Capital Bank', shortName: 'BVB', code: 'BVB' },
+    { name: 'KienLongBank', shortName: 'KLB', code: 'KLB' },
+    { name: 'BaoViet Bank', shortName: 'BVB', code: 'BAOVIET' },
+    { name: 'ABBank', shortName: 'ABB', code: 'ABB' },
+];
 import { toast } from 'sonner';
 import { ImageUploader } from '@/components/common/ImageUploader';
+
+function BankSelect({ value, search, onSearch, onChange, open, onOpenChange }: {
+    value: string; search: string; onSearch: (v: string) => void;
+    onChange: (code: string) => void; open: boolean; onOpenChange: (v: boolean) => void;
+}) {
+    const ref = useRef<HTMLDivElement>(null);
+    const filtered = VN_BANKS.filter(b =>
+        b.name.toLowerCase().includes(search.toLowerCase()) ||
+        b.code.toLowerCase().includes(search.toLowerCase()) ||
+        b.shortName.toLowerCase().includes(search.toLowerCase())
+    );
+    const chosen = VN_BANKS.find(b => b.code === value);
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) onOpenChange(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [onOpenChange]);
+
+    return (
+        <div ref={ref} className="relative w-full">
+            <button
+                type="button"
+                onClick={() => onOpenChange(!open)}
+                className="w-full h-10 px-3 border border-slate-200 rounded-lg bg-white text-sm flex items-center justify-between gap-2 hover:border-slate-400 transition-colors"
+            >
+                <span className={chosen ? 'text-slate-900 font-bold' : 'text-slate-400'}>
+                    {chosen ? `${chosen.shortName} — ${chosen.name}` : 'Chọn ngân hàng...'}
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+            </button>
+            {open && (
+                <div className="absolute z-50 top-11 left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                    <div className="p-2 border-b border-slate-100 flex items-center gap-2 px-3">
+                        <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                        <input
+                            autoFocus
+                            value={search}
+                            onChange={e => onSearch(e.target.value)}
+                            placeholder="Tìm ngân hàng..."
+                            className="w-full text-sm outline-none bg-transparent"
+                        />
+                    </div>
+                    <ul className="max-h-52 overflow-y-auto py-1">
+                        {filtered.length === 0 && (
+                            <li className="px-4 py-3 text-xs text-slate-400 text-center">Không tìm thấy ngân hàng</li>
+                        )}
+                        {filtered.map(b => (
+                            <li key={b.code}>
+                                <button
+                                    type="button"
+                                    onClick={() => { onChange(b.code); onSearch(''); onOpenChange(false); }}
+                                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-slate-50 transition-colors ${value === b.code ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-700'}`}
+                                >
+                                    <img
+                                        src={`https://img.vietqr.io/image/${b.code}-compact.png`}
+                                        alt={b.shortName}
+                                        className="w-8 h-8 rounded object-contain border border-slate-100 bg-white"
+                                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                    <span className="font-bold w-10 shrink-0">{b.shortName}</span>
+                                    <span className="text-slate-500 truncate">{b.name}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
     const { payouts, requestPayout, isRequesting, isLoading: isPayoutsLoading } = useOwnerPayouts();
@@ -18,29 +118,33 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PAYOUT' | 'BANKS' | 'MAINTENANCE'>('OVERVIEW');
 
     // Add Bank Form
-    const [bankName, setBankName] = useState('');
+    const [selectedBankCode, setSelectedBankCode] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [accountName, setAccountName] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
+    const [bankSearch, setBankSearch] = useState('');
 
     // Payout Form
     const [payoutAmount, setPayoutAmount] = useState<number | ''>('');
     const [selectedBank, setSelectedBank] = useState<string>('');
 
+    const chosenBank = VN_BANKS.find(b => b.code === selectedBankCode) ?? null;
+
     const handleAddBank = () => {
-        if (!bankName || !accountNumber || !accountName) {
+        if (!selectedBankCode || !accountNumber || !accountName) {
             toast.error("Vui lòng điền đủ thông tin ngân hàng.");
             return;
         }
-        addAccount({ 
-            bank_name: bankName, 
-            bank_code: bankName, 
-            account_number: accountNumber, 
-            account_name: accountName, 
+        addAccount({
+            bank_name: chosenBank!.name,
+            bank_code: chosenBank!.code,
+            account_number: accountNumber,
+            account_name: accountName,
             qr_code_url: qrCodeUrl,
-            is_default: accounts.length === 0 
+            is_default: accounts.length === 0
         });
-        setBankName(''); setAccountNumber(''); setAccountName(''); setQrCodeUrl('');
+        setSelectedBankCode(''); setBankSearch(''); setAccountNumber(''); setAccountName(''); setQrCodeUrl('');
     };
 
     const handlePayoutDesc = () => {
@@ -282,7 +386,14 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="w-full relative">
                                         <label className="text-xs font-bold text-slate-500 block mb-1.5">Ngân Hàng <span className="text-rose-500">*</span></label>
-                                        <Input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="VD: MBBank, VCB..." className="w-full" />
+                                        <BankSelect
+                                            value={selectedBankCode}
+                                            search={bankSearch}
+                                            onSearch={setBankSearch}
+                                            onChange={setSelectedBankCode}
+                                            onOpenChange={setBankDropdownOpen}
+                                            open={bankDropdownOpen}
+                                        />
                                     </div>
                                     <div className="w-full relative">
                                         <label className="text-xs font-bold text-slate-500 block mb-1.5">Số Tài Khoản <span className="text-rose-500">*</span></label>
@@ -315,14 +426,24 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
                         ) : accounts.length === 0 ? (
                             <div className="col-span-full p-12 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-500 font-medium my-4">Chưa có thông tin nhận tiền. Vui lòng thêm ngân hàng để rút tiền.</div>
                         ) : (
-                            accounts.map(acc => (
-                                <Card key={acc.id} className="p-5 relative group overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900 border-none text-white shadow-lg">
+                            accounts.map(acc => {
+                                const validCode = VN_BANKS.some(b => b.code === acc.bank_code);
+                                return (
+                                <Card key={acc.id} className={`p-5 relative group overflow-hidden border-none text-white shadow-lg ${validCode ? 'bg-gradient-to-br from-slate-800 to-slate-900' : 'bg-gradient-to-br from-rose-800 to-rose-950'}`}>
                                     <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                                    {!validCode && (
+                                        <div className="relative z-10 mb-3 flex items-center gap-2 bg-rose-500/30 border border-rose-400/40 rounded-lg px-3 py-2 text-[11px] font-bold text-rose-200">
+                                            ⚠️ bank_code "{acc.bank_code}" không hợp lệ cho VietQR. Xóa và thêm lại để chọn đúng ngân hàng.
+                                        </div>
+                                    )}
                                     <div className="relative z-10 flex flex-col h-full justify-between">
                                         <div className="flex justify-between items-start mb-6">
                                             <div>
                                                 <h4 className="font-black text-lg text-emerald-400">{acc.bank_name}</h4>
-                                                {acc.is_default && <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">Mặc định</span>}
+                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                    {acc.is_default && <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">Mặc định</span>}
+                                                    <span className="bg-white/10 text-slate-300 text-[10px] font-mono px-2 py-0.5 rounded">code: {acc.bank_code}</span>
+                                                </div>
                                             </div>
                                             <CreditCard className="w-6 h-6 text-slate-500/50" />
                                         </div>
@@ -344,7 +465,8 @@ export const OwnerFinanceManagement = ({ venueId }: { venueId: string }) => {
                                         </button>
                                     </div>
                                 </Card>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>

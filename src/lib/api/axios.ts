@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-import { getSession } from 'next-auth/react';
+import { getSession, signOut } from 'next-auth/react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
@@ -11,20 +10,29 @@ const apiClient = axios.create({
     },
 });
 
+// Request: đính kèm accessToken
 apiClient.interceptors.request.use(
     async (config) => {
         const session = await getSession();
         const token = (session as any)?.user?.accessToken;
-        
-        console.log('>>> [AXIOS DEBUG] Request URL:', config.url);
-        console.log('>>> [AXIOS DEBUG] Token status:', token ? 'Found' : 'Not Found');
-
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
     (error) => Promise.reject(error)
+);
+
+// Response: khi nhận 401 → signOut và redirect về login
+apiClient.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        if (error.response?.status === 401) {
+            // Sign out next-auth session và chuyển về trang login
+            await signOut({ callbackUrl: '/login', redirect: true });
+        }
+        return Promise.reject(error);
+    }
 );
 
 export default apiClient;
