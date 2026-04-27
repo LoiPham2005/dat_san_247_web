@@ -9,6 +9,7 @@ import { Badge } from '@/components/common/Badge';
 import {
     ChevronLeft, MapPin, CalendarDays, Clock, ShieldCheck, Ticket,
     Zap, CheckCircle2, Building2, Copy, AlertCircle, QrCode,
+    CreditCard, Banknote, Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { format } from 'date-fns';
@@ -17,12 +18,60 @@ import { useCreateBooking, useCreateRecurringBooking } from '@/features/venue/ho
 import { toast } from 'sonner';
 import apiClient from '@/lib/api/axios';
 
+type PaymentMethod = 'VNPAY' | 'MOMO' | 'ZALOPAY' | 'BANK_TRANSFER' | 'CASH';
+
+const PAYMENT_METHODS: {
+    id: PaymentMethod;
+    label: string;
+    description: string;
+    icon: React.ReactNode;
+    badge?: string;
+    badgeColor?: string;
+}[] = [
+    {
+        id: 'VNPAY',
+        label: 'VNPay Gateway',
+        description: 'Thanh toán qua QR Code, ATM, Visa/Master — tất cả app ngân hàng',
+        icon: <CreditCard className="w-6 h-6" />,
+        badge: 'Khuyến nghị',
+        badgeColor: 'bg-emerald-500 text-white',
+    },
+    {
+        id: 'MOMO',
+        label: 'Ví MoMo',
+        description: 'Thanh toán qua ví MoMo — nhanh, tiện lợi, hoàn tiền dễ dàng',
+        icon: <Wallet className="w-6 h-6" />,
+        badge: 'Phổ biến',
+        badgeColor: 'bg-pink-500 text-white',
+    },
+    {
+        id: 'ZALOPAY',
+        label: 'ZaloPay',
+        description: 'Thanh toán qua ví ZaloPay — tích hợp Zalo, nạp rút dễ dàng',
+        icon: <Wallet className="w-6 h-6" />,
+    },
+    {
+        id: 'BANK_TRANSFER',
+        label: 'Chuyển khoản thủ công',
+        description: 'Chuyển khoản trực tiếp đến tài khoản chủ sân, gửi minh chứng',
+        icon: <Banknote className="w-6 h-6" />,
+    },
+    {
+        id: 'CASH',
+        label: 'Tiền mặt tại sân',
+        description: 'Thanh toán trực tiếp khi đến sân',
+        icon: <Banknote className="w-6 h-6" />,
+    },
+];
+
 export default function CheckoutPage() {
     const router = useRouter();
     const [draft, setDraft] = useState<any>(null);
+    const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('VNPAY');
     const { mutate: createBooking, isPending: isBookingSingle } = useCreateBooking();
     const { mutate: createRecurring, isPending: isBookingRecurring } = useCreateRecurringBooking();
-    const isProcessing = isBookingSingle || isBookingRecurring;
+    const [isRedirecting, setIsRedirecting] = useState(false);
+    const isProcessing = isBookingSingle || isBookingRecurring || isRedirecting;
 
     const [voucherCode, setVoucherCode] = useState('');
     const [voucherStatus, setVoucherStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -98,6 +147,7 @@ export default function CheckoutPage() {
             return;
         }
 
+        // Tạo booking trước, sau đó xử lý thanh toán theo phương thức đã chọn
         createBooking({
             venue_id: draft.venue.id,
             booking_date: draft.date,
@@ -106,16 +156,100 @@ export default function CheckoutPage() {
                 start_time: s.time,
                 end_time: getNextSlotTime(s.time),
             })),
-            payment_method: 'BANK_TRANSFER',
+            payment_method: selectedMethod,
             note: '',
         }, {
-            onSuccess: (data: any) => {
-                const code = data.bookings?.[0]?.booking_code;
-                if (!code) { toast.error('Không lấy được mã booking'); return; }
-                router.push(`/checkout/bank-transfer/${code}`);
+            onSuccess: async (data: any) => {
+                const bookingCode = data.bookings?.[0]?.booking_code;
+                if (!bookingCode) { toast.error('Không lấy được mã booking'); return; }
+
+                if (selectedMethod === 'VNPAY') {
+                    await handleVNPayRedirect(bookingCode);
+                } else if (selectedMethod === 'MOMO') {
+                    await handleMoMoRedirect(bookingCode);
+                } else if (selectedMethod === 'ZALOPAY') {
+                    await handleZaloPayRedirect(bookingCode);
+                } else if (selectedMethod === 'BANK_TRANSFER') {
+                    router.push(`/checkout/bank-transfer/${bookingCode}`);
+                } else {
+                    // CASH — chuyển thẳng sang success
+                    localStorage.setItem('booking_success', JSON.stringify({
+                        venue: draft.venue, date: draft.date, slots: draft.slots,
+                        total: totalAmount, mode: 'single', booking_code: bookingCode,
+                        payment_method: 'CASH',
+                    }));
+                    router.push('/checkout/success');
+                }
             },
             onError: (err: any) => toast.error(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo đơn hàng.'),
         });
+    };
+
+    const handleZaloPayRedirect = async (bookingCode: string) => {
+        try {
+            setIsRedirecting(true);
+            const res = await apiClient.post('/customer/zalopay/create-payment', { booking_code: bookingCode });
+            const { payment_url } = res.data?.data || {};
+            if (!payment_url) throw new Error('Không lấy được URL thanh toán');
+
+            localStorage.setItem('zalopay_pending', JSON.stringify({
+                booking_code: bookingCode,
+                venue: draft.venue,
+                date: draft.date,
+                slots: draft.slots,
+                total: totalAmount,
+            }));
+
+            window.location.href = payment_url;
+        } catch (err: any) {
+            setIsRedirecting(false);
+            toast.error(err?.response?.data?.message || 'Lỗi khi khởi tạo thanh toán ZaloPay');
+        }
+    };
+
+    const handleMoMoRedirect = async (bookingCode: string) => {
+        try {
+            setIsRedirecting(true);
+            const res = await apiClient.post('/customer/momo/create-payment', { booking_code: bookingCode });
+            const { payment_url } = res.data?.data || {};
+            if (!payment_url) throw new Error('Không lấy được URL thanh toán');
+
+            localStorage.setItem('momo_pending', JSON.stringify({
+                booking_code: bookingCode,
+                venue: draft.venue,
+                date: draft.date,
+                slots: draft.slots,
+                total: totalAmount,
+            }));
+
+            window.location.href = payment_url;
+        } catch (err: any) {
+            setIsRedirecting(false);
+            toast.error(err?.response?.data?.message || 'Lỗi khi khởi tạo thanh toán MoMo');
+        }
+    };
+
+    const handleVNPayRedirect = async (bookingCode: string) => {
+        try {
+            setIsRedirecting(true);
+            const res = await apiClient.post('/customer/vnpay/create-payment', { booking_code: bookingCode });
+            const { payment_url } = res.data?.data || {};
+            if (!payment_url) throw new Error('Không lấy được URL thanh toán');
+
+            // Lưu thông tin để dùng ở trang return
+            localStorage.setItem('vnpay_pending', JSON.stringify({
+                booking_code: bookingCode,
+                venue: draft.venue,
+                date: draft.date,
+                slots: draft.slots,
+                total: totalAmount,
+            }));
+
+            window.location.href = payment_url;
+        } catch (err: any) {
+            setIsRedirecting(false);
+            toast.error(err?.response?.data?.message || 'Lỗi khi khởi tạo thanh toán VNPay');
+        }
     };
 
     // Build display data
@@ -201,77 +335,158 @@ export default function CheckoutPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
-                                        <span className="font-bold text-slate-700">Tổng cộng {draft.slots.length} hiệp (slots)</span>
-                                    </div>
-                                    <Badge variant="outline" className="bg-slate-50 border-slate-200 text-slate-600 px-3 py-1 font-mono">{(draft.slots.length * 0.5).toFixed(1)} Giờ chơi</Badge>
-                                </div>
                             </CardContent>
                         </Card>
 
-                        {/* Preview thông tin ngân hàng */}
+                        {/* Chọn phương thức thanh toán */}
                         <Card className="rounded-[2rem] border-0 shadow-sm overflow-hidden">
                             <CardHeader className="bg-white border-b border-slate-100 p-6">
                                 <CardTitle className="text-xl font-bold flex items-center gap-2">
                                     <Building2 className="w-5 h-5 text-emerald-500" /> Phương thức thanh toán
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-6 bg-white">
-                                {!bankInfo ? (
-                                    <div className="flex items-center gap-3 text-slate-400 text-sm">
-                                        <div className="w-4 h-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin" />
-                                        Đang tải thông tin thanh toán...
-                                    </div>
-                                ) : !bankInfo.bank_account ? (
-                                    <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-200">
-                                        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                        <p className="text-sm text-amber-700 font-medium">Chủ sân chưa cài đặt tài khoản ngân hàng. Vui lòng liên hệ trực tiếp.</p>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col md:flex-row gap-6 items-center">
-                                        {/* QR preview */}
-                                        <div className="shrink-0 flex flex-col items-center gap-2">
-                                            <div className="p-2 border-2 border-slate-100 rounded-2xl w-44 h-44 flex items-center justify-center bg-white shadow-sm">
-                                                {qrSrc && !qrError ? (
-                                                    <img src={qrSrc} alt="QR" className="w-40 h-40 object-contain rounded-xl" onError={() => setQrError(true)} />
-                                                ) : (
-                                                    <div className="flex flex-col items-center gap-2 text-slate-300">
-                                                        <QrCode className="w-16 h-16" />
-                                                        <span className="text-[10px] text-slate-400 text-center">QR đầy đủ sau<br/>khi chốt booking</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <p className="text-[10px] text-slate-400 text-center max-w-[160px]">QR đầy đủ với mã booking sẽ hiện ở bước tiếp theo</p>
+                            <CardContent className="p-6 bg-white space-y-3">
+                                {PAYMENT_METHODS.map(method => (
+                                    <button
+                                        key={method.id}
+                                        onClick={() => setSelectedMethod(method.id)}
+                                        className={cn(
+                                            "w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all",
+                                            selectedMethod === method.id
+                                                ? "border-primary bg-primary/5 shadow-sm"
+                                                : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-white"
+                                        )}
+                                    >
+                                        {/* Radio indicator */}
+                                        <div className={cn(
+                                            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                                            selectedMethod === method.id ? "border-primary" : "border-slate-300"
+                                        )}>
+                                            {selectedMethod === method.id && (
+                                                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                                            )}
                                         </div>
 
-                                        {/* Bank details */}
-                                        <div className="flex-1 space-y-2 w-full">
-                                            {[
-                                                { label: 'Ngân hàng', value: bankInfo.bank_account.bank_name, key: null },
-                                                { label: 'Số TK', value: bankInfo.bank_account.account_number, key: 'stk' },
-                                                { label: 'Chủ TK', value: bankInfo.bank_account.account_name, key: null },
-                                                { label: 'Số tiền', value: `${totalAmount.toLocaleString('vi-VN')}đ`, key: 'amount' },
-                                            ].map(({ label, value, key }) => (
-                                                <div key={label} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0 gap-3">
-                                                    <span className="text-xs text-slate-400 font-medium w-16 shrink-0">{label}</span>
-                                                    <div className="flex items-center gap-2 flex-1 justify-end">
-                                                        <span className="text-sm font-bold text-slate-800 text-right truncate">{value}</span>
-                                                        {key && (
-                                                            <button onClick={() => copyField(value.replace(/[^\d]/g, '') || value, key)} className="shrink-0 text-slate-400 hover:text-primary transition-colors">
-                                                                {copiedField === key ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                                                            </button>
+                                        {/* Icon */}
+                                        <div className={cn(
+                                            "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                                            selectedMethod === method.id ? "bg-primary text-white" : "bg-slate-200 text-slate-500"
+                                        )}>
+                                            {method.icon}
+                                        </div>
+
+                                        {/* Text */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className={cn(
+                                                    "font-bold text-base",
+                                                    selectedMethod === method.id ? "text-slate-900" : "text-slate-700"
+                                                )}>
+                                                    {method.label}
+                                                </span>
+                                                {method.badge && (
+                                                    <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-full", method.badgeColor)}>
+                                                        {method.badge}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-0.5">{method.description}</p>
+                                        </div>
+                                    </button>
+                                ))}
+
+                                {/* Preview thông tin ngân hàng khi chọn BANK_TRANSFER */}
+                                {selectedMethod === 'BANK_TRANSFER' && (
+                                    <div className="mt-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        {!bankInfo ? (
+                                            <div className="flex items-center gap-3 text-slate-400 text-sm">
+                                                <div className="w-4 h-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin" />
+                                                Đang tải thông tin thanh toán...
+                                            </div>
+                                        ) : !bankInfo.bank_account ? (
+                                            <div className="flex items-start gap-3">
+                                                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                                <p className="text-sm text-amber-700 font-medium">Chủ sân chưa cài đặt tài khoản ngân hàng. Vui lòng liên hệ trực tiếp hoặc chọn phương thức khác.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col md:flex-row gap-4 items-center">
+                                                <div className="shrink-0 flex flex-col items-center gap-2">
+                                                    <div className="p-2 border-2 border-slate-100 rounded-2xl w-36 h-36 flex items-center justify-center bg-white shadow-sm">
+                                                        {qrSrc && !qrError ? (
+                                                            <img src={qrSrc} alt="QR" className="w-32 h-32 object-contain rounded-xl" onError={() => setQrError(true)} />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2 text-slate-300">
+                                                                <QrCode className="w-12 h-12" />
+                                                                <span className="text-[10px] text-slate-400 text-center">QR đầy đủ sau<br/>khi chốt booking</span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
-                                            ))}
-                                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                                                <p className="text-[11px] text-blue-700 font-semibold">
-                                                    Nhấn "Chốt Booking" → trang chuyển khoản sẽ hiện QR đầy đủ kèm mã booking tự động điền nội dung.
-                                                </p>
+                                                <div className="flex-1 space-y-2 w-full">
+                                                    {[
+                                                        { label: 'Ngân hàng', value: bankInfo.bank_account.bank_name, key: null },
+                                                        { label: 'Số TK', value: bankInfo.bank_account.account_number, key: 'stk' },
+                                                        { label: 'Chủ TK', value: bankInfo.bank_account.account_name, key: null },
+                                                    ].map(({ label, value, key }) => (
+                                                        <div key={label} className="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0 gap-3">
+                                                            <span className="text-xs text-slate-400 font-medium w-16 shrink-0">{label}</span>
+                                                            <div className="flex items-center gap-2 flex-1 justify-end">
+                                                                <span className="text-sm font-bold text-slate-800 text-right truncate">{value}</span>
+                                                                {key && (
+                                                                    <button onClick={() => copyField(value, key)} className="shrink-0 text-slate-400 hover:text-primary transition-colors">
+                                                                        {copiedField === key ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    <p className="text-[11px] text-blue-600 font-semibold pt-1">
+                                                        QR đầy đủ kèm mã booking sẽ hiện ở bước tiếp theo.
+                                                    </p>
+                                                </div>
                                             </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Info khi chọn ZALOPAY */}
+                                {selectedMethod === 'ZALOPAY' && (
+                                    <div className="mt-2 p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-start gap-3">
+                                        <ShieldCheck className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-bold text-blue-800">Thanh toán qua ZaloPay</p>
+                                            <p className="text-xs text-blue-600 mt-0.5">Bạn sẽ được chuyển sang ZaloPay để hoàn tất. Hỗ trợ ví ZaloPay, ATM và thẻ quốc tế liên kết qua Zalo.</p>
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* Info khi chọn MOMO */}
+                                {selectedMethod === 'MOMO' && (
+                                    <div className="mt-2 p-4 bg-pink-50 rounded-2xl border border-pink-100 flex items-start gap-3">
+                                        <ShieldCheck className="w-5 h-5 text-pink-500 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-bold text-pink-800">Thanh toán qua ví MoMo</p>
+                                            <p className="text-xs text-pink-600 mt-0.5">Bạn sẽ được chuyển sang app MoMo để hoàn tất. Hỗ trợ ví MoMo, thẻ ATM và thẻ quốc tế liên kết.</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Info khi chọn VNPAY */}
+                                {selectedMethod === 'VNPAY' && (
+                                    <div className="mt-2 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-3">
+                                        <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-bold text-emerald-800">Thanh toán an toàn qua VNPay</p>
+                                            <p className="text-xs text-emerald-600 mt-0.5">Bạn sẽ được chuyển sang trang VNPay để hoàn tất. Hỗ trợ QR, ATM nội địa và thẻ quốc tế từ 40+ ngân hàng.</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Info khi chọn CASH */}
+                                {selectedMethod === 'CASH' && (
+                                    <div className="mt-2 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
+                                        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                        <p className="text-sm text-amber-700 font-medium">Vui lòng thanh toán trực tiếp tại quầy lễ tân khi đến sân. Booking sẽ chờ xác nhận từ chủ sân.</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -306,16 +521,49 @@ export default function CheckoutPage() {
                                         <span className="font-black text-emerald-600">-{discount.toLocaleString('vi-VN')} ₫</span>
                                     </div>
                                 )}
+
+                                {/* Phương thức đã chọn */}
+                                <div className="flex justify-between items-center text-sm pt-2 border-t border-slate-100">
+                                    <span className="text-slate-500 font-medium">Phương thức</span>
+                                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                                        {selectedMethod === 'VNPAY' && <><CreditCard className="w-4 h-4 text-primary" /> VNPay</>}
+                                        {selectedMethod === 'MOMO' && <><Wallet className="w-4 h-4 text-pink-500" /> MoMo</>}
+                                        {selectedMethod === 'ZALOPAY' && <><Wallet className="w-4 h-4 text-blue-500" /> ZaloPay</>}
+                                        {selectedMethod === 'BANK_TRANSFER' && <><Wallet className="w-4 h-4 text-blue-500" /> Chuyển khoản</>}
+                                        {selectedMethod === 'CASH' && <><Banknote className="w-4 h-4 text-amber-500" /> Tiền mặt</>}
+                                    </span>
+                                </div>
                             </CardContent>
                             <CardFooter className="bg-slate-50 flex-col p-6 items-stretch gap-4 border-t border-slate-100">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-bold text-slate-600 uppercase tracking-widest">Tổng Thanh Toán</span>
                                     <span className="text-3xl font-black text-primary">{totalAmount.toLocaleString('vi-VN')}₫</span>
                                 </div>
-                                <Button className="w-full h-14 rounded-2xl font-black text-lg shadow-lg" onClick={handlePayment} disabled={isProcessing}>
-                                    {isProcessing
-                                        ? <span className="flex items-center gap-2"><Zap className="w-5 h-5 animate-pulse" /> Đang xử lý...</span>
-                                        : <span className="flex items-center gap-2"><ShieldCheck className="w-5 h-5" /> CHỐT BOOKING & THANH TOÁN</span>}
+                                <Button
+                                    className="w-full h-14 rounded-2xl font-black text-lg shadow-lg"
+                                    onClick={handlePayment}
+                                    disabled={isProcessing}
+                                >
+                                    {isProcessing ? (
+                                        <span className="flex items-center gap-2">
+                                            <Zap className="w-5 h-5 animate-pulse" />
+                                            {isRedirecting
+                                        ? selectedMethod === 'MOMO' ? 'Đang chuyển đến MoMo...'
+                                          : selectedMethod === 'ZALOPAY' ? 'Đang chuyển đến ZaloPay...'
+                                          : 'Đang chuyển đến VNPay...'
+                                        : 'Đang xử lý...'
+                                    }
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-2">
+                                            <ShieldCheck className="w-5 h-5" />
+                                            {selectedMethod === 'VNPAY' ? 'THANH TOÁN QUA VNPAY' :
+                                             selectedMethod === 'MOMO' ? 'THANH TOÁN QUA MOMO' :
+                                             selectedMethod === 'ZALOPAY' ? 'THANH TOÁN QUA ZALOPAY' :
+                                             selectedMethod === 'BANK_TRANSFER' ? 'CHỐT BOOKING & CHUYỂN KHOẢN' :
+                                             'CHỐT BOOKING & THANH TOÁN TIỀN MẶT'}
+                                        </span>
+                                    )}
                                 </Button>
                             </CardFooter>
                         </Card>

@@ -24,7 +24,7 @@ export default function CheckoutSuccessPage() {
 
     if (!successData) return <div className="min-h-screen flex items-center justify-center font-bold text-slate-400">Đang tải kết quả đặt sân...</div>;
 
-    const mainBookingCode = successData.results?.[0]?.booking_code || "N/A";
+    const mainBookingCode = successData.results?.[0]?.booking_code || successData.booking_code || "N/A";
 
     const handleCopy = () => {
         navigator.clipboard.writeText(mainBookingCode);
@@ -84,7 +84,7 @@ export default function CheckoutSuccessPage() {
                 <p className="text-slate-500 font-medium px-4 leading-relaxed">
                     {isRecurring 
                         ? "Yêu cầu đặt sân cố định của bạn đã được gửi tới chủ sân. Vui lòng chờ phản hồi trong mục lịch sử."
-                        : `Giao dịch của bạn đã được xác nhận. ${successData.results.length > 1 ? `Bạn có ${successData.results.length} mã vé cho các sân khác nhau.` : 'Mã vé của bạn đã sẵn sàng.'}`
+                        : `Giao dịch của bạn đã được xác nhận. ${(successData.results?.length ?? 1) > 1 ? `Bạn có ${successData.results.length} mã vé cho các sân khác nhau.` : 'Mã vé của bạn đã sẵn sàng.'}`
                     }
                 </p>
             </div>
@@ -150,7 +150,7 @@ export default function CheckoutSuccessPage() {
                             <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 text-[10px] font-medium text-blue-700 leading-relaxed">
                                 * Lưu ý: Chủ sân sẽ liên hệ hoặc duyệt yêu cầu của bạn trong vòng 24h. Bạn không cần thanh toán ngay bây giờ.
                             </div>
-                        ) : successData.results.length > 1 && (
+                        ) : (successData.results?.length ?? 0) > 1 && (
                             <div className="bg-amber-50 p-3 rounded-xl border border-amber-100 text-[10px] font-medium text-amber-700">
                                 * Lưu ý: Có {successData.results.length} đơn đặt cho các sân khác nhau. Vui lòng xem chi tiết trong Lịch sử.
                             </div>
